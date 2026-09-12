@@ -1,0 +1,4 @@
+describe('System Manager API Tests', function() {
+   require('./sm-HTTPTest');
+   require('./sm-WSTest');
+});

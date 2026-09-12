@@ -1,0 +1,111 @@
+{
+    "WebCore" : {
+        "serverPort" : 8383,
+        "fileRoot": "/usr/local/var/www/audioservice",
+        "requestLogging": false
+    },
+    "AudioService": {
+        "registryPort": 8181,
+        "serverPort": 8383,
+        "AlsaAudio": {
+            "energy": {
+                "high_freq": 1000,
+                "high_q": 2.0,
+                "mid_freq": 500,
+                "mid_q": 2.0,
+                "low_freq": 200,
+                "low_q": 1.0
+            },
+            "LocationEstimate": {
+                "adjust_confidence_scale": 0.9,
+                "alternate_confidence_scale": 0.5
+            },
+            "LocationHistory": {
+                "adjust_confidence_scale": 0.9,
+                "alternate_confidence_scale": 0.5
+            },
+            "PlaybackDetector": {
+                "quiet_threshold": 50,
+                "sub_samples": 10,
+                "consec_active_threshold": 2,
+                "consec_inactive_threshold": 10
+            }
+        },
+        "alsaCaptureDevice": "hw:ADC",
+        "alsaPlaybackDevice": "hw:TLV320DAC3100",
+        "routerCaptureDevice": "services_sink",
+        "routerCaptureLatency": 64000,
+        "routerPlaybackDevice": "as_source",
+        "routerPlaybackLatency": 64000,
+        "useMMFx": true,
+        "SEDiags": {
+            "injector_white_noise_rx_magnitude_q15": [2048],
+            "injector_white_noise_tx_magnitude_q15": [2048],
+            "senr_res_echo_fullband_weight_factor": [3]
+        },
+        "kinematic_model": "/usr/local/etc/jibo-kinematic-model.json",
+        "hotphrase_begin_time": 0.800,
+        "hotphrase_end_time": 0.200,
+        "log_hotphrase_audio": false,
+        "enable_vis_sockets": false,
+        "ping_pong_test": false,
+        "log_directory": "/tmp",
+        "moving_noise_enabled": false,
+        "moving_noise_file": "/usr/local/share/audioservice/brown_noise.wav",
+        "moving_noise_duration": 2.0,
+        "moving_noise_min_vel": 0.05
+    },
+    "ErrorTracker": {
+        "views": [
+            {
+                "name": "AudioService",
+                "errors": [
+                    "ALSA_CAPTURE_XRUN",
+                    "ALSA_PLAYBACK_XRUN",
+                    "ROUTER_CAPTURE_XRUN",
+                    "ROUTER_CAPTURE_SHORT",
+                    "ROUTER_PLAYBACK_XRUN",
+                    "ROUTER_PLAYBACK_SHORT",
+                    "ROUTER_GET_UNDERRUN",
+                    "ROUTER_PUT_OVERRUN",
+                    "ROUTER_READ_OVERRUN",
+                    "ROUTER_WRITE_UNDERRUN",
+                    "ROUTER_ON_STREAM_OVERFLOW",
+                    "ROUTER_ON_STREAM_UNDERFLOW"
+                ]
+            }
+        ]
+    },
+    "logging": {
+        "loggers": {
+            "root": {
+                "level": "notice"
+            },
+            "pr": {
+                "name": "PulseRouter",
+                "level": "notice"
+            },
+            "ar": {
+                "name": "AlsaRouter",
+                "level": "notice"
+            },
+            "as": {
+                "name": "AudioService",
+                "level": "notice"
+            },
+            "aa": {
+                "name": "AlsaAudio",
+                "level": "notice"
+            },
+            "aalh": {
+                "name": "AlsaAudio.LocationHistory",
+                "level": "notice"
+            },
+            "aala": {
+                "name": "AlsaAudio.LocationAccumulator",
+                "level": "notice"
+            }
+        }
+    }
+}
+

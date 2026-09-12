@@ -1,0 +1,73 @@
+div.section {
+    position: relative;
+    width: 100%;
+    clear: both;
+}
+
+div.plotcontainer {
+    position: relative;
+    width: 900px;
+    height: 350px;
+}
+
+div.plot {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+#axisCmdSection {
+    position: relative;
+    top: 10pt;
+}
+
+#pelvisControls {
+    position: relative;
+    left: 0em;
+}
+
+#torsoControls {
+    position: relative;
+    left: 2pt;
+}
+
+#neckControls {
+    position: relative;
+    left: 4pt;
+}
+
+#pelvisCmd {
+    width: 50pt;
+}
+
+#torsoCmd {
+    width: 50pt;
+}
+
+#neckCmd {
+    width: 50pt;
+}
+
+#ledRedCmd {
+    width: 50pt;
+}
+
+#ledGreenCmd {
+    width: 50pt;
+}
+
+#ledBlueCmd {
+    width: 50pt;
+}
+
+#leddRedCmd {
+    width: 50pt;
+}
+
+#leddGreenCmd {
+    width: 50pt;
+}
+
+#leddBlueCmd {
+    width: 50pt;
+}

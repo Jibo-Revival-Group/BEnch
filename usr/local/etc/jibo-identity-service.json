@@ -1,0 +1,87 @@
+{
+    "WebCore": {
+        "serverPort": 8489,
+        "fileRoot": "/usr/local/var/www/identity"
+    },
+    "IdentityService":{
+        "registryPort":8181,
+        "serverPort":8489,
+        "global" : {
+            "face_landmark_68" : {
+                "file" :
+                "/usr/local/share/lps/shape_predictor_68_face_landmarks.dat"
+            }
+        },
+        "engine" : {
+            "processor":{
+                "max_requests":10,
+                "interval":1000
+            },
+            "manager" : {
+                "criteria" : { },
+                "kind" : "face",
+                "max_subjects" : 16,
+                "max_examples" : 5,
+                "max_attempts" : 3,
+                "directory" : "/var/jibo/identity/faces",
+                "detector": {
+                    "criteria": {},
+                    "min_hint_width" : 40,
+                    "min_hint_height" : 40
+                }
+            },
+            "identifier" : {
+                "identifier_type": "deepid",
+                "eigenfaces" : {
+                    "type" : "eigenfaces_identifier",
+                    "name" : "eigenfaces",
+                    "kind" : "face",
+                    "size" : 128,
+                    "radius" : 5,
+                    "attenuation" : 100.0,
+                    "filename" : "/var/jibo/identity/eigenfaces.data"
+                },
+                "deepid" : {
+                    "type" : "deepid_identifier",
+                    "name" : "deepid",
+                    "kind" : "face",
+                    "solver" : "/usr/local/share/lps/deepid/CASIA_solver.prototxt",
+                    "model" : "/usr/local/share/lps/deepid/CASIA_train_test.prototxt",
+                    "snapshot" : "/usr/local/share/lps/deepid",
+                    "weights" : "/usr/local/share/lps/deepid/CASIA_iter_666000.caffemodel",
+                    "iterations" : 50000,
+                    "size" : 128,
+                    "sigint_effect" : "stop",
+                    "sighup_effect" : "snapshot",
+                    "jlf" : "/var/jibo/identity/deepid",
+                    "filename" : "/var/jibo/identity/deepid.data",
+                    "gpu_id":0
+                },
+                "resnetfaceid" : {
+                    "type" : "resnetfaceid_identifier",
+                    "name" : "resnetfaceid",
+                    "kind" : "face",
+                    "model" : "/usr/local/share/identity/resnet/dlib_face_recognition_resnet_model_v1.dat",
+                    "size" : 150,
+                    "jlf" : "/var/jibo/identity/resnet",
+                    "filename" : "/var/jibo/identity/resnetfaceid.data"
+                }
+            }
+        }
+    },
+    "logging" : {
+        "loggers" : {
+            "root": {
+                "level": "warning"
+            },
+            "l8" : {
+                "name" : "IdentificationManager",
+                "level" : "information"
+            },
+            "l11" : {
+                "name" : "ImageIdentifier",
+                "level" : "information"
+            }
+        }
+    }
+}

@@ -1,0 +1,15 @@
+{
+  "name": "system_monitoring_service_http_test",
+  "version": "1.0.0",
+  "description": "System Monitoring Service HTTP Test",
+  "main": "sms-HTTPTest",
+  "scripts": {
+    "test": "XUNIT_FILE='/usr/local/lib/jibo-platform-test/sms-report.xml' mocha index --reporter xunit-file --timeout 5000"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.jibo.com:PlatformTeam/system-monitoring-service.git"
+  },
+  "author": "Russell Kirmayer",
+  "license": "ISC"
+}

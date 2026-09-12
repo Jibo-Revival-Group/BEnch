@@ -1,0 +1,4 @@
+describe('ASR Service API Tests', function() {
+   require('./asr-HTTPTest');
+   require('./asr-WSTest')
+});

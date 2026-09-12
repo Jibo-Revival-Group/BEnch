@@ -1,0 +1,4 @@
+describe('TTS Service API Tests', function() {
+   require('./tts-HTTPTest');
+   require('./tts-WSTest')
+});

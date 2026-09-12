@@ -1,0 +1,1 @@
+These files are used in the **Simulator ONLY** - jibo-command-requester is set up to accept these when connecting to the simulator. When on the robot, actual certificates will be provided by Jibo.

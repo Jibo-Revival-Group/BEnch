@@ -1,0 +1,4 @@
+describe('Server Service API Tests', function() {
+   require('./ss-HTTPTest');
+   require('./ss-WSTest')
+});

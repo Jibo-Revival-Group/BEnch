@@ -1,0 +1,14 @@
+type = SENSORY_SPEAKER_ID_TD
+backgroundModel = /../sensory_data_td/hey_jibo.ubm
+clientModel = /../sensory_data_td/client_model.bin
+tempSidDir = /../sensory_data_td/audio/
+threshold = -1.2
+delta_threshold = 2.0
+sampleRate = 16000
+beginSample = 0
+endSample = -1
+restartEngine = false
+maxUtterances = 10000
+saving_sid_audio = false
+VADlevel = OFF
+PHRASEver = OFF

@@ -1,0 +1,23 @@
+{
+    "WebCore" : {
+        "serverPort": 8181,
+        "fileRoot": "/usr/local/var/www/service-registry",
+        "requestLogging": false
+    },
+    "ManagementCore": {
+        "authenticate": false,
+        "validate": false,
+        "fileRoot": "/usr/local/var/www/service-management"
+    },
+    "ServiceRegistry": {
+        "registryPort": 8181,
+        "serverPort": 8181
+    },
+    "logging": {
+        "loggers": {
+            "root": {
+                "level": "notice"
+            }
+        }
+    }
+}

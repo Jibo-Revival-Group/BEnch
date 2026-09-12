@@ -1,0 +1,15 @@
+{
+  "name": "asr_service_http_test",
+  "version": "1.0.0",
+  "description": "ASR Service HTTP Test",
+  "main": "asr-HTTPTest",
+  "scripts": {
+    "test": "XUNIT_FILE='/usr/local/lib/jibo-platform-test/asr-report.xml' mocha index --reporter xunit-file"
+  },
+  "repository": {
+    "type": "git",
+    "url": "ssh://git@git.jibo.com:7999/plts/eardrum.git"
+  },
+  "author": "Russell Kirmayer",
+  "license": "ISC"
+}

@@ -1,0 +1,15 @@
+::Name
+Trigger: en_US heyjibo
+
+::Vocabulary
+hey jibo
+
+::Sensitivity
+Sensitivity: 8
+
+::Search
+jibo_jibo_heyjibo_en_US_sfs_delivery03_search_8.raw
+
+::Net
+jibo_jibo_heyjibo_en_US_sfs_delivery03_am.raw
+

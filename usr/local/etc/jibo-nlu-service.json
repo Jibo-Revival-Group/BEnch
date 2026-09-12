@@ -1,0 +1,50 @@
+{
+    "webCore" : {
+        "serverPort": 8787,
+	"requestLogging": false
+    },
+    "Service": {
+        "version":"v2.7.6",
+        "name":"nlu",
+        "host":"localhost",
+        "port":8787,
+        "path":"/",
+        "ttl":30,
+        "reg_timer":10000,
+        "tls":"",
+        "handler":"nlu_interface",
+        "log_ws":"nlu_logs",
+        "reset_memory_ws":"reset_memory",
+        "nlu_data_dir":"/usr/local/share/nlu-data",
+        "default_locale":"en-us",
+        "post_to_perf_monitor_service":true
+    },
+    "parsing": {
+        "cmp_params": {
+            "log_weights": false,
+            "minimize_fst": true,
+            "union_minimize_fst": false
+        },
+        "parsing_params": {
+            "max_num_states": 50,
+            "use_v8_interpreter": true
+        }
+    },
+
+    "logging" : {
+    	"jibo_message_prefix": "C",
+    	"loggers" : {
+		"root": {
+	            "level": "information"
+        	 },
+	         "l1" : {
+        	     "name" : "NluService",
+	             "level" : "information"
+        	 },
+	         "l2" : {
+        	     "name" : "Application",
+	             "level" : "information"
+        	 }
+      	}
+    }
+}

@@ -1,0 +1,244 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<script src="jquery-2.1.3.js"></script>
+<link href="asr.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript">
+
+
+$(document).ready(function() {
+
+
+    connectAsr();
+
+    initTaskSettings();
+    onChange1();
+});
+//var httpReq = new XMLHttpRequest();
+//httpReq.open('POST', "localhost", true);
+var ip2 = window.location.hostname;
+ip2=ip2.concat(":8089"); 
+var host = window.location.host;
+var socket = new WebSocket("ws://"+host+"/port");
+var wsMsgLog = "";
+
+//httpReq.setRequestHeader('Access-Control-Allow-Headers', '*');
+//httpReq.setRequestHeader('Content-type', 'application/ecmascript');
+//httpReq.setRequestHeader('Access-Control-Allow-Origin', '*');
+
+
+function connectAsr() {
+ 
+    socket.onopen = function() {
+        console.log("Touch state socket open!");
+    };
+    socket.onmessage = function(msg) {
+        console.log("Got message!!");
+		//console.log(msg.data);	
+        var data = JSON.parse(msg.data);
+        var data_str = JSON.stringify(data, null, 4);
+        data_str = data_str.concat("\n");
+        data_str = data_str.concat(wsMsgLog);
+        wsMsgLog = data_str;
+        //state.appendTouchState(data);
+        console.log(data);
+        //$("#asr").html($("<p>").text(JSON.stringify(data, null, 2)));
+        $("#asrState").val(wsMsgLog);
+
+        //state.appendTouchState(data);
+        //console.log(data);
+        //$("#asr").html($("<p>").text(JSON.stringify(data, null, 2)));
+        //$("#asrState").val(JSON.stringify(data, null, 4));
+    };
+    socket.onclose = function() {
+        console.log("Asr state socket close!");
+        setTimeout(function() { connectAsr(); }, 3000);
+    };
+}
+
+function sendSocketMsg() {
+    console.log("Sending socket msg");
+    socket.send('10');
+}
+
+
+function initTaskSettings() {
+
+
+    $("#send").click(function() {
+        $.ajax({
+            type: "POST",
+            url: "/upload_interface",
+            dataType: "json",
+            data: packUploadSettings(), 
+            success: function() {
+            },
+            error: function(xhr, status, error) {
+                console.log("ERROR " + status + " " + error + JSON.stringify(data));
+            }
+        });
+
+    });
+
+
+}
+ 
+
+
+var data = {task: "default", action: "default"};
+
+function packUploadSettings() {
+    data.mode = $('#mode_drop').val()
+    data.old_checksum = $('#old_checksum').val(); 
+    data.new_checksum = $('#new_checksum').val(); 
+    data.task_id = "0";
+    data.command = $('#command_drop').val();
+    if ($('#type_drop').val()==="loop"){
+     data.grammar = "loop";
+    data.loop_list = [{"first_name":$('#first').val(),"last_name":$('#last').val(),"full_name":$('#first').val()+" "+$('#last').val(),"nick_name":""}]; 
+    }
+    if ($('#type_drop').val()==="contacts"){
+    data.grammar = "contacts";
+    data.contacts_list = [{"first_name":$('#first').val(),"last_name":$('#last').val(),"full_name":$('#first').val()+" "+$('#last').val(),"nick_name":""}];
+    }
+    if ($('#type_drop').val()==="custom_word"){
+    data.grammar = "custom_words";
+    data.words_list = [$('#custom_word').val()];
+    }
+    if ($('#type_drop').val()==="raw_custom"){
+      data.grammar = "custom_words";
+      data.words_list = JSON.parse($('#custom_word').val());
+    }
+    if ($('#type_drop').val()==="raw_contacts"){
+      data.grammar = "contacts";
+      data.contacts_list = JSON.parse($('#custom_word').val());
+    }
+    if ($('#type_drop').val()==="raw_loop"){
+      data.grammar = "loop";
+      data.loop_list = JSON.parse($('#custom_word').val());
+    }
+   
+    data.userid_list = [$("#user").val()];
+    data.recog_type = "dictation";
+    //console.log("XXXX "+JSON.stringify(data));
+    return JSON.stringify(data);
+}
+
+
+
+   
+
+function onChange1() {
+    if($('#type_drop').val() === 'loop')  {
+        document.getElementById("first").disabled=false;
+        document.getElementById("last").disabled=false;
+        document.getElementById("custom_word").disabled=true;
+    }
+    if($('#type_drop').val() === 'contacts')  {
+        document.getElementById("first").disabled=false;
+        document.getElementById("last").disabled=false;
+        document.getElementById("custom_word").disabled=true;
+    }
+    else if($('#type_drop').val() === 'custom_word'){
+        document.getElementById("first").disabled=true;
+        document.getElementById("last").disabled=true;
+        document.getElementById("custom_word").disabled=false;
+    }
+    else if($('#type_drop').val() === 'raw_custom'){
+        document.getElementById("first").disabled=true;
+        document.getElementById("last").disabled=true;
+        document.getElementById("custom_word").disabled=false;
+
+
+        document.getElementById('custom_word').value = "[\"Jibo\",\"JSON\"]";
+
+    }
+    else if($('#type_drop').val() === 'raw_contacts'){
+        document.getElementById("first").disabled=true;
+        document.getElementById("last").disabled=true;
+        document.getElementById("custom_word").disabled=false;
+        document.getElementById('custom_word').value = "[{\"first_name\":\"Amir\",\"last_name\":\"Harati\",\"full_name\":\"Amir Harati\",\"nick_name\":\"\"},{\"first_name\":\"John\",\"last_name\":\"Smith\",\"full_name\":\"John Smith\",\"nick_name\":\"doe\"}]";
+
+    }
+
+    else if($('#type_drop').val() === 'raw_loop'){
+        document.getElementById("first").disabled=true;
+        document.getElementById("last").disabled=true;
+        document.getElementById("custom_word").disabled=false;
+        document.getElementById('custom_word').value = "[{\"first_name\":\"Amir\",\"last_name\":\"Harati\",\"full_name\":\"Amir Harati\",\"nick_name\":\"\"},{\"first_name\":\"John\",\"last_name\":\"Smith\",\"full_name\":\"John Smith\",\"nick_name\":\"doe\"}]";
+
+    }
+ };
+
+</script>
+<title>Asr Service</title>
+</head>
+<body>
+
+<div class="section">
+
+<h1>Socket messages from ASR</h1>
+<textarea id="asrState" disabled="true" rows="15" cols="120"></textarea>
+
+<table style="width:100%" border=4 cellpadding=8 bordercolor="#FFFFFF">
+  <tr>
+    <td align="left" valign="top" bgcolor="#dddddd">
+      <label for="user">User:</label> 
+      <input type="text" id="user" value="0000" />
+      
+      <label for="old_checksum">Old_Checksum:</label> 
+      <input type="text" id="old_checksum" value="1" />
+
+      <label for="new_checksum">New_Checksum:</label> 
+      <input type="text" id="new_checksum" value="1" />
+      
+
+      <br>
+
+      <label for="action_spec">Mode:</label>
+      <select class="c10" onchange="showCSTemplates(this);" id="mode_drop">
+	<option value="full" id="Templates">full</option>
+	<option value="partial">partial</option>
+      </select>
+      <br>
+      <label for="action_spec">Command:</label>
+      <select class="c10" onchange="showCSTemplates(this);" id="command_drop">
+	<option value="add" id="Templates">add</option>
+	<option value="remove">remove</option>	
+      </select>
+      <br>
+      <label for="action_spec">Type:</label>
+      <select class="c10"  id="type_drop" onChange="onChange1();">
+	<option value="loop" id="Templates">loop</option>
+	<option value="contacts" id="Templates">contacts</option>
+	<option value="custom_word">cutom_word</option>
+	<option value="raw_custom">raw_custom</option>
+	<option value="raw_contact">raw_contacts</option>
+	<option value="raw_loop">raw_loop</option>
+      </select>
+
+    </td>
+   </tr>
+   <tr> 
+    <td align="left" valign="top" bgcolor="#dddddd">
+      <label for="first">first name:</label> 
+      <input type="text" id="first" value=""/>
+      <label for="last">last name:</label> 
+      <input type="text" id="last" value=""/>
+      <br>
+      <label for="custom">custom(or raw):</label><br> 
+      <textarea id="custom_word" rows ="10" cols="60"></textarea><br>
+    </td>
+   </tr>
+   <tr>
+    <td align="left" valign="top" bgcolor="#dddddd">
+      <button id="send">Send</button>
+    </td>
+
+  </tr>
+  
+</table>
+
+
+</body>
+</html>

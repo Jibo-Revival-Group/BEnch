@@ -1,0 +1,10 @@
+type = GOOGLE_ASR
+silence_timeout = 7000
+hj_time_window = 3000
+min_gain_db = 0
+max_gain_db = 25
+norm_rules_file = rules.txt
+global_hints = jibo, hey jibo, no, nah, yes, yeap, yeah, nope
+hint_categories = $YESNO, $COMMANDS
+$YESNO = yes, yeap, yeah, no, nah, nope, sure
+$COMMANDS = stop

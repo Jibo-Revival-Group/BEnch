@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script src="js/jquery-2.1.3.js"></script>
+<script src="js/sms.js"></script>
+<script src="js/Chart.js"></script>
+<script src="js/canvasjs.min.js"></script>
+<meta charset="UTF-8">
+<link href="css/sms.css" rel="stylesheet" type="text/css" />
+<title>System Monitoring Service</title>
+</head>
+<body>
+
+<h1>System Monitoring Service</h1>
+
+<div id="root"></div>
+
+<h2>Performance Service</h2>
+<button onclick="window.location.href='performance/index.html'" id="perfButton">Performance</button>
+
+<h2>System Information</h2>
+
+<button id="systemInfoButton">Clear</button>
+
+<button onclick="window.location.href='report/index.html'"
+    id="reportButton">Crash Report</button>
+
+<div id="sysInfoTableDiv" style="height: 0; padding-top: 25px; padding-bottom:
+    600px;">
+    <table id="systemInfoTable"></table>
+</div>
+
+<h2>Storage Information</h2>
+<h3>Directory Sizes</h3>
+
+<div>
+    <canvas id="storageChart"></canvas>
+</div>
+
+<h3>Mount Sizes</h3>
+
+<div>
+    <canvas id="mountChart"></canvas>
+</div>
+
+<div class = "clearfix"></div>
+
+<h2>System Information</h2>
+<h3>Load Average</h3>
+
+<p id="delay_ratio">Delay ratio:</p>
+
+<button id="loadAverageButtonConnect">Load Average Connect</button>
+<button id="loadAverageButtonDisconnect">Load Average Disconnect</button>
+
+<div style="height: 0; padding-bottom: 300px;">
+    <div id="loadAverageChart" style="responsive: false"></div>
+</div>
+
+<h3>Available Memory</h3>
+
+<button id="memoryUsageButtonConnect">Available Memory Connect</button>
+<button id="memoryUsageButtonDisconnect">Available Memory Disconnect</button>
+
+<div style="height: 0; padding-bottom: 300px;">
+    <div id="memoryUsageChart" style="responsive: false"></div>
+</div>
+
+<h3>CPU/GPU Usage</h3>
+
+<button id="CPUUsageButtonConnect">CPU Usage Connect</button>
+<button id="CPUUsageButtonDisconnect">CPU Usage Disconnect</button>
+
+<div style="height: 0; padding-bottom: 350px;">
+    <div id="cpuUsageChart" height: "350px" style= "responsive: false"></div>
+</div>
+
+<div style="height: 0; padding-bottom: 350px;">
+    <div id="cpuStatsChart" height: "350px" style= "responsive: false"></div>
+</div>
+
+<div style="height: 0; padding-bottom: 350px;">
+    <div id="gpuUtilChart" height: "350px" style= "responsive: false"></div>
+</div>
+
+
+<h3>CPU & GPU Stats</h3>
+
+<p id="cpu1"></p>
+<p id="cpu2"></p>
+<p id="cpu3"></p>
+<p id="cpu4"></p>
+<p id="cpu5"></p>
+<p id="cpu6"></p>
+<p id="cpu7"></p>
+<p id="gpu_freq1"></p>
+<p id="gpu_freq2"></p>
+<p id="gpu_freq3"></p>
+
+<h3>Network Usage</h3>
+
+<button id="NetworkLoadConnect">Network Load Connect</button>
+<button id="NetworkLoadDisconnect">Network Load Disconnect</button>
+
+<div style="height: 0; padding-bottom: 400px;">
+    <div id="networkLoadChart" height: "350px" style= "responsive: false"></div>
+</div>
+
+<h2>Process Information</h2>
+
+<button id="ProcessListConnect">Process List Connect</button>
+<button id="ProcessListDisconnect">Process List Disconnect</button>
+
+<h3>Process Memory Usage Plot</h3>
+<input type="text" id="ProcMemText" value="">
+
+<button id="processMemoryButton">Add Process</button>
+<button id="processMemRemoveButton">Clear Chart</button>
+
+<div style="height: 0; padding-bottom: 350px;">
+    <div id="rssChart" style="responsive: false"></div>
+</div>
+
+<h3>Jibo Process List</h3>
+
+<input type="text" id="ProcessText" value="">
+
+<button id="processTextButton">Add Process</button>
+
+<div style="height: 0; padding-top: 25px; padding-bottom: 400px;">
+    <table id="ProcessListTable"></table>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,168 @@
+{
+    "type" : "CUDA",
+    "cuda" : {
+        "devices" : [
+            {
+                "enabled" : true,
+                "name" : "Camera-0",
+                "path" : "/dev/video1",
+                "bufferPoolSize" : 10,
+                "width" : 1280,
+                "height" : 720,
+                "outputBufferFormats" : 2,
+                "hFlip" : true,
+                "vFlip" : true,
+                "gamma" : {
+                    "R" : 0.7,
+                    "G" : 0.7,
+                    "B" : 0.7
+                },
+                "numSamples" : 10000,
+                "ae" : {
+                    "exposureP" : 0.02,
+                    "gainP" : 0.02,
+                    "targetY" : 0.6,
+                    "avgYThreshold" : 0.8,
+                    "skinSegmentedTargetY" : 0.43,
+                    "skinSegmentedAvgYThreshold" : 0.8,
+                    "skinRatioThreshold" : 0.010,
+                    "numSamples" : 1000,
+                    "numRegions" : 64,
+                    "errorY" : 0.0001
+                },
+                "awb" : {
+                    "grayThreshold" : 0.3,
+                    "numSamples" : 1000,
+                    "P" : 0.15,
+                    "targetU" : 0.505,
+                    "targetV" : 0.50,
+                    "seed" : 0
+                }
+            },
+            {
+                "enabled" : true,
+                "name" : "Camera-1",
+                "path" : "/dev/video0",
+                "bufferPoolSize" : 4,
+                "width" : 1280,
+                "height" : 720,
+                "outputBufferFormats" : 2,
+                "hFlip" : true,
+                "vFlip" : true,
+                "gamma" : {
+                    "R" : 0.7,
+                    "G" : 0.7,
+                    "B" : 0.7
+                },
+                "numSamples" : 10000,
+                "ae" : {
+                    "exposureP" : 0.02,
+                    "gainP" : 0.02,
+                    "targetY" : 0.6,
+                    "avgYThreshold" : 0.8,
+                    "skinSegmentedTargetY" : 0.46,
+                    "skinSegmentedAvgYThreshold" : 0.8,
+                    "skinRatioThreshold" : 0.010,
+                    "numSamples" : 1000,
+                    "errorY" : 0.0001
+                },
+                "awb" : {
+                    "grayThreshold" : 0.3,
+                    "numSamples" : 1000,
+                    "P" : 0.15,
+                    "targetU" : 0.505,
+                    "targetV" : 0.50,
+                    "seed" : 0
+                }
+            }
+        ],
+        "cuda" : {
+
+        }
+    },
+    "file" : {
+        "videos" : [
+            "videos/video-000/video.json",
+            "videos/video-001/video.json"
+        ],
+        "format" : "YUV420p"
+    },
+    "v4l2" : {
+        "devices" : {
+            "left" : "/dev/video0",
+            "right" : "/dev/video1"
+        }
+    },
+    "controls" : [
+        {
+            "width" : 1280,
+            "height" : 720,
+            "hFlip" : true,
+            "vFlip" : true,
+            "ae" : {
+                "lock" : false,
+                "manual" : false,
+                "time" : {
+                    "low" : 0.0016667,
+                    "high" : 0.033
+                },
+                "regions" : [],
+                "targetY" : 0.4,
+                "manualMode" : "default",
+                "manualExposure" : 0.03333,
+                "manualGain" : 1,
+                "ev" : 0
+            },
+            "outputBuffers" : [],
+            "outputBuffersConfIndex" : 2,
+            "awb" : {
+                "lock" : false,
+                "manual" : false,
+                "gammaRed" : 0.7,
+                "gammaGreen" : 0.7,
+                "gammaBlue" : 0.7,
+                "regions" : [],
+                "manualRedGain" : 1024,
+                "manualGreenGain" : 1024,
+                "manualBlueGain" : 1024,
+                "gammaCr" : 0.78,
+                "gammaCb" : 0.78
+            }
+        },
+        {
+            "width" : 1280,
+            "height" : 720,
+            "hFlip" : true,
+            "vFlip" : true,
+            "ae" : {
+                "lock" : false,
+                "manual" : false,
+                "time" : {
+                    "low" : 0.0016667,
+                    "high" : 0.033
+                },
+                "regions" : [],
+                "targetY" : 0.4,
+                "manualMode" : "default",
+                "manualExposure" : 0.03333,
+                "manualGain" : 1,
+                "ev" : 0
+            },
+            "outputBuffers" : [],
+            "outputBuffersConfIndex" : 2,
+            "awb" : {
+                "lock" : false,
+                "manual" : false,
+                "gammaRed" : 0.7,
+                "gammaGreen" : 0.7,
+                "gammaBlue" : 0.7,
+                "regions" : [],
+                "manualRedGain" : 1024,
+                "manualGreenGain" : 1024,
+                "manualBlueGain" : 1024,
+                "gammaCr" : 0.78,
+                "gammaCb" : 0.78
+            }
+        }
+    ]
+}

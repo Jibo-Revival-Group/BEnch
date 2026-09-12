@@ -1,0 +1,84 @@
+{
+    "webCore" : {
+        "serverPort": 8088,
+        "fileRoot": "/usr/local/var/www/asrservice",
+	"requestLogging": false
+    },
+    "AsrService" : {
+	"cloud_establish_http_timeout": 5000,
+	"language": "en-US",
+	"post_to_performance_service": true,
+      	"log_audio": true,
+	"log_text" : true,
+	"log_path" : "/var/log/asr",
+	"log_level" : "INFO",
+	"log_server_url" : "https://speech-logging.jibo.com/logdrop/logdrop.py",
+	"speaker_id_resource_path" : "/var/jibo/asr/",
+	"name_learning_resource_path" : "/usr/local/share/asr/namelearning",
+	"name_learning_temp_path" : "/var/jibo/asr/namelearning_temp/",
+	"name_learning_nbest" : 70,
+	"active_sleep_duration" : 5000,
+	"idle_sleep_duration" : 50000,
+	"block_duration" : 50,
+	"audio_loop_sleep_us": 10000,
+	"use_nuance_upload_voc": false,
+	"dictation_type" : "dictation",
+	"nuance_uId" : "b8fb02f2c5794963aaafb8c716ef384c",
+	"contacts_checksum": "",
+        "loop_checksum": "1",
+	"customs_checksum": "",
+	"upload_voc_url": "ws.nuancemobility.net",
+	"cloud_url": "https://jibo-ncs-engusa-http.nuancemobility.net/NmspServlet/",
+	"cloud_appid": "HTTP_NMDPPRODUCTION_Jibo_Jibo_Robot_20151231124503",
+	"cloud_appkey": "a8c18159a8e3ca49471c56d867552bc77693ccdcc041375ee97b7c867160ae1a212f73c9123d1359596931c0be5c8734ef5310af95470d7ec3890434e9b24e0b",
+	"upload_voc_rootcert": "",
+	"google_credential": "/usr/local/share/asr/google_asr/credentials-key.json",
+	"fadeout_duration": 5000000,
+	"max_logfile_size": 1000,
+	"log_upload_time_interval": 60000,
+	"min_available_log_partition_space": 5000,
+	"max_asr_log_dir_size_before_upload_trigger": 10000,
+	"max_asr_log_dir_size": 12000,
+	"size_to_free_up_when_dir_overflowing": 1000,
+  "asr_resource_path" : "/usr/local/share/asr/",    
+	"max_memory": 150000,
+	"wipable_files": ["/var/log/asr/*.pcm", "/var/log/asr/*.wav",
+			  "/var/log/asr/*.log", "/var/jibo/asr/sensory_data_td/client_model.bin", "/var/jibo/asr/sensory_data_td/audio/*", "/var/jibo/asr/namelearning_temp/*"
+                         ],
+	"resident_task" : "{\"command\":\"start\",\"task_id\":\"task0\",\"audio_source_id\":\"alsa1\",\"hotphrase\":\"hey_jibo\",\"request_id\":\"resident_hey_jibo_self_start\",\"residency\":true}",
+	"resident_audio_channel" : "{\"action\":\"start\", \"audio_source_id\":\"alsa1\", \"wav_files\":[], \"audio_source\":\"alsa\", \"request_id\":\"self_start_audio_source_request_id\"}",
+	"task_templates" : {
+	    	    "hey_jibo_resident": {"input_template": "{\"name\":\"hey jibo\",\"path\":\"/usr/local/share/asr/hey_jibo\",\"timeout\":0} * {\"name\":\"Speaker ID TD\",\"path\":\"/usr/local/share/asr/sensory_spkr_id_td\",\"audio_tail_length\":1}",
+			 "emitting_recogs": ["hey jibo", "Speaker ID TD"]},
+	    "hey_jibo": {"input_template": "{\"name\":\"hey jibo\",\"path\":\"/usr/local/share/asr/hey_jibo\",\"timeout\":0} * ({\"name\":\"pcmwriter\",\"path\":\"/usr/local/share/asr/pcm_writer\",\"timeout\":0,\"audio_tail_length\":0, \"audio_overshoot_duration\":0} | {\"name\":\"Speaker ID TD\",\"path\":\"/usr/local/share/asr/sensory_spkr_id_td\",\"audio_tail_length\":1})",
+			 "emitting_recogs": ["hey jibo", "Speaker ID TD"]
+			},
+	    "cloud": {"input_template":"({\"name\":\"google_asr\",\"path\":\"/usr/local/share/asr/google_asr\",\"timeout\":14000,\"bargein\":false,\"nbest\":1,\"speaker_name\":\"\",\"incremental\":false,\"audio_tail_length\":300}| {\"name\":\"sensory_sdet\",\"path\":\"/usr/local/share/asr/jibo_energy_fake_eos\",\"timeout\":50000,\"bargein\":false,\"nbest\":1,\"speaker_name\":\"\",\"incremental\":false})",
+		      "emitting_recogs": ["google_asr","sensory_sdet"]
+		     },
+	    "hey_jibo_cloud": {"input_template":"{\"name\":\"hey jibo\",\"path\":\"/usr/local/share/asr/hey_jibo\",\"timeout\":0,\"bargein\":true,\"nbest\":1,\"speaker_name\":\"\",\"incremental\":false,\"speaker_id\":true} * ({\"name\":\"Speaker ID TD\",\"path\":\"/usr/local/share/asr/sensory_spkr_id_td\",\"audio_tail_length\":1} & ({\"name\":\"pcmwriter\",\"path\":\"/usr/local/share/asr/pcm_writer\",\"timeout\":0,\"audio_tail_length\":400, \"audio_overshoot_duration\":0, \"prebuffer\":true} | {\"name\":\"google_asr\",\"path\":\"/usr/local/share/asr/google_asr\",\"timeout\":14000,\"bargein\":false,\"nbest\":1,\"speaker_name\":\"\",\"incremental\":false,\"trim_audio_tail\":true,\"wakeup_phrase_detection\":false,\"audio_tail_length\":0}|{\"name\":\"sensory_sdet\",\"path\":\"/usr/local/share/asr/jibo_energy_fake_eos\",\"timeout\":50000,\"bargein\":false,\"nbest\":1,\"speaker_name\":\"\",\"incremental\":false}))",
+			       "emitting_recogs": ["hey jibo", "Speaker ID TD", "google_asr","sensory_sdet"]
+			      }
+	},
+	"rewrite_rules" : {
+	    "log_audio_no_trigger" : "^(?!.*?hey_jibo)(.*)->{\"name\":\"pcmwriter\",\"path\":\"/usr/local/share/asr/pcm_writer\",\"timeout\":0,\"audio_tail_length\":300, \"audio_overshoot_duration\":0,\"prebuffer\":false} | ($1)",
+	    "namelearning_EOS" : "^(.*?\"name\":\"\\s*name_learning.*)->{\"name\":\"jibo_energy_eos\",\"path\":\"/usr/local/share/asr/jibo_energy_eos\",\"timeout\":10000,\"bargein\":false,\"nbest\":1,\"speaker_name\":\"\",\"incremental\":false} | ($1)"
+	}
+    },
+    "logging" : {
+	"jibo_message_prefix": "C",
+	"loggers" : {
+            "root": {
+                "level": "information"
+            },
+            "l1" : {
+                "name" : "ASRService",
+                "level" : "information"
+            },
+            "l2" : {
+                "name" : "Application",
+                "level" : "information"
+            }
+        }
+    }
+}

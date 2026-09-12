@@ -1,0 +1,39 @@
+"use strict";
+
+const assert = require('assert');
+const Common = require('./../../../lib/jibo-platform-test/common');
+
+const JSONlist = require("./ms-HTTPTest.json");
+const testList = JSONlist.list;
+
+describe('Media Service HTTP Tests', function() {
+
+    before(function() {
+        this.request = {
+            'POST': Common._post,
+            'GET': Common._get
+        };
+    });
+
+    for(let i = 0; i < testList.length; i++) {
+        const test = testList[i];
+        it('Testing the ' + test.url.substring(1).split("?")[0] + ' API', function(done) {
+            this.request[test.type]("localhost", test.url, 8486, test.args, function(error, response, body) {
+                assert(!error, 'Error ' + error);
+                if (test.statusExpect){
+                    assert(response.statusCode == test.statusExpect,
+                        'Unexpected status code ' + response.statusCode
+                    );
+                }else{
+                    assert(response.statusCode < 300,
+                        'Bad status code ' + response.statusCode);
+                }
+                done();
+            });
+        });
+    }
+
+    after(function() {
+        console.log("- Finished testing media service HTTP APIs");
+    });
+});

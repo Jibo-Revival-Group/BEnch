@@ -1,0 +1,11 @@
+type = SENSORY_SPEAKER_ENROLL_TD
+backgroundModel = /../sensory_data_td/hey_jibo.ubm
+clientModel = /../sensory_data_td/client_model.bin
+saving_enroll_pcm = false
+isPCM = false
+sampleRate = 16000
+restartEngine = false
+minEnrollUtts = 6
+minEnrollDurationSec = 1.5
+maxUtterances = 10000
+checkQuality = MEDIUM 

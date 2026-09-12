@@ -1,0 +1,306 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<script src="jquery-2.1.3.js"></script>
+<link href="tts.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript">
+var ip = window.location.host;
+//alert(ip);
+
+$(document).ready(function() {
+
+    initTaskSettings();
+});
+ 
+var host = window.location.host;
+
+var val_a;
+var val_b;
+
+var bestPitch=2.0;
+var bestPitchBandwidth=0.55;
+var bestAllPass=0.55;
+var bestFramerate=240;
+var bestVoicedUnvoiced=0.55;
+var bestGVMCEP=1.0;
+var bestPostFilter=0.5;
+var currentPrompt;
+
+var data = {prompt: "Hi, my name is jibo.", locale: "en-us", voice: "griffin", duration_stretch:parseFloat("1.0"), pitch:parseFloat(bestPitch),pitchBandwidth:parseFloat("1.0"),mode:"text",outputMode:"stream",allPass:parseFloat("0.54"),framerate:parseFloat("240")};
+var pitchCounter = 0;
+var paramCounter = 0;
+var isNew = 1;
+var promptCounter = 0;
+var overallCounter = 0;
+
+var currentTuningParameter = 0;
+var prompts = ["Just happy to be here.",
+"Hey, you and I haven't hung out much yet. Right?",
+"And that should do it for now.",
+"Not much. Just being Jibo.",
+"Now you know me just a little better.",
+"That's all I've got for now."
+]
+var pitchVals = [-2,-1,4,0,2,3];
+var pitchBandwidth = [2,0.1,1,0.57,1];
+var all_pass = [0.60,0.5,0.55,0.53,0.52,0.51,0.54];
+var frame_rate = [300,200,240,250,260];
+var unvoicedvoiced = [0.1,0.75,0.4,0.56];
+var gv_mcep = [1.1];
+var postfilter_b = [0.2,0.3,0.4,0.6,0.7,0.8,0.1];
+
+var parameters = [pitchVals,pitchBandwidth,all_pass,frame_rate,unvoicedvoiced,gv_mcep,postfilter_b];
+
+function initTaskSettings() {
+
+    $("#clip_a").click(function() {
+data = {prompt: prompts[promptCounter], locale: "en-us", voice: "griffin", duration_stretch:parseFloat("1.0"), pitch:parseFloat(bestPitch),pitchBandwidth:parseFloat(bestPitchBandwidth),mode:"text",outputMode:"stream",allPass:parseFloat(bestAllPass),framerate:parseFloat(bestFramerate),unvoicedvoiced:parseFloat(bestVoicedUnvoiced),gvMCEP:parseFloat(bestGVMCEP),postfilter:parseFloat(bestPostFilter)};
+        $("#clip_a").attr('disabled', true);
+        $.ajax({
+            type: "POST",
+            url: "http://"+ip+"/tts_speak",
+            dataType: "json",
+            data: packDataForClipA(), 
+            success: function() {
+            $("#clip_a").attr('disabled', false);
+            console.log(data);
+            },
+            error: function(xhr, status, error) {
+                console.log("ERROR " + status + " " + error + JSON.stringify(data));
+            $("#clip_a").attr('disabled', false);
+    }
+
+        });
+        isNew=0;
+    });
+
+$("#clip_b").click(function() {
+data = {prompt: prompts[promptCounter], locale: "en-us", voice: "griffin", duration_stretch:parseFloat("1.0"), pitch:parseFloat(bestPitch),pitchBandwidth:parseFloat(bestPitchBandwidth),mode:"text",outputMode:"stream",allPass:parseFloat(bestAllPass),framerate:parseFloat(bestFramerate),unvoicedvoiced:parseFloat(bestVoicedUnvoiced),gvMCEP:parseFloat(bestGVMCEP),postfilter:parseFloat(bestPostFilter)};
+        $("#clip_b").attr('disabled', true);
+        $.ajax({
+            type: "POST",
+            url: "http://"+ip+"/tts_speak",
+            dataType: "json",
+            data: packDataForClipB(), 
+            success: function() {
+            $("#clip_b").attr('disabled', false);
+            console.log(data);
+            },
+            error: function(xhr, status, error) {
+                console.log("ERROR " + status + " " + error + JSON.stringify(data));
+            $("#clip_b").attr('disabled', false);
+    }
+
+        });
+        isNew=0;
+    });
+
+$("#submit_next").click(function() {
+                
+if (atLeastOneRadio()) {
+    checkRadioButtonChecked();
+    isNew=1;
+    if (paramCounter >= parameters[currentTuningParameter].length) {
+      currentTuningParameter++;
+      paramCounter = 0;
+      if (currentTuningParameter >= parameters.length) {
+        alert("You have completed. Thank you!");
+      }
+      }
+      promptCounter++;
+      overallCounter++;
+      if(promptCounter >= prompts.length) {
+        promptCounter = 0;
+      }
+
+     $('input[name=Preference]').attr('checked',false);
+
+} else {
+ console.log("No Radio Button clicked");
+ }
+          $("#counter").val(overallCounter);
+    });
+}
+
+function packDataForClipA() {
+
+    data.clip = "A";
+   if (currentTuningParameter == 0) { 
+     data.pitch = iterateParams(0);
+   } else if(currentTuningParameter == 1) {
+     data.pitchBandwidth = iterateParams(0);
+   } else if(currentTuningParameter == 2) {
+     data.allPass = iterateParams(0);
+   } else if(currentTuningParameter == 3) {
+     data.framerate = iterateParams(0);
+   } else if(currentTuningParameter == 4) {
+     data.unvoicedvoiced = iterateParams(0);
+   } else if(currentTuningParameter == 5) {
+     data.gv_mcep = iterateParams(0);
+   } else if(currentTuningParameter == 6) {
+     data.postfilter = iterateParams(0);
+   } else {
+    console.log("Finished all parameters.");
+   }
+    return JSON.stringify(data);
+}
+
+function packDataForClipB() {
+
+    data.clip = "B";
+/**  
+ if (currentTuningParameter == 0) { 
+     data.pitch = iterateParams(1);
+   } else if(currentTuningParameter == 1) {
+     data.pitchBandwidth = iterateParams(1);
+   } else if(currentTuningParameter == 2) {
+     data.allPass = iterateParams(1);
+   } else if(currentTuningParameter == 3) {
+     data.framerate = iterateParams(1);
+   } else if(currentTuningParameter == 4) {
+     data.unvoicedvoiced = iterateParams(1);
+   } else if(currentTuningParameter == 5) {
+     data.gv_mcep = iterateParams(1);
+   } else if(currentTuningParameter == 6) {
+     data.postfilter = iterateParams(1);
+   } else {
+    console.log("Finished all parameters.");
+   }
+**/
+    return JSON.stringify(data);
+}
+
+function packTaskSettings() {
+    data.timeout = parseFloat($("#timeout").val());
+    data.duration_stretch = parseFloat($("#duration_stretch").val());
+    data.pitch = 1;
+    data.pitchBandwidth = parseFloat($("#pitchBandwidth").val());
+    data.locale = $("#locale").val();
+    data.voice = $("#voice").val();
+    data.prompt = $("#prompt").val();
+    data.mode = $("#mode").val();
+    data.outputMode = $("#outputMode").val();
+    data.volume = parseFloat($("#volume").val());
+    data.whisper = $("#whisper").val();
+    data.samplerate = parseFloat($("#samplerate").val());
+    data.postfilter = parseFloat($("#postfilter").val());
+    data.framerate = parseFloat($("#framerate").val());
+    data.unvoicedvoiced = parseFloat($("#unvoicedvoiced").val());
+    data.allPass = parseFloat($("#allPass").val());
+    data.gvMCEP = parseFloat($("#gvMCEP").val());
+
+    return JSON.stringify(data);
+}
+
+function iterateParams(step) {
+if (isNew == 1) {
+    //paramCounter = paramCounter + step;
+if (paramCounter < parameters[currentTuningParameter].length) {
+    paramCounter++;
+    }
+    else {
+   paramCounter= 1;
+   //currentTuningParameter++;
+ }
+}
+    var retVal;
+    
+    if (paramCounter < parameters[currentTuningParameter].length ) {
+    retVal = parameters[currentTuningParameter][paramCounter+step - 1];
+   } else {
+    retVal = parameters[currentTuningParameter][paramCounter - 1];
+  }
+
+if (step==0) {
+    val_a = retVal; 
+    } else {
+    val_b = retVal;
+   }
+  return retVal;
+}
+
+function checkRadioButtonChecked() {
+if(document.getElementById('A').checked) {
+  if (currentTuningParameter == 0) {
+    bestPitch = val_a;
+  } else if(currentTuningParameter == 1) {
+     bestPitchBandwidth = val_a;
+  }  else if(currentTuningParameter == 2) {
+     bestAllPass = val_a;
+  }  else if(currentTuningParameter == 3) {
+     bestFramerate = val_a;
+  }  else if(currentTuningParameter == 4) {
+     bestVoicedUnvoiced = val_a;
+  }  else if(currentTuningParameter == 5) {
+     bestGVMCEP = val_a;
+  } else if(currentTuningParameter == 6) {
+     bestPostFilter = val_a;
+  }
+  console.log("A clip selected");
+
+}else if(document.getElementById('B').checked) {
+
+/**
+  if (currentTuningParameter == 0) {
+    bestPitch = val_b;
+  } else if(currentTuningParameter == 1) {
+     bestPitchBandwidth = val_b;
+  }  else if(currentTuningParameter == 2) {
+     bestAllPass = val_b;
+  }  else if(currentTuningParameter == 3) {
+     bestFramerate = val_b;
+  }  else if(currentTuningParameter == 4) {
+     bestVoicedUnvoiced = val_b;
+  }  else if(currentTuningParameter == 5) {
+     bestGVMCEP = val_b;
+  } else if(currentTuningParameter == 6) {
+     bestPostFilterFilter = val_b;
+  }
+**/
+  console.log("B clip selected");
+   $("#submit_next").attr('disabled', false);
+}else if(document.getElementById('SAME').checked) {
+  console.log("Same selected");
+   $("#submit_next").attr('disabled', false);
+} else if(document.getElementById('NEITHER').checked) {
+  console.log("Neither");
+   $("#submit_next").attr('disabled', false);
+}
+}
+
+function atLeastOneRadio() {
+    return ($('input[type=radio]:checked').size() > 0);
+}
+
+</script>
+<title>TTS Service</title>
+</head>
+<body>
+
+<div class="section">
+
+
+<h1>JIBO Inc. TTS EVALUATION</h1>
+
+<button id="clip_a" type="button">Play Clip A</button>
+<br><br>
+<button id="clip_b" type="button">Play Clip B</button>
+<br><br>
+
+<input type="radio" name="Preference" id="A" value="PREFER_A">Clip A
+<input type="radio" name="Preference" id="B" value="PREFER_B">Clip B
+<input type="radio" name="Preference" id="SAME" value="NO_PREFER">Same<br><br>
+<input type="radio" name="Preference" id="NEITHER" value="NO_PREFER">Neither<br><br>
+
+<button id="submit_next" type="button">Next</button>
+<br>
+<br>
+<textarea id="counter" disabled="true" rows="1" cols="10"></textarea>
+<!--
+<label for="prompt">Text/SSML:</label> 
+<input type="text" maxlength="100" size="20" style="font-size:12pt;height:50px" id="prompt" value="Hi this is a simple TTS interface." />
+-->
+
+
+</body>
+</html>

@@ -1,0 +1,128 @@
+#!/usr/bin/env node
+
+"use strict";
+var startTime = new Date().getTime();
+/**********************************************************
+*
+* Jibo Platform Test
+* Jibo, Inc. 2016
+* Author: Russell Kirmayer
+* Notes: System test to check which services are running on
+* the robot 
+/**********************************************************/
+
+/*
+* Requirements for testing functionality
+*/
+let fs = require('fs');
+let http = require('http');
+let path = require('path');
+let Common = require('./../../lib/jibo-platform-test/common');
+let childProcess = require('child_process');
+
+/*
+* Logging information
+*/
+// this.logKey = 'observedServiceList';
+// this.logPath = pathToLog;
+// this.logData = {};
+// this.logData['duration'] = {'duration': undefined};
+// this.logData['result'] = {"serviceRunning": {"pass": 0, "fail": 0},
+//                           "serviceRegistered": {"pass": 0, "fail": 0}}
+
+/**********************************************************/
+
+let hostname = "localhost";
+
+let serviceNameList = new Set(['asr', 'audio', 'body', 'dev-shell', 'gl', 
+                                'kb', 'lps', 'media', 'media-manager', 'nlu', 'notifications', 
+                                'performance', 'server', 'skills-service', 'system-manager',
+                                'system-monitoring-service', 'tts', 'wifi']);
+
+let knownServiceList = ['jibo-service-registry',
+                        'jibo-system-manager',
+                        'jibo-body-service',
+                        'jibo-audio-service', 
+                        'jibo-nlu-service',
+                        'jibo-asr-service',
+                        'jibo-tts-service',
+                        'jibo-lps-service',
+                        'jibo-system-monitoring-service']
+
+//capture this
+var _this = this;
+Common._get("localhost", "/registry", 8181, 0, function(error, response, body){
+    if(error){
+        console.log('error');
+        return;
+    }
+    serviceRegistryCheck(body);
+});
+
+function servicesRunning(){
+    // collect services running on Jibo
+    let observedServiceList = childProcess.execSync('ps -e | grep usr/local/bin/jibo-');
+    observedServiceList = String(observedServiceList).split('bin/');
+    let observedServiceSet = new Set();
+
+
+    console.log('\nList of services detected running:')
+    //collect all observed services running
+    for(let i = 0; i < observedServiceList.length; i++){
+        let service = observedServiceList[i];
+        //check for known service names for parsing
+        if(service.includes('jibo-') && 
+            (service.includes('service') || 
+                service.includes('manager'))){
+            service = service.split(' -c')[0].split('/')[0];
+            console.log('. '+service);
+            if(observedServiceSet.has(service)){
+                console.log("**" + service + " is running more than once!");
+            }
+            observedServiceSet.add(service);
+        }
+    }
+    let numServicesRunning = 0;
+    //verify how many observed services are running compared
+    //to list of known services
+    for(let i = 0; i < knownServiceList.length; i++){
+        if(observedServiceSet.has(knownServiceList[i])){
+            numServicesRunning++;
+            //_this.logData['result'].serviceRunning.pass++;
+        } else{
+            //_this.logData['result'].serviceRunning.fail++;
+            console.log(String(knownServiceList[i])+" is NOT running");
+        }
+    }
+    console.log('\n'+numServicesRunning+'/'+ knownServiceList.length + ' services running\n');
+
+    /*****************************************************************************/
+    var endTime = new Date().getTime();
+
+}
+//capture this
+function serviceRegistryCheck(body){
+    var bodyData = JSON.parse(body);
+    console.log("Number of services registered: " + bodyData.records.length);
+
+    for(let i = 0; i < serviceNameList.size; i++){
+        if(bodyData.records[i]){
+            let tempService = bodyData.records[i];
+            // console.log(tempService.name);
+            if(serviceNameList.has(String(tempService.name))){
+                console.log((i+1)+". "+String(tempService.name) + " service: \n \t - Registered: YES");
+                //_this.logData['result'].serviceRegistered.pass++;
+                if(tempService.ttl <= 300){
+                    console.log('\t - TTL: ' + tempService.ttl + " seconds");
+                } else{
+                    console.log('\t - TTL: ' + (tempService.ttl - 300) + " seconds TOO LONG!");
+                    //_this.logData['result'].serviceRegistered.fail++;  
+                } 
+            }else{
+                console.log((i+1)+". "+String(tempService.name) + "service: \n \t - Registered: NO");
+                //_this.logData['result'].serviceRegistered.fail++;
+            }
+        }
+    }
+    servicesRunning();
+}

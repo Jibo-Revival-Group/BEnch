@@ -1,0 +1,313 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<script src="jquery-2.1.3.js"></script>
+<script src="jquery.flot.js"></script>
+<script src="jquery.flot.navigate.js"></script>
+<script src="bs.js"></script>
+<link href="bs.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript">
+$(document).ready(function() {
+    makeAxisPlot();
+    makeImuPlot();
+    makeTouchPlot();
+    makePowerPlot();
+    makeMiscPlot();
+
+    connectState();
+    connectCmd();
+    connectIMU();
+    connectTouch();
+    connectPower();
+    connectMisc();
+    connectLEDState();
+    connectLEDCmd();
+    connectSettings();
+    connectFaults();
+    connectScreen();
+
+    initMotorSettings();
+
+    getAxisInfo();
+});
+</script>
+
+<title>Body Service</title>
+</head>
+<body>
+
+<div class="section">
+
+<h1>Axis State</h1>
+<textarea id="axisState" disabled="true" rows="50" cols="80"></textarea>
+
+<div id="pelvisStatus"></div>
+<div id="torsoStatus"></div>
+<div id="neckStatus"></div>
+
+<div class="plotcontainer">
+<div id="axisplot" class="plot"></div>
+</div>
+
+<span id="axisControls" />
+
+<label for="axisSelect">Axis:</label>
+<select id="axisSelect" value="pelvis">
+    <option value="pelvis">pelvis</option>
+    <option value="torso">torso</option>
+    <option value="neck">neck</option>
+</select>
+
+</div> <!-- section -->
+
+<div class="section" id="axisCmdSection">
+
+<div id="pelvisControls">
+<label for="pelvisCmd">Pelvis Cmd:</label>
+<input type="range" id="pelvisRange" value="0.0" min="-100" max="100" />
+<input type="text" id="pelvisCmd" value="0.0" />
+<select id="pelvisMode">
+    <option value="0">NONE</option>
+    <option value="1">LIMP</option>
+    <option value="2">BRAKE</option>
+    <option value="3">PWM</option>
+    <option value="4">VEL</option>
+    <option value="5">TRAJ</option>
+    <option value="6">TRQ</option>
+    <option value="7">POS_VEL</option>
+</select>
+<label for="pelvisAcc">Acc:</label>
+<input type="text" id="pelvisAcc" value="30.0" />
+</div>
+<div id="torsoControls">
+<label for="torsoCmd">Torso Cmd:</label>
+<input type="range" id="torsoRange" value="0.0" min="-100" max="100" />
+<input type="text" id="torsoCmd" value="0.0" />
+<select id="torsoMode">
+    <option value="0">NONE</option>
+    <option value="1">LIMP</option>
+    <option value="2">BRAKE</option>
+    <option value="3">PWM</option>
+    <option value="4">VEL</option>
+    <option value="5">TRAJ</option>
+    <option value="6">TRQ</option>
+    <option value="7">POS_VEL</option>
+</select>
+<label for="torsoAcc">Acc:</label>
+<input type="text" id="torsoAcc" value="30.0" />
+</div>
+<div id="neckControls">
+<label for="neckCmd">Neck Cmd:</label>
+<input type="range" id="neckRange" value="0.0" min="-100" max="100" />
+<input type="text" id="neckCmd" value="0.0" />
+<select id="neckMode">
+    <option value="0">NONE</option>
+    <option value="1">LIMP</option>
+    <option value="2">BRAKE</option>
+    <option value="3">PWM</option>
+    <option value="4">VEL</option>
+    <option value="5">TRAJ</option>
+    <option value="6">TRQ</option>
+    <option value="7">POS_VEL</option>
+</select>
+<label for="neckAcc">Acc:</label>
+<input type="text" id="neckAcc" value="30.0" />
+</div>
+<div id="cmdBtns">
+<button id="cmdBtn">Set Command</button>
+<button id="stopBtn">Stop</button>
+<label for="cmdPat">Pattern:</label>
+<select id="cmdPat">
+    <option value="0">NONE</option>
+    <option value="1">FLIP</option>
+    <option value="2">SINE</option>
+    <option value="3">INDEX</option>
+</select>
+<label for="patPeriod">Period:</label>
+<input type="text" id="patPeriod" value="1"></input>
+<button id="testBtn">Axis Test</button>
+</div>
+
+</div> <!-- section -->
+
+<div class="section">
+
+<h1>Motor Settings</h1>
+<div>
+<label for="ms_kP">kP</label>
+<input type="text" id="ms_kP" />
+</div>
+<div>
+<label for="ms_kI">kI</label>
+<input type="text" id="ms_kI" />
+</div>
+<div>
+<label for="ms_kD">kD</label>
+<input type="text" id="ms_kD" />
+</div>
+<div>
+<label for="ms_kFv">kFv</label>
+<input type="text" id="ms_kFv" />
+</div>
+<div>
+<label for="ms_kFa">kFa</label>
+<input type="text" id="ms_kFa" />
+</div>
+<div>
+<label for="ms_iLimit">iLimit</label>
+<input type="text" id="ms_iLimit" />
+</div>
+<div>
+<label for="ms_outLimit">outLimit</label>
+<input type="text" id="ms_outLimit" />
+</div>
+<div>
+<label for="ms_kV">kV</label>
+<input type="text" id="ms_kV" />
+</div>
+<div>
+<label for="ms_rMotor">rMotor</label>
+<input type="text" id="ms_rMotor" />
+</div>
+<div>
+<label for="ms_ticksPerRev">ticksPerRev</label>
+<input type="text" id="ms_ticksPerRev" />
+</div>
+<div>
+<label for="ms_velFilter">velFilter</label>
+<input type="text" id="ms_velFilter" />
+</div>
+
+<label for="ms_select">Axis:</label>
+<select id="ms_select" value="pelvis">
+    <option value="pelvis">pelvis</option>
+    <option value="torso">torso</option>
+    <option value="neck">neck</option>
+</select>
+<button id="ms_refresh">Refresh</button>
+<button id="ms_commit">Commit</button>
+
+</div> <!-- section -->
+
+<div class="section">
+
+<h1>Axis Info</h1>
+<div id="axis_info"></div>
+
+</div> <!-- section -->
+
+<div class="section">
+
+<h1>IMU State</h1>
+
+<textarea id="imustate" disabled="true" rows="35" cols="40"></textarea>
+<span id="imu_hpr"></span>
+<div class="plotcontainer">
+<div id="imuplot" class="plot"></div>
+</div>
+
+<span id="imuControls" />
+
+</div> <!-- section -->
+
+<div class="section">
+
+<h1>Touch State</h1>
+<div id="touch"></div>
+
+<div class="plotcontainer">
+<div id="touchplot" class="plot"></div>
+</div>
+
+<span id="touchControls" />
+
+</div> <!-- section -->
+
+<div class="section">
+
+<h1>Power State</h1>
+<div id="power"></div>
+
+<div class="plotcontainer">
+<div id="powerplot" class="plot"></div>
+</div>
+
+<span id="powerControls" />
+
+</div> <!-- section -->
+
+<div class="section">
+
+<h1>Misc State</h1>
+<div id="misc"></div>
+
+<div class="plotcontainer">
+<div id="miscplot" class="plot"></div>
+</div>
+
+<span id="miscControls" />
+
+</div> <!-- section -->
+
+<div class="section">
+
+<h1>LED State</h1>
+<div id="ledState"></div>
+
+<div>
+    <label for="ledRedCmd">Red:</label>
+    <input type="text" id="ledRedCmd" value="0.0" />
+    <label for="ledGreenCmd">Green:</label>
+    <input type="text" id="ledGreenCmd" value="0.0" />
+    <label for="ledBlueCmd">Blue:</label>
+    <input type="text" id="ledBlueCmd" value="0.0" />
+    <label for="leddRedCmd">dRed:</label>
+    <input type="text" id="leddRedCmd" value="1.0" />
+    <label for="leddGreenCmd">dGreen:</label>
+    <input type="text" id="leddGreenCmd" value="1.0" />
+    <label for="leddBlueCmd">dBlue:</label>
+    <input type="text" id="leddBlueCmd" value="1.0" />
+    <button id="ledBtn">Set Command</button>
+</div>
+
+</div> <!-- section -->
+
+<div class="section">
+
+<h1>System Settings</h1>
+
+<label for="lcdBacklight">LCD Backlight:</label>
+<input type="text" id="lcdBacklight" value="0.2" />
+<label for="fanSpeed">Fan Speed:</label>
+<input type="text" id="fanSpeed" value="0.0" />
+<label for="fanMode">Fan Mode:</label>
+<select id="fanMode" value="0">
+    <option value="0">Auto</option>
+    <option value="1">Manual</option>
+</select>
+<button id="refreshSettings">Refresh</button>
+<button id="submitSettings">Submit</button>
+
+</div> <!-- section -->
+
+<div class="section">
+
+<h1>Fault Counts</h1>
+<div id="faultState"></div>
+<button id="refreshFaults">Refresh</button>
+
+</div> <!-- section -->
+
+<div class="section">
+
+<h1>Screen Blank</h1>
+<div id="screenBlank"></div>
+<button id="refreshScreenBlank">Refresh</button>
+<button id="screenOff">Off</button>
+<button id="screenOn">On</button>
+
+</div> <!-- section -->
+
+
+</body>
+</html>

@@ -1,0 +1,495 @@
+{
+    "schemas" :[
+        {
+            "name" : "FaceDetectSchema",
+            "type" : "image_update_schema",
+            "enable" : true,
+            "predicate" : {
+                "type" : "face_detection_predicate",
+                "enable" : true,
+                "start" : 0,
+                "skip_with_tracks" : 30,
+                "skip_without_tracks" : 10,
+                "criteria" : {
+                    "cameraIds" : [0]
+                }
+            },
+            "actions" :[
+                {
+                    "name" : "FaceDetectAction",
+                    "type" : "face_detection_action",
+                    "enable" : true,
+                    "policy_detector" : {
+                        "criteria" : {
+                            "cameraIds" : [0],
+                            "dimensions" : [
+                                { "width" : 1280, "height" : 720 },
+                                { "width" : 80, "height" : 45 }
+                            ],
+                            "formats" : [3, 1],
+                            "outputTypes" : [0, 2]
+                        },
+                        "detector" : {
+                            "min_hint_width" : 40,
+                            "min_hint_height" : 40
+                        },
+                        "policies" : [
+                            {
+                                "weight": 0.75,
+                                "kind": "skincolor",
+                                "sub_image_width" : 200,
+                                "sub_image_height" : 200,
+                                "extra_horizontal" : 20,
+                                "extra_vertical" : 20
+                            },
+                            {
+                                "weight": 0.25,
+                                "kind": "gaussian",
+                                "sub_image_width" : 200,
+                                "sub_image_height" : 200,
+                                "extra_horizontal" : 20,
+                                "extra_vertical" : 20
+                            }
+                        ]
+                    }
+                },
+                {
+                    "name" : "FaceTrackerInitAction",
+                    "type" : "face_tracker_init_action",
+                    "enable" : true,
+                    "max_tracked" : 3
+                },
+                {
+                    "name": "FaceTrackerIDAction",
+                    "type": "face_tracker_id_action",
+                    "enable": true,
+                    "criteria": {
+                        "cameraIds" : [0],
+                        "dimensions" : [{ "width" : 1280, "height" : 720 }],
+                        "formats" : [3],
+                        "outputTypes" : [0]
+                    }
+                }
+            ]
+        },
+        {
+            "name" : "FaceTrackSchema",
+            "type" : "image_update_schema",
+            "enable" : true,
+            "actions" :[
+                {
+                    "name" : "FaceTrackerUpdate",
+                    "type" : "face_tracker_update_action",
+                    "enable" : true
+                }
+            ]
+        },
+        {
+            "name" : "FaceTrackPoseEstimateSchema",
+            "type" : "image_update_schema",
+            "enable" : false,
+            "predicate" : {
+                "type" : "face_tracker_pose_estimate_predicate",
+                "enable" : true,
+                "start" : 4,
+                "skip" : 11
+            },
+            "actions" :[
+                {
+                    "name" : "FaceTrackerPoseEstimate",
+                    "type" : "face_tracker_pose_estimate_action",
+                    "enable" : true,
+                    "hflip" : true,
+                    "vflip" : false,
+                    "criteria" : {
+                        "cameraIds" : [0],
+                        "dimensions" : [{ "width" : 640, "height" : 360 }],
+                        "formats" : [3],
+                        "outputTypes" : [0]
+                    },
+                    "detector" : {
+                        "criteria" : {
+                            "cameraIds" : [0],
+                            "dimensions" : [{ "width" : 640, "height" : 360 }],
+                            "formats" : [3],
+                            "outputTypes" : [0]
+                        },
+                        "min_hint_width" : 80,
+                        "min_hint_height" : 80
+                    }
+                }
+            ]
+        },
+        {
+            "name" : "FaceTrackRedetectSchema",
+            "type" : "image_update_schema",
+            "enable" : true,
+            "predicate" : {
+                "type" : "face_reevaluate_predicate",
+                "enable" : true,
+                "start" : 0,
+                "skip" : 3
+            },
+            "actions" :[
+                {
+                    "name" : "PersonRedetectAction",
+                    "type" : "person_redetect_action",
+                    "enable" : true,
+                    "detector" : {
+                        "criteria" : {
+                            "cameraIds" : [0],
+                            "dimensions" : [{ "width" : 1280, "height" : 720 }],
+                            "formats" : [3],
+                            "outputTypes" : [0]
+                        },
+                        "min_hint_width" : 80,
+                        "min_hint_height" : 80
+                    }
+                }
+            ]
+        },
+        {
+            "name" : "DeferredDetectSchema",
+            "type" : "image_update_schema",
+            "enable" : true,
+            "actions" :[
+                {
+                    "name" : "DeferredDetectionAction",
+                    "type" : "deferred_detection_action",
+                    "enable" : true,
+                    "detector" : {
+                        "criteria" : {
+                            "cameraIds" : [0],
+                            "dimensions" : [{ "width" : 640, "height" : 360 }],
+                            "formats" : [3],
+                            "outputTypes" : [0]
+                        },
+                        "min_hint_width" : 80,
+                        "min_hint_height" : 80
+                    },
+                    "max_tracked": 3
+                }
+            ]
+        },
+        {
+            "name" : "FaceTrainSchema",
+            "type" : "image_update_schema",
+            "enable" : true,
+            "predicate" : {
+                "type" : "face_training_predicate",
+                "enable" : true
+            },
+            "actions" :[
+                {
+                    "name" : "FaceTrainingAction",
+                    "type" : "face_training_action",
+                    "enable" : true
+                }
+            ]
+        },
+        {
+            "name" : "EntityDetailSchema",
+            "type" : "image_update_schema",
+            "enable" : true,
+            "actions" :[
+                {
+                    "name" : "EntityDetailAction",
+                    "type" : "entity_detail_action",
+                    "enable" : true,
+                    "detector" : {
+                        "criteria" : {
+                            "dimensions" : [{ "width" : 640, "height" : 360 }],
+                            "formats" : [3],
+                            "outputTypes" : [0]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name" : "VisualAwarenessSchema",
+            "type" : "image_update_schema",
+            "enable" : true,
+            "actions" : [
+                {
+                    "name" : "VisualAwarenessUpdateAction",
+                    "type" : "visual_awareness_update_action",
+                    "enable" : true
+                }
+            ]
+        },
+        {
+            "name" : "BarcodeSchema",
+            "type" : "image_update_schema",
+            "enable" : true,
+            "actions" :[
+                {
+                    "name" : "BarcodeRequestAction",
+                    "type" : "barcode_request_action",
+                    "enable" : true,
+                    "reader":{
+                        "types": {
+                            "EAN8" : false,
+                            "UPCE" : false,
+                            "ISBN10" : false,
+                            "UPCA" : false,
+                            "EAN13" : false,
+                            "ISBN13" : false,
+                            "I25" : false,
+                            "CODE39" : false,
+                            "PDF417" : false,
+                            "QRCODE" : true,
+                            "CODE128" : false
+                        }
+                    },
+                    "criteria" : {
+                        "cameraIds" : [0],
+                        "dimensions" : [{ "width" : 1280, "height" : 720 }],
+                        "outputTypes" : [0]
+                    }
+                }
+            ]
+        },
+        {
+            "name" : "ControlChangeSchema",
+            "type" : "image_update_schema",
+            "enable": true,
+            "actions": [
+                {
+                    "name" : "ControlChangeRequestAction",
+                    "type" : "control_change_request_action",
+                    "enable" : true,
+                    "defaultResetTimeout": 7000
+                }
+            ]
+        },
+        {
+            "name" : "MotionSchema",
+            "type" : "image_update_schema",
+            "enable" : true,
+            "actions" :[
+                {
+                    "name" : "MotionImagerAction",
+                    "type" : "motion_imager_action",
+                    "enable" : true,
+                    "moving_delay" : 400,
+                    "image_width" : 128,
+                    "image_height" : 128,
+                    "accumulator_alpha" : 0.75,
+                    "criteria" : {
+                        "cameraIds" : [0],
+                        "dimensions" : [{ "width" : 320, "height" : 180 }],
+                        "outputTypes" : [0]
+                    },
+                    "motion_timeout" : 100
+                },
+                {
+                    "name" : "MotionDetectionAction",
+                    "type" : "motion_detection_action",
+                    "enable" : true,
+                    "moving_delay" : 400,
+                    "detector": {
+                        "min_width" : 10,
+                        "min_height" : 10,
+                        "criteria" : {
+                            "cameraIds" : [0]
+                        },
+                        "threshold" : {
+                            "dynamic": true,
+                            "low": 5,
+                            "high": 50,
+                            "ae":{
+                                "gain":16.0,
+                                "time":0.0333
+                            },
+                            "awb":{
+                                "red":4.0,
+                                "green":4.0,
+                                "blue": 4.0
+                            }
+                        }
+                    }
+                },
+                {
+                    "name" : "MotionTrackerInitAction",
+                    "type" : "motion_tracker_init_action",
+                    "enable" : true,
+                    "moving_delay" : 400,
+                    "max_tracked" : 3,
+                    "pool" : {
+                        "format" : 1,
+                        "width" : 128,
+                        "height" : 128,
+                        "size" : 8
+                    }
+                },
+                {
+                    "name" : "MotionTrackerUpdateAction",
+                    "type" : "motion_tracker_update_action",
+                    "enable" : true,
+                    "moving_delay" : 400,
+                    "pool" : {
+                        "format" : 1,
+                        "width" : 128,
+                        "height" : 128,
+                        "size" : 8
+                    }
+                }
+            ]
+        },
+        {
+            "name" : "FaceTimeSchema",
+            "type" : "time_update_schema",
+            "enable" : true,
+            "actions" :[
+                {
+                    "name" : "FaceTimeAction",
+                    "type" : "face_time_action",
+                    "enable" : true,
+                    "drop_radius" : 0.3,
+                    "fence_radius": 4.0,
+                    "ceiling_height": 2.0,
+                    "floor_height": -2.0
+                }
+            ]
+        },
+        {
+            "name" : "FaceEvaluateTimeSchema",
+            "type" : "time_update_schema",
+            "enable" : true,
+            "predicate" : {
+                "type" : "min_period_predicate",
+                "enable" : true,
+                "min_period" : 1.1
+            },
+            "actions" :[
+                {
+                    "name" : "PersonEvaluationAction",
+                    "type" : "person_evaluation_action",
+                    "enable" : true,
+                    "unknown_age_limit":10.0,
+                    "not_trained_age_limit":20.0,
+                    "refresh_limit":50.0
+                },
+                {
+                    "name" : "PresenceTimeAction",
+                    "type" : "presence_time_action",
+                    "enable" : true
+                }
+            ]
+        },
+        {
+            "name" : "SpeakerTimeSchema",
+            "type" : "time_update_schema",
+            "enable" : true,
+            "actions" :[
+                {
+                    "name" : "SpeakerTimeAction",
+                    "type" : "speaker_time_action",
+                    "enable" : true,
+                    "expiration": 60000
+                }
+            ]
+        },
+        {
+            "name" : "AwarenessTimeSchema",
+            "type" : "time_update_schema",
+            "enable" : true,
+            "actions" :[
+                {
+                    "name" : "AwarenessTimeAction",
+                    "type" : "awareness_time_action",
+                    "enable" : true
+                }
+            ]
+        },
+        {
+            "name" : "MotionTimeSchema",
+            "type" : "time_update_schema",
+            "enable" : true,
+            "actions" :[
+                {
+                    "name" : "MotionTimeAction",
+                    "type" : "motion_time_action",
+                    "enable" : true,
+                    "drop_radius" : 0.3,
+                    "fence_radius": 4.0
+                }
+            ]
+        },
+        {
+            "name" : "AudioTimeSchema",
+            "type" : "time_update_schema",
+            "enable" : true,
+            "actions" :[
+                {
+                    "name" : "AudioTimeAction",
+                    "type" : "audio_time_action",
+                    "enable" : true,
+                    "event_timeout" : 5.0
+                }
+            ]
+        },
+        {
+            "name" : "PresenceTimeSchema",
+            "type" : "time_update_schema",
+            "enable" : true,
+            "actions" :[
+                {
+                    "name" : "PresenceTimeAction",
+                    "type" : "presence_time_action",
+                    "enable" : true
+                }
+            ]
+        },
+        {
+            "name" : "AudioDetectSchema",
+            "type" : "audio_update_schema",
+            "enable" : true,
+            "actions" :[
+                {
+                    "name" : "AudioDetectionAction",
+                    "type" : "audio_detection_action",
+                    "enable" : true
+                },
+                {
+                    "name" : "AudioMeasurementAction",
+                    "type" : "audio_measurement_action",
+                    "enable" : true,
+                    "audio_angle_tolerance" : 0.5,
+                    "audio_time_tolerance" : 0.35,
+                    "in_fov_margin" : 0.1
+                }
+            ]
+        },
+        {
+            "name" : "AudioAwarenessSchema",
+            "type" : "audio_update_schema",
+            "enable" : true,
+            "actions" :[
+                {
+                    "name" : "AudioAwarenessAction",
+                    "type" : "audio_awareness_action",
+                    "enable" : true
+                }
+            ]
+        },
+        {
+            "name" : "AxisUpdateSchema",
+            "type" : "axis_update_schema",
+            "enable" : true,
+            "actions" :[
+                {
+                    "name" : "GeometryUpdateAction",
+                    "type" : "geometry_update_action",
+                    "enable" : true
+                },
+                {
+                    "name" : "MotionTrackerAxisUpdateAction",
+                    "type" : "motion_tracker_axis_update_action",
+                    "enable" : true
+                }
+            ]
+        }
+    ]
+}

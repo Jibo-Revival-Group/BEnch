@@ -1,0 +1,93 @@
+{"list" :
+    [
+        {"type": "GET", "url": "/lps/barcode" },
+        {"type": "GET", "url": "/lps/entity/config" },
+        {"type": "POST", "url": "/lps/entity/config", "args":
+            {
+                "camera_id":0
+            }
+        },
+        {"type": "POST", "url": "/lps/entity/config", "args":
+            {
+                "camera_id":1
+            }
+        },
+        {"type": "POST", "url": "/lps/faces", "args":
+            {
+                "camera_id": 0,
+                "kind": "faces",
+                "init_tracks": false
+            }
+        },
+        {"type": "POST", "url": "/lps/faces", "args":
+            {
+                "camera_id": 1,
+                "kind": "faces",
+                "init_tracks": true
+            }
+        },
+        {"type": "POST", "url": "/lps/faces", "args":
+            {
+                "camera_id": 1,
+                "kind": "faces",
+                "init_tracks": false
+            }
+        },
+        {"type": "POST", "url": "/lps/faces", "args":
+            {
+                "camera_id": 0,
+                "kind": "faces",
+                "init_tracks": true
+            }
+        },
+        {"type": "POST", "url": "/lps/presence", "args":
+            {
+                "name": "name",
+                "confidence": 0.50,
+                "present": true
+            },
+            "statusExpect": 400
+        },
+        {"type": "GET", "url": "/lps/detection",
+            "statusExpect": 400
+        },
+        {"type": "GET", "url": "/lps/mode" },
+        {"type": "POST", "url": "/lps/mode", "args":
+            {
+                "mode": 0
+            }
+        },
+        {"type": "POST", "url": "/lps/mode", "args":
+            {
+                "mode": 1 
+            }
+        },
+        {"type": "POST", "url": "/lps/mode", "args":
+            {
+                "mode": 2
+            }
+        },
+        {"type": "POST", "url": "/lps/identity/train", "args":
+            {
+                "":""
+            },
+            "statusExpect": 400
+        },
+        {"type": "POST", "url": "/lps/record/start" , "args":
+            {
+                "":""
+            }
+        },
+        {"type": "POST", "url": "/lps/record/stop", "args":
+            {
+                "":""
+            }
+        },
+        {"type": "GET", "url": "/lps/record/download"},
+        {"type": "POST", "url": "/lps/play/start", "args":
+            {
+                "":""
+            }
+        }
+    ]
+}

@@ -1,0 +1,30 @@
+#!/usr/bin/env node
+
+"use strict";
+var startTime = new Date().getTime();
+/**********************************************************
+*
+* Jibo Platform Test
+* Jibo, Inc. 2017
+* Author: Russell Kirmayer
+* Notes: Resolv.conf test
+/**********************************************************/
+
+var ping = require('ping');
+var wget = require('node-wget');
+
+ 
+ // list of sites to ping
+var hosts = ['google.com', '8.8.8.8', 'jibo.com', 'repository.jibo.com'];
+
+// ping each of the above hosts
+hosts.forEach(function(host){
+    ping.sys.probe(host, function(isAlive){
+        var msg = isAlive ? 'host ' + host + ' is alive' : 'host ' + host + ' is dead';
+        console.log(msg);
+    });
+});
+
+// download small tarball to test connection
+wget({url: "http://repository.jibo.com/platformbb/sha256.txt",
+        dest:"/usr/local/share/jibo-platform-test/"});

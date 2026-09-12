@@ -1,0 +1,1668 @@
+#The main rules file - to be cat'ed to the toprule files.
+
+######### A word ########
+
+# One or more characters we consider alphabetical
+Word = [$Character{_out=Character._out} 
+        *$Character{_out+=Character._out}];
+
+Character [a{_out='a'} |
+          b{_out='b'} |
+          c{_out='c'} |
+          d{_out='d'} |
+          e{_out='e'} |
+          f{_out='f'} |
+          g{_out='g'} |
+          h{_out='h'} |
+          i{_out='i'} |
+          j{_out='j'} |
+          k{_out='k'} |
+          l{_out='l'} |
+          m{_out='m'} |
+          n{_out='n'} |
+          o{_out='o'} |
+          p{_out='p'} |
+          q{_out='q'} |
+          r{_out='r'} |
+          s{_out='s'} |
+          t{_out='t'} |
+          u{_out='u'} |
+          v{_out='v'} |
+          w{_out='w'} |
+          x{_out='x'} |
+          y{_out='y'} |
+          z{_out='z'}];
+
+######### NUMBERS #########
+# Top rule for rules that deals with numbers
+Numbers = $handle:Digit{_out=Digit._ordinal}~0.1 |
+          [$YearSafe{_out=YearSafe._out}] |
+          $DigitWithDecimal{_out=DigitWithDecimal._out} |
+          $DigitCardinal{_out=DigitCardinal._out} |
+          [$ClockDigit{_out=ClockDigit._out}] |
+          $Currency{_out=Currency._out} |
+          $NumberBaseRule{_out=NumberBaseRule._out};
+
+# A heavily dispreferred rule to apply should we have no other number related rule to apply
+# Just say the numbers one at a time (000 = zero zero zero)
+NumberBaseRule = [$SingleDigit~0.9{_out=SingleDigit._ordinal} *$SingleDigit~0.9{_out+='_'}{_out+=SingleDigit._ordinal}];
+
+##### Digits
+
+DigitWithDecimal = $handle:Digit{_out=Digit._ordinal} $DigitDecimal{_out+='_'}{_out+=DigitDecimal._out};
+
+DigitMaybeWithDecimal = $DigitWithDecimal{_out=DigitWithDecimal._out} |
+                        $handle:Digit{_out=Digit._ordinal};
+
+DigitCardinal = $handle:Digit $CardinalMark{_out=Digit._cardinal};
+
+CardinalMark = th | st | nd | rd;
+
+# If a digit starts with a zero we say each digit individually
+DigitZeroBeg [0{_out='zero'} +$SingleDigit{_out+='_'}{_out+=SingleDigit._ordinal}];
+
+
+# A decimal
+# If finish in a digit in the tens we go 'o' for every 0 and then the digit.
+# If finish in a digit above the tens we say each digit individually (five four two zero nine).
+DigitDecimal = .{_tmp=''}{_out=''}
+                ( 
+                  [+0] |
+                  [*0{_tmp+='oletter_'}
+                    $ToTenDigit{_out+='point_'}{_out+=_tmp}{_out+=ToTenDigit._ordinal} |
+                    $SingleDigitNoZero{_out+='point_'}{_out+=_tmp}{_out+=SingleDigitNoZero._ordinal} |
+                    (
+                      $SingleDigitNoZero{_out+='point_'}{_out+=_tmp}{_out+=SingleDigitNoZero._ordinal}
+                      $SingleDigit{_out+='_'}{_out+=SingleDigit._ordinal}
+                      +$SingleDigit{_out+='_'}{_out+=SingleDigit._ordinal}
+                    )
+                  ]
+                );
+# We say each digit individually (five four two zero nine).
+#DigitDecimal = .{_tmp=''}{_out=''}
+#                ( 
+#                  [+0] |
+#                  [*0{_tmp+='oletter_'}
+#                    $SingleDigitNoZero{_out+='point_'}{_out+=_tmp}{_out+=SingleDigitNoZero._ordinal}
+#                    *$SingleDigit{_out+='_'}{_out+=SingleDigit._ordinal}
+#                  ]
+#                );
+
+# A single digit
+SingleDigit [ 0{_ordinal = 'zero'}{_cardinal = 'zeroeth'}{_asDigit = '0'} |
+              $SingleDigitNoZero{_ordinal=SingleDigitNoZero._ordinal}{_cardinal=SingleDigitNoZero._cardinal}{_asDigit = SingleDigitNoZero._asDigit} ];
+
+SingleDigitCardinal = [$SingleDigit]{_out=SingleDigit._cardinal} $CardinalMark;
+
+# A single digit not including zero
+# Useful in e.g. HundredDigit rule
+SingleDigitNoZero [ 1{_ordinal = 'one'}{_cardinal = 'first'}{_asDigit = '1'} |
+                    2{_ordinal = 'two'}{_cardinal = 'second'}{_asDigit = '2'} |
+                    3{_ordinal = 'three'}{_cardinal = 'third'}{_asDigit = '3'} |
+                    4{_ordinal = 'four'}{_cardinal = 'fourth'}{_asDigit = '4'} |
+                    5{_ordinal = 'five'}{_cardinal = 'fifth'}{_asDigit = '5'} |
+                    6{_ordinal = 'six'}{_cardinal = 'sixth'}{_asDigit = '6'} |
+                    7{_ordinal = 'seven'}{_cardinal = 'seventh'}{_asDigit = '7'} |
+                    8{_ordinal = 'eight'}{_cardinal = 'eighth'}{_asDigit = '8'} |
+                    9{_ordinal = 'nine'}{_cardinal = 'ninth'}{_asDigit = '9'} ];
+
+# A cardinal single digit
+SingleDigitNoZeroCardinal = [$SingleDigitNoZero] $CardinalMark{_out = SingleDigitNoZero._cardinal};
+
+# The tens
+Tens [ 10{_ordinal = 'ten'}{_cardinal = 'tenth'} |
+       11{_ordinal = 'eleven'}{_cardinal = 'eleventh'} |
+       12{_ordinal = 'twelve'}{_cardinal = 'twelvth'} |
+       13{_ordinal = 'thirteen'}{_cardinal = 'thirteenth'} |
+       14{_ordinal = 'fourteen'}{_cardinal = 'fourteenth'} |
+       15{_ordinal = 'fifteen'}{_cardinal = 'fifteenth'} |
+       16{_ordinal = 'sixteen'}{_cardinal = 'sixteenth'} |
+       17{_ordinal = 'seventeen'}{_cardinal = 'seventeenth'} |
+       18{_ordinal = 'eighteen'}{_cardinal = 'eighteenth'} |
+       19{_ordinal = 'nineteen'}{_cardinal = 'nineteenth'} ];
+
+# Twenties
+Twenties [
+           (2 $SingleDigitNoZero)
+           {_ordinal='twenty'}{_ordinal+='_'}{_ordinal += SingleDigitNoZero._ordinal}
+           {_cardinal='twenty'}{_cardinal+='_'}{_cardinal += SingleDigitNoZero._cardinal} |
+           20
+           {_ordinal='twenty'}
+           {_cardinal='twentieth'}
+         ];
+
+TwentiesCardinal = [$Twenties]{_out=Twenties._cardinal} $CardinalMark;
+
+# Thirties
+Thirties [
+           (3 $SingleDigitNoZero)
+           {_ordinal='thirty'}{_ordinal+='_'}{_ordinal += SingleDigitNoZero._ordinal}
+           {_cardinal='thirty'}{_cardinal+='_'}{_cardinal += SingleDigitNoZero._cardinal} |
+           30
+           {_ordinal='thirty'}
+           {_cardinal='thirtieth'}
+         ];
+
+ThirtiesCardinal = [$Thirties]{_out=Thirties._cardinal} $CardinalMark;
+
+# Fourties
+Fourties [
+           (4 $SingleDigitNoZero)
+           {_ordinal='forty'}{_ordinal+='_'}{_ordinal += SingleDigitNoZero._ordinal}
+           {_cardinal='forty'}{_cardinal+='_'}{_cardinal += SingleDigitNoZero._cardinal} |
+           40
+           {_ordinal='forty'}
+           {_cardinal='fortieth'}
+         ];
+
+FourtiesCardinal = [$Fourties]{_out=Fourties._cardinal} $CardinalMark;
+
+# Fifties
+Fifties [
+           (5 $SingleDigitNoZero)
+           {_ordinal='fifty'}{_ordinal+='_'}{_ordinal += SingleDigitNoZero._ordinal}
+           {_cardinal='fifty'}{_cardinal+='_'}{_cardinal += SingleDigitNoZero._cardinal} |
+           50
+           {_ordinal='fifty'}
+           {_cardinal='fiftieth'}
+         ];
+
+FiftiesCardinal = [$Fifties]{_out=Fifties._cardinal} $CardinalMark;
+
+# Sixties
+Sixties [
+           (6 $SingleDigitNoZero)
+           {_ordinal='sixty'}{_ordinal+='_'}{_ordinal += SingleDigitNoZero._ordinal}
+           {_cardinal='sixty'}{_cardinal+='_'}{_cardinal += SingleDigitNoZero._cardinal} |
+           60
+           {_ordinal='sixty'}
+           {_cardinal='sixtieth'}
+         ];
+
+SixtiesCardinal = [$Sixties]{_out=Sixties._cardinal} $CardinalMark;
+
+# Seventies
+Seventies [
+           (7 $SingleDigitNoZero)
+           {_ordinal='seventy'}{_ordinal+='_'}{_ordinal += SingleDigitNoZero._ordinal}
+           {_cardinal='seventy'}{_cardinal+='_'}{_cardinal += SingleDigitNoZero._cardinal} |
+           70
+           {_ordinal='seventy'}
+           {_cardinal='seventieth'}
+         ];
+
+SeventiesCardinal = [$Seventies]{_out=Seventies._cardinal} $CardinalMark;
+
+# Eighties
+Eighties [
+           (8 $SingleDigitNoZero)
+           {_ordinal='eighty'}{_ordinal+='_'}{_ordinal += SingleDigitNoZero._ordinal}
+           {_cardinal='eighty'}{_cardinal+='_'}{_cardinal += SingleDigitNoZero._cardinal} |
+           80
+           {_ordinal='eighty'}
+           {_cardinal='eightieth'}
+         ];
+
+EightiesCardinal = [$Eighties]{_out=Eighties._cardinal} $CardinalMark;
+
+# Nineties
+Nineties [
+           (9 $SingleDigitNoZero)
+           {_ordinal='ninety'}{_ordinal+='_'}{_ordinal += SingleDigitNoZero._ordinal}
+           {_cardinal='ninety'}{_cardinal+='_'}{_cardinal += SingleDigitNoZero._cardinal} |
+           90
+           {_ordinal='ninety'}
+           {_cardinal='ninetieth'}
+         ];
+
+NinetiesCardinal = [$Nineties]{_out=Nineties._cardinal} $CardinalMark;
+
+# A digit in the tens
+TenDigit [ $Tens{_ordinal = Tens._ordinal}{_cardinal = Tens._cardinal} |
+           $Twenties{_ordinal = Twenties._ordinal}{_cardinal = Twenties._cardinal} |
+           $Thirties{_ordinal = Thirties._ordinal}{_cardinal = Thirties._cardinal} |
+           $Fourties{_ordinal = Fourties._ordinal}{_cardinal = Fourties._cardinal} |
+           $Fifties{_ordinal = Fifties._ordinal}{_cardinal = Fifties._cardinal} |
+           $Sixties{_ordinal = Sixties._ordinal}{_cardinal = Sixties._cardinal} |
+           $Seventies{_ordinal = Seventies._ordinal}{_cardinal = Seventies._cardinal} |
+           $Eighties{_ordinal = Eighties._ordinal}{_cardinal = Eighties._cardinal} |
+           $Nineties{_ordinal = Nineties._ordinal}{_cardinal = Nineties._cardinal} ];
+
+TenDigitCardinal = $TenDigit $CardinalMark{_out=TenDigit._cardinal};
+
+# Any digit from 1 to 99
+ToTenDigit [ $TenDigit{_ordinal=TenDigit._ordinal}{_cardinal=TenDigit._cardinal} |
+             $SingleDigitNoZero{_ordinal=SingleDigitNoZero._ordinal}{_cardinal=SingleDigitNoZero._cardinal} ];
+
+# Any digit from 1/01 to 31 (used for days in months)
+To31Digit [
+            $Tens{_ordinal = Tens._ordinal}{_cardinal = Tens._cardinal} |
+            $Twenties{_ordinal = Twenties._ordinal}{_cardinal = Twenties._cardinal} |
+            ( 30{_ordinal = 'thirty'}{_cardinal = 'thirtieth'} ) |
+            ( 31{_ordinal = 'thirty_one'}{_cardinal = 'thirty_first'} ) |
+            (
+              ?0 $SingleDigitNoZero{_ordinal=SingleDigitNoZero._ordinal}{_cardinal=SingleDigitNoZero._cardinal}
+            )
+          ];
+
+# Any digit from 01 to 99 normalised to ignore leading 0
+ToTen2Digits [ $TenDigit{_ordinal=TenDigit._ordinal}{_cardinal=TenDigit._cardinal} |
+               (0 $SingleDigitNoZero{_ordinal=SingleDigitNoZero._ordinal}{_cardinal=SingleDigitNoZero._cardinal}) ];
+
+# A digit in the hundreds
+HundredDigit [ 
+               $SingleDigitNoZero
+                 {_ordinal=SingleDigitNoZero._ordinal}{_ordinal+='_hundred'}
+                 {_cardinal=_ordinal}
+               (
+                 00{_cardinal+='th'} |
+                 $ToTen2Digits
+                   {_ordinal+='_'}{_ordinal+=ToTen2Digits._ordinal}
+                   {_cardinal+='_'}{_cardinal+=ToTen2Digits._cardinal}
+               )
+             ];
+
+HundredDigitCardinal = [$HundredDigit] $CardinalMark{_out=HundredDigit._cardinal};
+
+# Any digit from 1 to 999
+ToHundredDigit [ $HundredDigit{_ordinal=HundredDigit._ordinal}{_cardinal=HundredDigit._cardinal} |
+                 $ToTenDigit{_ordinal=ToTenDigit._ordinal}{_cardinal=ToTenDigit._cardinal} ];
+
+ToHundredDigitCardinal = [$ToHundredDigit] $CardinalMark{_out=ToHundredDigit._cardinal};
+
+# Any digit from 001 to 999 normalised to ignore leading 0
+ToHundred3Digits [ $HundredDigit{_ordinal=HundredDigit._ordinal}{_cardinal=HundredDigit._cardinal} |
+                 (0 $TenDigit{_ordinal=TenDigit._ordinal}{_cardinal=TenDigit._cardinal}) |
+                 (00 $SingleDigitNoZero{_ordinal=SingleDigitNoZero._ordinal}{_cardinal=SingleDigitNoZero._cardinal}) ];
+
+ToHundred3DigitsCardinal = [$ToHundred3Digits] $CardinalMark{_out=ToHundred3Digits._cardinal};
+
+# Any digit from 1.000 up to 999.999
+ThousandDigit = [
+                  $ToHundredDigit
+                    {_ordinal=ToHundredDigit._ordinal}{_ordinal+='_thousand'}
+                    {_cardinal=_ordinal}
+                  (
+                    000{_cardinal+='th'} |
+                    $ToHundred3Digits
+                      {_ordinal+='_'}{_ordinal+=ToHundred3Digits._ordinal}
+                      {_cardinal+='_'}{_cardinal+=ToHundred3Digits._cardinal}
+                  )
+                ] |
+                (
+                  [$ToHundredDigit]
+                    {_ordinal=ToHundredDigit._ordinal}{_ordinal+='_thousand'}
+                    {_cardinal=_ordinal}
+                  ,
+                  (
+                    000{_cardinal+='th'} | 
+                    [$ToHundred3Digits]
+                      {_ordinal+='_'}{_ordinal+=ToHundred3Digits._ordinal}
+                      {_cardinal+='_'}{_cardinal+=ToHundred3Digits._cardinal}
+                  )
+                );
+
+ThousandDigitCardinal = $ThousandDigit $CardinalMark{_out=ThousandDigit._cardinal};
+
+# A digit in the millions - 1.000.000 to 999.999.999
+MillionDigit = [
+                 $ToHundredDigit
+                   {_ordinal=ToHundredDigit._ordinal}{_ordinal+='_million'}
+                 (
+                   (000) |
+                   $ToHundred3Digits
+                     {_ordinal+='_'}{_ordinal+=ToHundred3Digits._ordinal}{_ordinal+='_thousand'}
+                     {_cardinal=_ordinal}
+                 )
+                 (
+                   000{_cardinal+='th'} |
+                   $ToHundred3Digits
+                     {_ordinal+='_'}{_ordinal+=ToHundred3Digits._ordinal}
+                     {_cardinal+='_'}{_cardinal+=ToHundred3Digits._cardinal}
+                 )
+               ] |
+               (
+                 [$ToHundredDigit]
+                   {_ordinal=ToHundredDigit._ordinal}{_ordinal+='_million'}
+                 ,
+                 (
+                   000 |
+                   [$ToHundred3Digits]
+                     {_ordinal+='_'}{_ordinal+=ToHundred3Digits._ordinal}{_ordinal+='_thousand'}
+                     {_cardinal=_ordinal}
+                 )
+                 ,
+                 (
+                   000{_cardinal+='th'} |
+                   [$ToHundred3Digits]
+                     {_ordinal+='_'}{_ordinal+=ToHundred3Digits._ordinal}
+                     {_cardinal+='_'}{_cardinal+=ToHundred3Digits._cardinal}
+                 )
+               );
+
+MillionDigitCardinal = $MillionDigit $CardinalMark{_out=MillionDigit._cardinal};
+
+# A digit in the billions - 1.000.000.000 to 999.999.999.999
+BillionDigit = [
+                 $ToHundredDigit
+                   {_ordinal=ToHundredDigit._ordinal}{_ordinal+='_billion'}
+                 (
+                   (000) |
+                   $ToHundred3Digits
+                     {_ordinal+='_'}{_ordinal+=ToHundred3Digits._ordinal}{_ordinal+='_million'}
+                 )
+                 (
+                   (000) |
+                   $ToHundred3Digits
+                     {_ordinal+='_'}{_ordinal+=ToHundred3Digits._ordinal}{_ordinal+='_thousand'}
+                     {_cardinal=_ordinal}
+                 )
+                 (
+                   000{_cardinal='th'} |
+                   $ToHundred3Digits
+                     {_ordinal+='_'}{_ordinal+=ToHundred3Digits._ordinal}
+                     {_cardinal+='_'}{_cardinal+=ToHundred3Digits._cardinal}
+                 )
+               ] |
+               (
+                 [$ToHundredDigit]
+                   {_ordinal=ToHundredDigit._ordinal}{_ordinal+='_billion'}
+                 ,
+                 (
+                   000 |
+                   [$ToHundred3Digits]
+                     {_ordinal+='_'}{_ordinal+=ToHundred3Digits._ordinal}{_ordinal+='_million'}
+                 )
+                 ,
+                 (
+                   000 |
+                   [$ToHundred3Digits]
+                     {_ordinal+='_'}{_ordinal+=ToHundred3Digits._ordinal}{_ordinal+='_thousand'}
+                     {_cardinal=_ordinal}
+                 )
+                 ,
+                 (
+                   000{_cardinal='th'} |
+                   [$ToHundred3Digits]
+                     {_ordinal+='_'}{_ordinal+=ToHundred3Digits._ordinal}
+                     {_cardinal+='_'}{_cardinal+=ToHundred3Digits._cardinal}
+                 )
+               );
+
+DigitWord = thousand{_out='thousand'} |
+            million{_out='million'} |
+            billion{_out='billion'} |
+            trillion{_out='trillion'};
+
+BillionDigitCardinal = $BillionDigit $CardinalMark{_out=BillionDigit._cardinal};
+
+# Primarily used for time, but generally useful
+ClockDigit [ ( ($ToTenDigit{_out=ToTenDigit._ordinal} | 0{_out='zero'}) | ($ToTen2Digits{_out=ToTen2Digits._ordinal} | 00{_out='zero'}) ) :{_out+='_'} ($ToTen2Digits{_out+=ToTen2Digits._ordinal} | 00{_out+='zero'}) ];
+
+#Exact thousands - used for years
+ExactThousands [ $SingleDigitNoZero 000 
+               {_out=SingleDigitNoZero._ordinal}{_out+='_'}{_out+='thousand'}];
+
+# The whole tens as plurals - used for e.g. years such as 1990's
+ExactTensPlural [ 10{_out='tens'} |
+                  20{_out='twenties'} |
+                  30{_out='thirties'} |
+                  40{_out='forties'} |
+                  50{_out='fifties'} |
+                  60{_out='sixties'} |
+                  70{_out='seventies'} |
+                  80{_out='eighties'} |
+                  90{_out='nineties'}];
+
+#### Currencies ####
+# Top currency rule
+Currency = $CurrencySingular{_out=CurrencySingular._out} |
+           $CurrencyPlural{_out=CurrencyPlural._out}~0.1;
+
+# A currency in the singular
+CurrencySingular = $CurrencySingularLeading{_out=CurrencySingularLeading._out} |
+                   $CurrencySingularTrailingSpaceDecimal{_out=CurrencySingularTrailingSpaceDecimal._out} |
+                   $CurrencySingularTrailingSpace{_out=CurrencySingularTrailingSpace._out};
+
+# A currency in plural
+CurrencyPlural = $CurrencyPluralLeading{_out=CurrencyPluralLeading._out} |
+                 $CurrencyPluralTrailingSpace{_out=CurrencyPluralTrailingSpace._out} |
+                 $CurrencyPluralTrailingSpaceDecimal{_out=CurrencyPluralTrailingSpaceDecimal._out};
+
+# Currencies in plural with leading/trailing sign
+CurrencyPluralLeading = $CurrencySign
+                        (
+                          $handle:Digit{_out=Digit._ordinal}{_out+='_'}{_out+=CurrencySign._plural}
+                          ?(
+                            . 
+                            (
+                              01{_out+='_one_'}{_out+=CurrencySign._smallSingular} |
+                              [$ToTen2Digits]{_out+='_'}{_out+=ToTen2Digits._ordinal}{_out+='_'}{_out+=CurrencySign._smallPlural}~0.1
+                            )
+                          )
+                        ) | 
+                        (
+                          (
+                            ($handle:Digit{_out=Digit._ordinal} ?(. [$ToTen2Digits]{_out+='_point_'}{_out+=ToTen2Digits._ordinal})) |
+                            $DigitWithDecimal{_out=DigitWithDecimal._out}~0.2
+                          )
+                          $DigitWord{_out+='_'}{_out+=DigitWord._out}{_out+='_'}{_out+=CurrencySign._plural}
+                        );
+
+CurrencyPluralTrailingSpace = $handle:Digit{_out=Digit._ordinal}{_out+='_'}
+                              $CurrencySign{_out+=CurrencySign._plural};
+
+CurrencyPluralTrailingSpaceDecimal = $handle:Digit .
+                                       (01 $CurrencySign)
+                                       {_out=Digit._ordinal}{_out+='_'}{_out+=CurrencySign._plural}{_out+='_one_'}{_out+=CurrencySign._smallSingular} |
+                                       ([$ToTen2Digits] $CurrencySign)
+                                       {_out=Digit._ordinal}{_out+='_'}{_out+=CurrencySign._plural}{_out+='_'}{_out+=ToTen2Digits._ordinal}{_out+='_'}{_out+=CurrencySign._smallPlural};
+
+#Currencies in singular with leading/trailing sign
+CurrencySingularLeading = $CurrencySign 
+                          (
+                            (1{_out='one_'} ?$DigitWord{_out+=DigitWord._out}){_out+=CurrencySign._singular}
+                            ?( 
+                              . (01{_out+='_one_'}{_out+=CurrencySign._smallSingular} |
+                                [$ToTen2Digits]{_out+='_'}{_out+=ToTen2Digits._ordinal}{_out+='_'}{_out+=CurrencySign._smallPlural}~0.1)
+                            )
+                          );
+
+CurrencySingularTrailingSpace = 1{_out='one_'} $CurrencySign{_out+=CurrencySign._singular};
+
+CurrencySingularTrailingSpaceDecimal = 1 . 
+                                         (01 $CurrencySign)
+                                         {_out='one_'}{_out+=CurrencySign._singular}{_out+='_one_'}{_out+=CurrencySign._smallSingular} |
+                                         ([$ToTen2Digits] $CurrencySign)
+                                         {_out='one_'}{_out+=CurrencySign._singular}{_out+='_'}{_out+=ToTen2Digits._ordinal}{_out+='_'}{_out+=CurrencySign._smallPlural};
+
+# Currencies
+CurrencySign = \${_singular='dollar'}{_plural='dollars'}{_smallSingular='cent'}{_smallPlural='cents'} |
+             hkd{_singular='hong_kong_dollar'}{_plural='hong_kong_dollars'}{_smallSingular='cent'}{_smallPlural='cents'} |
+             mxn{_singular='mexican_peso'}{_plural='mexican_pesos'}{_smallSingular='centavo'}{_smallPlural='centavos'} |
+             cop{_singular='columbian_peso'}{_plural='columbian_pesos'}{_smallSingular='centavo'}{_smallPlural='centavos'} |
+             clp{_singular='chilean_peso'}{_plural='chilean_pesos'}{_smallSingular='centavo'}{_smallPlural='centavos'} |
+             cad{_singular='canadian_dollar'}{_plural='canadian_dollars'}{_smallSingular='cent'}{_smallPlural='cents'} |
+             usd{_singular='uletter_sletter_dollar'}{_plural='uletter_sletter_dollars'}{_smallSingular='cent'}{_smallPlural='cents'} |
+             nzd{_singular='new_zealand_dollar'}{_plural='new_zealand_dollars'}{_smallSingular='cent'}{_smallPlural='cents'} |
+             ¥{_singular='yuan'}{_plural='yuans'}{_smallSingular='fen'}{_smallPlural='fens'} |
+             cny{_singular='chinese_yuan'}{_plural='chinese_yuans'}{_smallSingular='fen'}{_smallPlural='fens'} |
+             ¥{_singular='yen'}{_plural='yens'}{_smallSingular='sen'}{_smallPlural='sens'} |
+             jpy{_singular='japanese_yen'}{_plural='japanese_yens'}{_smallSingular='sen'}{_smallPlural='sens'} |
+             £{_singular='pound'}{_plural='pounds'}{_smallSingular='pence'}{_smallPlural='pence'} |
+             gbp{_singular='british_pound'}{_plural='british_pounds'}{_smallSingular='pence'}{_smallPlural='pence'} |
+             egp{_singular='egyptian_pound'}{_plural='egyptian_pounds'}{_smallSingular='pence'}{_smallPlural='pence'} |
+             €{_singular='euro'}{_plural='euros'}{_smallSingular='cent'}{_smallPlural='cents'} |
+             ₩{_singular='won'}{_plural='wons'}{_smallSingular='jeon'}{_smallPlural='jeons'} |
+             kpw{_singular='north_korean_won'}{_plural='north_korean_wons'}{_smallSingular='chon'}{_smallPlural='chons'} |
+             krw{_singular='south_korean_won'}{_plural='south_korean_wons'}{_smallSingular='jeon'}{_smallPlural='jeons'} |
+             ₱{_singular='peso'}{_plural='pesos'}{_smallSingular='centavo'}{_smallPlural='centavos'} |
+             ₹{_singular='rupee'}{_plural='rupees'}{_smallSingular='paisa'}{_smallPlural='paisas'} |
+             (rs ?.){_singular='rupee'}{_plural='rupees'}{_smallSingular='paisa'}{_smallPlural='paisas'} |
+             inr{_singular='indian_rupee'}{_plural='indain_rupees'}{_smallSingular='paisa'}{_smallPlural='paisas'} |
+             (kr ?.){_singular='krone'}{_plural='kroner'}{_smallSingular='oere'}{_smallPlural='oerer'} |
+             (s/ .){_singular='sol'}{_plural='sols'}{_smallSingular='céntimo'}{_smallPlural='céntimos'} |
+             pen{_singular='peruvian_sol'}{_plural='peruvian_sols'}{_smallSingular='centimo'}{_smallPlural='centimos'} |
+             ₺{_singular='lira'}{_plural='liras'}{_smallSingular='kurus'}{_smallPlural='kurus'} |
+             try{_singular='turkish_lira'}{_plural='turkish_liras'}{_smallSingular='kurus'}{_smallPlural='kurus'} |
+             (r ?.){_singular='rand'}{_plural='rands'}{_smallSingular='cent'}{_smallPlural='cents'} |
+             zar{_singular='south_african_rand'}{_plural='south_african_rands'}{_smallSingular='cent'}{_smallPlural='cents'} |
+             rub{_singular='ruble'}{_plural='rubles'}{_smallSingular='kopek'}{_smallPlural='kopeks'} |
+             dkk{_singular='danish_krone'}{_plural='danish_kroner'}{_smallSingular='oere'}{_smallPlural='oerer'} |
+             sek{_singular='swedish_krona'}{_plural='swedish_kronas'}{_smallSingular='oeren'}{_smallPlural='oerens'} |
+             nok{_singular='norwegian_krone'}{_plural='norwegian_kroner'}{_smallSingular='oere'}{_smallPlural='oerer'} |
+             isk{_singular='icelandic_krona'}{_plural='icelandic_kronur'}{_smallSingular='eyrir'}{_smallPlural='eyrir'} |
+             (kč ?.){_singular='koruna'}{_plural='korunas'}{_smallSingular='haleru'}{_smallPlural='halerus'} |
+             czk{_singular='czech_koruna'}{_plural='czech_korunas'}{_smallSingular='haleru'}{_smallPlural='halerus'} |
+             irr{_singular='iranian_rial'}{_plural='iranian_rials'}{_smallSingular='dinar'}{_smallPlural='dinars'} |
+             chf{_singular='swiss_franc'}{_plural='swiss_francs'}{_smallSingular='rap'}{_smallPlural='raps'} |
+             ¢{_singular='centavo'}{_plural='centavos'}{_smallSingular='centavo'}{_smallPlural='centavos'} ;
+
+##### Dates ######
+Dates = $DateNumber{_out=DateNumber._out} |
+        $YearDate{_out=YearDate._out} |
+        $YearPeriod{_out=YearPeriod._out} |
+        $DateWritten{_out=DateWritten._out};
+
+
+#7/2/1996 or 7/2-1996 or 7 2, 1998 etc
+DateNumber = (
+              [$MonthsNumbers]{_out=MonthsNumbers._out}{_out+='_'} |
+              $Months{_out=Months._out}{_out+='_'}
+             )
+             (
+               (
+                 (/|-|,)
+                 [$To31Digit]{_out+=To31Digit._cardinal}
+                 ?(/|-|,)
+               ) | 
+               (
+                 [$To31Digit]{_out+=To31Digit._cardinal}
+                 (/|-|,)
+               )
+             )
+             ?[$Year]{_out+='_'}{_out+=Year._out};
+
+# 10th February 1995 or February 10th 1995
+DateWritten = (
+                [$To31Digit]{_out=To31Digit._cardinal}{_out+='_'}
+                ?$CardinalMark
+                $Months{_out+=Months._out}{_out+='_'}
+              ) |
+              (
+                $Months{_out=Months._out}{_out+='_'}
+                [$To31Digit]{_out+=To31Digit._cardinal}{_out+='_'}
+                ?$CardinalMark
+              )
+              ?,{_out+='_'}
+              ?[$Year{_out+=Year._out}];
+
+YearDate = $YearDateTrailing{_out=YearDateTrailing._out} | $YearDateLeading{_out=YearDateLeading._out};
+
+YearDateLeading =  (
+                     (from{_out='from_'} ?a{_out+='a_'}) |
+                     to{_out='to_'} |
+                     in{_out='in_'} |
+                     on{_out='on_'} |
+                     of{_out='of_'} |
+                     between{_out='between_'} |
+                     and{_out='and_'} |
+                     before{_out='before_'} |
+                     after{_out='after_'} |
+                     -{_out='to_'} |
+                     year{_out='year_'} |
+                     years{_out='years_'} |
+                     since{_out='since_'} |
+                     $Months{_out=Months._out}{_out+='_'} |
+                     (is a){_out='is_a_'} |
+                     (is an){_out='is_an_'} |
+                     (miss world){_out='miss_world_'} |
+                     (published as){_out='published_as_'}
+                   )
+                   [$Year{_out+=Year._out}];
+
+YearDateTrailing = [$Year{_out=Year._out}]
+                   (
+                     film{_out+='_film'}
+                   );
+
+# A year that starts with 1 or 2
+YearSafe [ (
+         ($Tens{_out=Tens._ordinal} | $Twenties{_out=Twenties._ordinal})
+         (
+           $TenDigit{_out+='_'}{_out+=TenDigit._ordinal} |
+           (0 0~0.1){_out+='_hundred'}~1 |
+           (0{_out+='_oletter_'} $SingleDigitNoZero{_out+=SingleDigitNoZero._ordinal})
+         )
+       ) |
+       $ExactThousands{_out=ExactThousands._out} |
+       ((1{_out='one'} | 2{_out='two'} ){_out+='_thousand_'} 00 $SingleDigitNoZero{_out+=SingleDigitNoZero._ordinal}) ];
+
+#Any year
+Year [ (
+         $TenDigit{_out=TenDigit._ordinal}
+         (
+           $TenDigit{_out+='_'}{_out+=TenDigit._ordinal} |
+           (0 0~0.1){_out+='_hundred'}~1 |
+           (0{_out+='_oletter_'} $SingleDigitNoZero{_out+=SingleDigitNoZero._ordinal})
+         )
+       ) |
+       $ExactThousands{_out=ExactThousands._out} |
+       ($SingleDigitNoZero{_out=SingleDigitNoZero._ordinal}{_out+='_thousand_'} 00 $SingleDigitNoZero{_out+=SingleDigitNoZero._ordinal}) ];
+
+# 1990's etc. We assume, for simplicity, these will not end in a single digit (e.g. 1999's)
+YearPeriod = [$YearPlural] (\'s | s){_out=YearPlural._out};
+
+YearPlural [  (
+                 $TenDigit{_out=TenDigit._ordinal}
+                 (
+                   $ExactTensPlural{_out+='_'}{_out+=ExactTensPlural._out} |
+                   $TenDigit~0.1{_out+='_'}{_out+=TenDigit._ordinal}{_out+='s'} |
+                   (0 0~0.2){_out+='_hundreds'}~1 |
+                   (0{_out+='_oletter_'} $SingleDigitNoZero{_out+=SingleDigitNoZero._ordinal}{_out+='s'})
+                 )
+              ) |
+              $ExactThousands{_out=ExactThousands._out}{_out+='s'} |
+              ($SingleDigitNoZero{_out=SingleDigitNoZero._ordinal}{_out+='_thousand_'} 00 $SingleDigitNoZero{_out+=SingleDigitNoZero._ordinal}{_out+='s'})
+              ];
+
+Months = $MonthAbbrev{_out=MonthAbbrev._out} | $MonthFull{_out=MonthFull._out};
+
+#Months - also used for abbreviations
+MonthAbbrev = (jan ?.){_out='january'} |
+               (feb ?.){_out='february'} |
+               (mar ?.){_out='march'} |
+               (apr ?.){_out='april'} |
+               (jun ?.){_out='june'} |
+               (jul ?.){_out='july'} |
+               (aug ?.){_out='august'} |
+               (sep ?.){_out='september'} |
+               (sept ?.){_out='september'} |
+               (oct ?.){_out='october'} |
+               (nov ?.){_out='november'} |
+               (dec ?.){_out='december'};
+
+MonthFull = january{_out='january'} |
+            february{_out='february'} |
+            march{_out='march'} |
+            april{_out='april'} |
+            may{_out='may'} |
+            june{_out='june'} |
+            july{_out='july'} |
+            august{_out='august'} |
+            september{_out='september'} |
+            october{_out='october'} |
+            november{_out='november'} |
+            december{_out='december'};
+
+MonthsNumbers [ (?01){_out='january'} |
+                (?02){_out='february'} |
+                (?03){_out='march'} |
+                (?04){_out='april'} |
+                (?05){_out='may'} |
+                (?06){_out='june'} |
+                (?07){_out='july'} |
+                (?08){_out='august'} |
+                (?09){_out='september'} |
+                10{_out='october'} |
+                11{_out='november'} |
+                12{_out='december'} ];
+
+
+####### Time #######
+Time = $Times{_out=Times._out};
+
+Times = ($HoursAMPM{_out=HoursAMPM._out}
+          ?(
+            (.|:)
+            ([$TenDigit]{_out+='_'}{_out+=TenDigit._ordinal} |
+             00 |
+             [0{_out+='_oletter_'}$SingleDigitNoZero{_out+=SingleDigitNoZero._ordinal}])
+            ?((.|:) 00)
+          )
+          $AMPM{_out+='_'}{_out+=AMPM._out}) |
+        (12 ?((.|:) 00) $AM{_out='midnight'}) |
+        (12 ?((.|:) 00) $PM{_out='noon'}) |
+        (00 ?((.|:) 00) $AM{_out='midnight'}) |
+        (00 ?((.|:) 00) $PM{_out='noon'});
+
+HoursAMPM = [$SingleDigitNoZero]{_out=SingleDigitNoZero._ordinal} |
+            10{_out='ten'} |
+            11{_out='eleven'} |
+            12{_out='twelve'};
+
+Hours24 = [$SingleDigitNoZero]{_out=SingleDigitNoZero._ordinal} |
+          [$TenDigit]{_out=TenDigit._ordinal} |
+          20{_out='twenty'} |
+          21{_out='twenty_one'} |
+          22{_out='twenty_two'} |
+          23{_out='twenty_three'} |
+          24{_out='twenty_four'};
+
+AMPM = $AM{_out=AM._out} | $PM{_out=PM._out} | o\'clock{_out='o\'clock'};
+
+AM = ((a . m) | am){_out='aletter_mletter'};
+
+PM = ((p . m) | pm){_out='pletter_mletter'};
+
+####### Measures ######
+
+Measures = $MeasuresPlural{_out=MeasuresPlural._out} | 
+            $MeasuresSingular{_out=MeasuresSingular._out} | 
+            $MeasuresSpecial{_out=MeasuresSpecial._out} |
+            $MeasuresWritten{_out=MeasuresWritten._out};
+
+# A set of special exceptions/rules which are not covered by the below
+MeasuresSpecial = (
+                    (
+                      1{_out='one_foot_'} | 
+                      $handle:Digit{_out=Digit._ordinal}{_out+='_feet_'}
+                    )
+                    (
+                      1{_out+='one_inch'} | $handle:Digit{_out+=Digit._ordinal}{_out+='_inches'}
+                    ) `` 
+                  ) |
+                  (
+                    ?\(
+                    $handle:Digit{_out='\[spau\]_'}{_out+=Digit._ordinal}
+                    (-|–){_out+='_to_'}
+                    $handle:Digit{_out+=Digit._ordinal}
+                    in .{_out+='_inches_\[spau\]'}
+                    ?\)
+                  );
+
+MeasuresSingular = 1{_out='one_'} ?(. [+0]) $MeasureGroup{_out+=MeasureGroup._singular};
+
+MeasuresPlural = ($handle:Digit{_out=Digit._ordinal} | $DigitDecimal{_out=DigitDecimal._out})
+                  $MeasureGroup{_out+='_'}{_out+=MeasureGroup._plural};
+
+#We only care about this when we're in the thousands
+MeasuresWritten = $ThousandDigit{_out=ThousandDigit._ordinal}
+                  $MeasureGroupWritten{_out+='_'}{_out+=MeasureGroupWritten._out};
+
+MeasureGroup = $Weights{_singular=Weights._singular}{_plural=Weights._plural} |
+               $Distances{_singular=Distances._singular}{_plural=Distances._plural} |
+               $TimeMeasures{_singular=TimeMeasures._singular}{_plural=TimeMeasures._plural}~0.1 |
+               $Volumes{_singular=Volumes._singular}{_plural=Volumes._plural} |
+               $Speeds{_singular=Speeds._singular}{_plural=Speeds._plural};
+
+MeasureGroupWritten = $WeightsWritten{_out=WeightsWritten._out} |
+                       $DistancesWritten{_out=DistancesWritten._out} |
+                       $TimeMeasuresWritten{_out=TimeMeasuresWritten._out} |
+                       $VolumesWritten{_out=VolumesWritten._out} |
+                       $SpeedsWritten{_out=SpeedsWritten._out};
+
+TimeMeasures = ms{_singular='millisecond'}{_plural='milliseconds'} |
+               s{_singular='second'}{_plural='seconds'} |
+               (mins | min){_singular='minute'}{_plural='minutes'} |
+               h{_singular='hour'}{_plural='hours'} |
+               hrs{_singular='hour'}{_plural='hours'};
+
+TimeMeasuresWritten = millisecond{_out='millisecond'} |
+                      milliseconds{_out='milliseconds'} |
+                      second{_out='second'} |
+                      seconds{_out='seconds'} |
+                      hour{_out='hour'} |
+                      hours{_out='hours'};
+
+Distances = $DistanceSafe{_singular=DistanceSafe._singular}{_plural=DistanceSafe._plural} |
+            $DistanceNoSafe{_singular=DistanceNoSafe._singular}{_plural=DistanceNoSafe._plural};
+
+# These are distance measures which are "safe" to use as general abbreviations
+DistanceSafe = mm{_singular='millimeter'}{_plural='millimeters'} |
+               cm{_singular='centimeter'}{_plural='centimeters'} |
+               dm{_singular='decimeter'}{_plural='decimeters'} |
+               km{_singular='kilometer'}{_plural='kilometers'} |
+               yd{_singular='yard'}{_plural='yards'} |
+               mi{_singular='mile'}{_plural='miles'} |
+               ft{_singular='foot'}{_plural='feet'};
+
+#There are measures that are not considered safe as general abbreviations
+DistanceNoSafe = ``{_singular='inch'}{_plural='inches'} |
+                 m{_singular='meter'}{_plural='meters'};
+
+#                 in{_singular='inch'}{_plural='inches'};
+
+DistancesWritten = millimeter{_out='millimeter'} |
+                   millimeters{_out='millimeters'} |
+                   centimeter{_out='centimeter'} |
+                   centimeters{_out='centimeters'} |
+                   decimeter{_out='decimeter'} |
+                   decimeters{_out='decimeters'} |
+                   kilometer{_out='kilometer'} |
+                   kilometers{_out='kilometers'} |
+                   yard{_out='yard'} |
+                   yards{_out='yards'} |
+                   mile{_out='mile'} |
+                   miles{_out='miles'} |
+                   foot{_out='foot'} |
+                   feet{_out='feet'} |
+                   inch{_out='inch'} |
+                   inches{_out='inches'} |
+                   meter{_out='meter'} |
+                   meters{_out='meters'};
+
+Volumes = $VolumesSafe{_singular=VolumesSafe._singular}{_plural=VolumesSafe._plural} |
+            $VolumesNoSafe{_singular=VolumesNoSafe._singular}{_plural=VolumesNoSafe._plural};
+
+VolumesSafe = (fl oz){_singular='fluid_ounce'}{_plural='fluid_ounces'} |
+              qt{_singular='quart'}{_plural='quarts'} |
+              gal{_singular='gallon'}{_plural='gallons'} |
+              ml{_singular='milliliter'}{_plural='milliliters'} |
+              cl{_singular='centiliter'}{_plural='centiliters'} |
+              dl{_singular='deciliter'}{_plural='deciliters'};
+
+VolumesNoSafe = pt{_singular='pint'}{_plural='pints'} |
+                l{_singular='liter'}{_plural='liters'};
+
+VolumesWritten = (fluid ounce){_out='fluid_ounce'} |
+                 (fluid ounces){_out='fluid_ounces'} |
+                  quart{_out='quart'} |
+                  quarts{_out='quarts'} |
+                  gallon{_out='gallon'} |
+                  gallons{_out='gallons'} |
+                  milliliter{_out='milliliter'} |
+                  milliliters{_out='milliliters'} |
+                  centiliter{_out='centiliter'} |
+                  centiliters{_out='centiliters'} |
+                  deciliter{_out='deciliter'} |
+                  deciliters{_out='deciliters'} |
+                  pint{_out='pint'} |
+                  pints{_out='pints'} |
+                  liter{_out='liter'} |
+                  liters{_out='liters'};
+
+Speeds = mph{_singular='mile_per_hour'}{_plural='miles_per_hour'} |
+         (km / h){_singular='kilometer_per_hour'}{_plural='kilometers_per_hour'};
+
+SpeedsWritten = (miles per hour){_out='miles_per_hour'} |
+                (mile per hour){_out='mile_per_hour'} |
+                (kilometer per hour){_out='kilometer_per_hour'} |
+                (kilometers per hour){_out='kilometers_per_hour'};
+
+Weights = $WeightSafe{_singular=WeightSafe._singular}{_plural=WeightSafe._plural} |
+          $WeightNoSafe{_singular=WeightNoSafe._singular}{_plural=WeightNoSafe._plural};
+
+WeightSafe = mg{_singular='milligram'}{_plural='milligrams'} |
+             cg{_singular='centigram'}{_plural='centigrams'} |
+             dg{_singular='decigram'}{_plural='decigrams'} |
+             kg{_singular='kilo'}{_plural='kilos'} |
+             lb{_singular='pound'}{_plural='pounds'} |
+             oz{_singular='ounce'}{_plural='ounces'};
+
+WeightNoSafe = g{_singular='gram'}{_plural='grams'} |
+               st{_singular='stone'}{_plural='stones'} |
+               t{_singular='ton'}{_plural='tons'};
+
+WeightsWritten = milligram{_out='milligram'} |
+                 milligrams{_out='milligrams'} |
+                 centigram{_out='centigram'} |
+                 centigrams{_out='centigrams'} |
+                 decigram{_out='decigram'} |
+                 decigrams{_out='decigrams'} |
+                 kilo{_out='kilo'} |
+                 kilos{_out='kilos'} |
+                 pound{_out='pound'} |
+                 pounds{_out='pounds'} |
+                 ounce{_out='ounce'} |
+                 ounces{_out='ounces'} |
+                 gram{_out='gram'} |
+                 grams{_out='grams'} |
+                 stone{_out='stone'} |
+                 stones{_out='stones'} |
+                 ton{_out='ton'} |
+                 tons{_out='tons'};
+
+####### Addresses ########
+# This aims to cover US style address patterns only.
+Address = $StateZip{_out=StateZip._out} |
+          $HouseStreet{_out=HouseStreet._out} |
+          $StreetNWES{_out=StreetNWES._out} |
+          $StreetStAveBlvd{_out=StreetStAveBlvd._out} |
+          $StDr{_out=StDr._out};
+
+# E.g. CA, 23456
+StateZip = $StatesUnsafeWithMaine{_out=StatesUnsafeWithMaine._out} ?,|- [$Zip]{_out+='_'}{_out+=Zip._out};
+
+# E.g. 1234, Apt. #3, 12th
+# 23, Ste. 5, 34th
+HouseStreet = [$HouseNumber]{_out=HouseNumber._out}{_out+='_\[spau\]'} ?,
+              ?$ApartmentNo{_out+='_'}{_out+=ApartmentNo._out}{_out+='_\[spau\]'} ?,
+              (
+                $StreetNumber{_out+='_'}{_out+=StreetNumber._out} |
+                $StreetStAveBlvd{_out+='_'}{_out+=StreetStAveBlvd._out} |
+                $WordStAveBlvd{_out+='_'}{_out+=WordStAveBlvd._out}~1 |
+                $StreetNWES{_out+='_'}{_out+=StreetNWES._out} |
+                $WordNWES{_out+='_'}{_out+=WordNWES._out}
+              )
+              ?(?, $ApartmentNo{_out+='_\[spau\]_'}{_out+=ApartmentNo._out}{_out+='_\[spau\]'} ?,)
+              ?$Floor{_out+='_'}{_out+=Floor._out};
+
+ApartmentNo = (
+                (
+                  (apt|apartment){_out='_apartment_'} |
+                  (ste|suite){_out='_suite_'}
+                )
+                ?.
+              )
+              ?( \# | (no ?.) )
+              [$HouseNumber]{_out+='_'}{_out+=HouseNumber._out};
+
+Floor = $StreetNumber{_out=StreetNumber._out} (fl|floor){_out+='_floor_\[spau\]'} ?,;
+
+# A simple safe way to detect saint and doctor over street and drive
+StDr = (st{_out='saint'}|dr{_out='doctor'}) ?. $Word{_out+='_'}{_out+=Word._out} $StAveBlvd{_out+='_'}{_out+=StAveBlvd._out};
+
+StreetNWES = $StreetNumber{_out=StreetNumber._out} $WordNWES{_out+='_'}{_out+=WordNWES._out};
+
+StreetStAveBlvd = $StreetNumber{_out=StreetNumber._out}
+                  ?(
+                    $Word{_out+='_'}{_out+=Word._out}~0.1 |
+                    $LetterAbbreviations{_out+=LetterAbbreviations._out}
+                  )
+                  $StAveBlvd{_out+='_'}{_out+=StAveBlvd._out};
+
+WordStAveBlvd = (
+                  $Word{_out+='_'}{_out+=Word._out}~0.1 |
+                  $LetterAbbreviations{_out+='_'}{_out+=LetterAbbreviations._out}
+                )
+                $StAveBlvd{_out+='_'}{_out+=StAveBlvd._out};
+
+WordNWES = ($Word{_out=Word._out} ?$StAveBlvd{_out+='_'}{_out+=StAveBlvd._out} $NWES{_out+='_'}{_out+=NWES._out}) |
+            ($NWES{_out=NWES._out} ?$Word{_out+='_'}{_out+=Word._out} $StAveBlvd{_out+='_'}{_out+=StAveBlvd._out});
+
+# These are taken primarily from http://pe.usps.gov/text/pub28/28apc_002.htm
+# For brevity not all are included
+StAveBlvd = (
+              (alley|aly){_out='alley'} |
+              (annex|anex|anx){_out='annex'} |
+              (arcade|arc){_out='arcade'} |
+              (ave|avenue|avn|avenu){_out='avenue'} |
+              (bayou|bayoo|byo){_out='bayou'} |
+              (beach|bch){_out='beach'} |
+              (bend|bnd){_out='bend'} |
+              (bluff|bluf|blf){_out='bluff'} |
+              (bluffs|blfs){_out='bluffs'} |
+              (bottom|btm|bot){_out='bottom'} |
+              (blvd|boulevard|boulv){_out='boulevard'} |
+              (branch|br|brnch){_out='branch'} |
+              (bridge|brdge|brg){_out='bridge'} |
+              (brook|brk){_out='brook'} |
+              (brooks|brks){_out='brooks'} |
+              (burg|bg){_out='burg'} |
+              (burgs|bgs){_out='burgs'} |
+              (bypass|byp|byps){_out='bypass'} |
+              (camp|cp|cmp){_out='cp'} |
+              (canyon|canyn|cnyn|cyn){_out='canyon'} |
+              (cape|cpe){_out='cape'} |
+              (causeway|causwa|cswy){_out='causeway'} |
+              (center|centre|cent|ctr|cntr|cen){_out='center'} |
+              (centers|centres|ctrs){_out='centers'} |
+              (circle|cir|crcl|circ){_out='circle'} |
+              (cliff|clf){_out='cliff'} |
+              (cliffs|clfs){_out='cliffs'} |
+              (club|clb){_out='club'} |
+              (common|cmn|comm){_out='common'} |
+              (commons|cmns|comms){_out='commons'} |
+              (corner|cor){_out='corner'} |
+              (corners|cors){_out='corners'} |
+              (course|crse){_out='course'} |
+              (court|ct){_out='court'} |
+              (courts|cts){_out='courts'} |
+              (cove|cv){_out='cove'} |
+              (coves|cvs){_out='coves'} |
+              (creek|crk){_out='creek'} |
+              (crescent|cres|crsent|crsnt){_out='crescent'} |
+              (crest|crst){_out='crest'} |
+              (crossing|crssng|xing){_out='crossing'} |
+              (crossroad|xrd){_out='crossroad'} |
+              (crossroads|xrds){_out='crossroads'} |
+              (curve|curv){_out='curve'} |
+              (dale|dl){_out='dale'} |
+              (dam|dm){_out='dam'} |
+              (divide|div|dv|dvd){_out='divide'} |
+              (drive|dr|driv|drv){_out='drive'} |
+              (drives|drs){_out='drives'} |
+              (estate|est){_out='estate'} |
+              (estates|ests){_out='estates'} |
+              (expressway|exp|expy|expr|express|expw|expr){_out='expressway'} |
+              (extension|ext|extn|exnsn){_out='extension'} |
+              (extensions|exts){_out='extensions'} |
+              (fall){_out='fall'} |
+              (falls|fls){_out='falls'} |
+              (ferry|fry){_out='ferry'} |
+              (field|fld){_out='field'} |
+              (fields|flds){_out='fields'} |
+              (flat|flt){_out='flat'} |
+              (flats|flts){_out='flats'} |
+              (ford|frd){_out='ford'} |
+              (fords|frds){_out='fords'} |
+              (forest|frst){_out='forest'} |
+              (forge|frg){_out='forge'} |
+              (forges|frgs){_out='forges'} |
+              (fork|frk){_out='fork'} |
+              (forks|frks){_out='forks'} |
+              (fort|frt|ft){_out='fort'} |
+              (freeway|frwy|fwy|freewy){_out='freeway'} |
+              (garden|gardn|grdn|grden){_out='garden'} |
+              (gardens|gardns|grdns|grdens){_out='gardens'} |
+              (gateway|gtwy|gtway|gatewy){_out='gateway'} |
+              (glen|gln){_out='glen'} |
+              (glens|glns){_out='glens'} |
+              (green|grn){_out='green'} |
+              (greens|grns){_out='greens'} |
+              (grove|grov|grv){_out='grove'} |
+              (groves|grvs){_out='groves'} |
+              (harbor|harb|harbr|hbr|hbor){_out='harbor'} |
+              (harbors|hbrs){_out='harbors'} |
+              (haven|hvn){_out='haven'} |
+              (heights|ht|hts){_out='heights'} |
+              (highway|highwy|hiway|hiwy|hway|hwy){_out='highway'} |
+              (hill|hl){_out='hill'} |
+              (hills|hls){_out='hills'} |
+              (hollow|hllw|holw){_out='hollow'} |
+              (hollows|hllws|holws){_out='hollows'} |
+              (inlet|inlt){_out='inlet'} |
+              (island|islnd){_out='island'} | #is has been removed for safety
+              (islands|iss|islnds){_out='islands'} |
+              (isle){_out='isle'} |
+              (isles){_out='isles'} |
+              (junction|jct|jction|jctn|junctn){_out='junction'} |
+              (junctions|jcts|jctions|jctns|junctns){_out='junctions'} |
+              (key|ky){_out='key'} |
+              (keys|kys){_out='keys'} |
+              (knoll|knl|knol){_out='knoll'} |
+              (knolls|knls|knols){_out='knolls'} |
+              (lake|lk){_out='lake'} |
+              (lakes|lks){_out='lakes'} |
+              (land){_out='land'} |
+              (landing|lndg|lndng){_out='landing'} |
+              (lane|ln){_out='lane'} |
+              (light|lgt){_out='light'} |
+              (lights|lgts){_out='lights'} |
+              (loaf|lf){_out='loaf'} |
+              (lock|lck){_out='lock'} |
+              (locks|lcks){_out='locks'} |
+              (lodge|ldg|ldge|lodg){_out='lodge'} |
+              (loop){_out='loop'} |
+              (mall){_out='mall'} |
+              (manor|mnr){_out='manor'} |
+              (manors|mnrs){_out='manors'} |
+              (meadow|mdw){_out='meadow'} |
+              (meadows|mdws){_out='meadows'} |
+              (mews){_out='mews'} |
+              (mill|ml){_out='mill'} |
+              (mills|mls){_out='mills'} |
+              (mission|msn|mssn|missn){_out='mission'} |
+              (motorway|mtwy){_out='motorway'} |
+              (mount|mt|mnt){_out='mount'} |
+              (mountain|mntain|mntn|mtin|mtn){_out='mountain'} |
+              (mountains|mntns|mtns){_out='mountains'} |
+              (neck|nck){_out='neck'} |
+              (orchard|orch|orchrd){_out='orchard'} |
+              (oval|ovl){_out='oval'} |
+              (overpass|opas){_out='overpass'} |
+              (park|prk){_out='park'} |
+              (parks){_out='parks'} |
+              (parkway|prkwy|pkway|pky){_out='parkway'} |
+              (parkways|pkways){_out='parkways'} |
+              (pass){_out='pass'} |
+              (passage|psge){_out='passage'} |
+              (path){_out='path'} |
+              (pike){_out='pike'} |
+              (pine|pne){_out='pine'} |
+              (pines|pnes){_out='pines'} |
+              (place|pl){_out='place'} |
+              (plain|pln){_out='plain'} |
+              (plains|plns){_out='plains'} |
+              (plaza|plz|plza){_out='plaza'} |
+              (point|pt){_out='point'} |
+              (points|pts){_out='points'} |
+              (port|prt){_out='port'} |
+              (ports|prts){_out='ports'} |
+              (prairie|pr|prr){_out='prairie'} |
+              (radial|rad|radl){_out='radial'} |
+              (ramp){_out='ramp'} |
+              (ranch|rnch){_out='ranch'} |
+              (ranches|rnchs){_out='ranches'} |
+              (rapid|rpd){_out='rapid'} |
+              (rapids|rpds){_out='rapids'} |
+              (rest|rst){_out='rest'} |
+              (ridge|rdg|rdge){_out='ridge'} |
+              (ridges|rdgs|rdges){_out='ridges'} |
+              (river|riv|rvr|rivr){_out='river'} |
+              (road|rd){_out='road'} |
+              (roads|rds){_out='roads'} |
+              (route|rte){_out='route'} |
+              (row){_out='row'} |
+              (rue){_out='rue'} |
+              (run){_out='run'} |
+              (shoal|shl){_out='shoal'} |
+              (shoals|shls){_out='shoals'} |
+              (shore|shr|shoar){_out='shore'} |
+              (shores|shrs|shoars){_out='shores'} |
+              (skyway|skwy){_out='skyway'} |
+              (spring|spg|spng|sprng){_out='spring'} |
+              (springs|spgs|spngs|sprngs){_out='springs'} |
+              (spur){_out='spur'} |
+              (spurs){_out='spurs'} |
+              (square|sq|sqr|sqre|squ){_out='square'} |
+              (squares|sqs|sqrs|sqres|squs){_out='squares'} |
+              (station|sta|statn|stn){_out='station'} |
+              (stravenue|strav|strvn|stra){_out='stravenue'} |
+              (stream|strm){_out='stream'} |
+              (st|street|strt|str){_out='street'} |
+              (sts|streets|strts|strs){_out='streets'} |
+              (summit|smt){_out='summit'} |
+              (terrace|ter|terr){_out='terrace'} |
+              (throughway|trwy){_out='throughway'} |
+              (trace|trce){_out='trace'} |
+              (track|trak|trk){_out='track'} |
+              (tracks|traks|trks){_out='tracks'} |
+              (trafficway|trfy){_out='trafficway'} |
+              (trail|trl){_out='trail'} |
+              (trails|trls){_out='trails'} |
+              (trailer|trlr){_out='trailer'} |
+              (tunnel|tunl|tunel){_out='tunnel'} |
+              (turnpike|trnpk|turnpk){_out='turnpike'} |
+              (underpass|upas){_out='underpass'} |
+              (union|un){_out='union'} |
+              (unions|uns){_out='unions'} |
+              (valley|vally|vlly|vly){_out='valley'} |
+              (valleys|vallys|vllys|vlys){_out='valleys'} |
+              (viaduct|vdct|viadct|via){_out='viaduct'} |
+              (view|vw){_out='view'} |
+              (views|vws){_out='views'} |
+              (village|vill|vlg|villg){_out='village'} |
+              (villages|vills|vlgs|villgs){_out='villages'} |
+              (ville|vl){_out='ville'} |
+              (vista|vis|vist|vst|vsta){_out='vista'} |
+              (walk){_out='walk'} |
+              (walks){_out='walks'} |
+              (wall){_out='wall'} |
+              (way|wy){_out='way'} |
+              (ways|wys){_out='ways'} |
+              (well|wl){_out='well'} |
+              (wells|wls){_out='wells'}
+            )
+            ?.;
+
+NWES = n{_out='north'} |
+       nw{_out='north_west'} |
+       ne{_out='north_east'} |
+       s{_out='south'} |
+       sw{_out='south_west'} |
+       se{_out='south_east'} |
+       e{_out='east'} |
+       w{_out='west'};
+
+# We go to max 999 (e.g. 999th Ave)
+StreetNumber = $ToHundredDigitCardinal{_out=ToHundredDigitCardinal._out};
+
+# We go to max 99999 (e.g. 99999, 999th Ave)
+HouseNumber [$SingleDigitNoZero{_out=SingleDigitNoZero._ordinal}
+            ?$SingleDigit{_out+='_'}{_out+=SingleDigit._ordinal}
+            ?$SingleDigit{_out+='_'}{_out+=SingleDigit._ordinal}
+            ?$SingleDigit{_out+='_'}{_out+=SingleDigit._ordinal}
+            ?$SingleDigit{_out+='_'}{_out+=SingleDigit._ordinal}];
+
+Zip [$SingleDigit{_out=SingleDigit._ordinal}
+    $SingleDigit{_out+='_'}{_out+=SingleDigit._ordinal}
+    $SingleDigit{_out+='_'}{_out+=SingleDigit._ordinal}
+    $SingleDigit{_out+='_'}{_out+=SingleDigit._ordinal}
+    $SingleDigit{_out+='_'}{_out+=SingleDigit._ordinal}];
+
+# Unsafe states for e.g. address patterns
+StatesUnsafe = (al | ala){_out='alabama'} |
+         (ak | alas){_out='alaska'} |
+         (az | ariz){_out='arizona'} |
+         (ar | ark){_out='arkansas'} |
+         (ca | cf | calif | cal){_out='california'} |
+         (co | cl | colo | col){_out='colorado'} |
+         (ct | conn){_out='connecticut'} |
+         (de | dl | del){_out='delaware'} |
+         ((dc) | (d . c .)){_out='district_of_columbia'} |
+         (((wash .) | washington) d . c .){_out='washington_dletter_cletter'} |
+         (fl | fla | flor){_out='florida'} |
+         (ga){_out='georgia'} |
+         ((hi | ha) | (h . i .)){_out='hawaii'} |
+         (id | ida){_out='idaho'} |
+         (il | ill | ills){_out='illinois'} |
+         (in | ind){_out='indiana'} |
+         (ia | ioa){_out='ioawa'} |
+         (ks | ka | kans | kan){_out='kansas'} |
+         (ky | ken | kent){_out='kentucky'} |
+         (la){_out='louisiana'} |
+         (md){_out='maryland'} |
+         (ma | mass){_out='massachusetts'} |
+         (mi | mich | mc){_out='michigan'} |
+         (mn | minn){_out='minnesota'} |
+         (ms | miss){_out='mississippi'} |
+         (mo){_out='missouri'} |
+         (mt | mont){_out='montana'} |
+         (ne | nb | neb | nebr){_out='nebraska'} |
+         (nv | nev){_out='nevada'} |
+         (nh | (n . h .)){_out='new_hampshire'} |
+         (nj | ((n . j .) | (n . jersey))){_out='new_jersey'} |
+         (nm | ((n . mex .) | (n . m .) | (new m .))){_out='new_mexico'} |
+         (ny | ((n . york) | (n . y .) )){_out='new_york'} |
+         (nc | ((n . c .) | (n . car .))){_out='north_carolina'} |
+         (nd | ((n . d .) | (n . dak .) | (nodak))){_out='north_dakota'} |
+         (oh | o){_out='ohio'} |
+         (ok | okla){_out='oklahoma'} |
+         (or | ore | oreg){_out='oregon'} |
+         (pa | penn | penna ){_out='pennsylvania'} |
+         (ri | ((r . i .) | (p . p .) | (r . isl .))){_out='rhode_island'} |
+         (sc | ((s . c .) | (s . car .))){_out='south_carolina'} |
+         (sd | ((s . d .) | sodak | (s . dak .))){_out='south_dakota'} |
+         (tn | tenn){_out='tennessee'} |
+         (tx | tex){_out='texas'} |
+         (ut){_out='utah'} |
+         (vt){_out='vermont'} |
+         (va | (virg .)){_out='virginia'} |
+         (wa | (wash .) | wn){_out='washington'} |
+         (wv | ((w . va .) | (w . v .) | (w . virg .))){_out='west_virginia'} |
+         (wi | ws | wis | wisc){_out='wisconsin'} |
+         (wy | wyo){_out='wyoming'};
+
+StatesUnsafeWithMaine = $StatesUnsafe{_out=StatesUnsafe._out} | 
+                        (me){_out='maine'};
+
+# Safe states for abbreviations
+StatesSafe = ((, al ,|.) | (ala .)){_out='alabama'} |
+         ((, ak .|,) | (alas .)){_out='alaska'} |
+         ((, az ,|.) | (ariz .)){_out='arizona'} |
+         ((, ar ,|.) | (ark .)){_out='arkansas'} |
+         ((, ca | cf ,|.) | ((calif | cal) .)){_out='california'} |
+         ((, co | cl ,|.) | ((colo | col) .)){_out='colorado'} |
+         ((, ct ,|.) | (conn .)){_out='connecticut'} |
+         ((, de | dl ,|.) | (del .)){_out='delaware'} |
+         ((, dc ,|.) | (d . c .)){_out='district_of_columbia'} |
+         (((wash .) | washington) d . c .){_out='washington_dletter_cletter'} |
+         ((, fl ,|.) | (fla | flor .)){_out='florida'} |
+         (, ga ,|.){_out='georgia'} |
+         ((, hi | ha .) | (h . i .)){_out='hawaii'} |
+         ((, id .) | (ida .)){_out='idaho'} |
+         ((, il .) | ((ill | ills) .)){_out='illinois'} |
+         ((, in .) | (ind .)){_out='indiana'} |
+         ((, ia ,|.) | (ioa .)){_out='ioawa'} |
+         ((, ks | ka ,|.) | (kans | kan .)){_out='kansas'} |
+         ((, ky ,|.) | (kent .)){_out='kentucky'} |
+         (, la ,|.){_out='louisiana'} |
+         (, me .){_out='maine'} |
+         (, md ,|.){_out='maryland'} |
+         ((, ma ,|.) | (mass .)){_out='massachusetts'} |
+         ((, mi | mc ,|.) | (mich .)){_out='michigan'} |
+         ((, mn ,|.) | (minn .)){_out='minnesota'} |
+         (, ms | (miss .)){_out='mississippi'} |
+         (, mo ,|.){_out='missouri'} |
+         ((, mt ,|.) | (mont .)){_out='montana'} |
+         ((, ne | nb ,|.) | (neb | nebr .)){_out='nebraska'} |
+         ((, nv ,|.) | (nev .)){_out='nevada'} |
+         ((, nh ,|.) | (n . h .)){_out='new_hampshire'} |
+         ((, nj ,|.) | ((n . j .) | (n . jersey))){_out='new_jersey'} |
+         ((, nm ,|.) | ((n . mex .) | (n . m .) | (new m .))){_out='new_mexico'} |
+         ((, ny ,|.) | ((n . york) | (n . y .) )){_out='new_york'} |
+         ((, nc ,|.) | ((n . c .) | (n . car .))){_out='north_carolina'} |
+         ((, nd .|,) | ((n . d .) | (n . dak .) | (nodak))){_out='north_dakota'} |
+         (, oh | o .|,){_out='ohio'} |
+         (okla ,|.){_out='oklahoma'} |
+         ((, or .|,) | (ore | oreg .)){_out='oregon'} |
+         ((, pa .|,) | (penn | penna .)){_out='pennsylvania'} |
+         ((, ri .|,) | ((r . i .) | (p . p .) | (r . isl .))){_out='rhode_island'} |
+         ((, sc .|,) | ((s . c .) | (s . car .))){_out='south_carolina'} |
+         ((, sd .|,) | ((s . d .) | (sodak) | (s . dak .))){_out='south_dakota'} |
+         ((, tn .|,) | (tenn .)){_out='tennessee'} |
+         ((, tx .|,) | (tex .)){_out='texas'} |
+         (, ut .|,){_out='utah'} |
+         (, vt .|,){_out='vermont'} |
+         ((, va .|,) | (virg .)){_out='virginia'} |
+         ((, wa .|,) | ((wash .) | (wn .))){_out='washington'} |
+         ((, wv .|,) | ((w . va .) | (w . v .) | (w . virg .))){_out='west_virginia'} |
+         (((, wi | ws) .|,) | ((wis | wisc) .)){_out='wisconsin'} |
+         ((, wy .|,) | (wyo .)){_out='wyoming'};
+
+
+####### Phones Numbers #########
+PhoneNo = ?( (\+{_out='plus_'} [$ToTenDigit{_out+=ToTenDigit._ordinal}{_out+='_'}]) |
+          ([00{_out+='zero_zero_'} $ToTenDigit{_out+=ToTenDigit._ordinal}{_out+='_'}])
+           )
+          ?(\( | -)
+          [ $SingleDigitNoZero{_out+=SingleDigitNoZero._ordinal}{_out+='_'}
+            $SingleDigit{_out+=SingleDigit._ordinal}{_out+='_'}
+            $SingleDigit{_out+=SingleDigit._ordinal}{_out+='_'} ]
+          ?(\) | -)
+          [ $SingleDigit{_out+=SingleDigit._ordinal}{_out+='_'}
+            $SingleDigit{_out+=SingleDigit._ordinal}{_out+='_'}
+            $SingleDigit{_out+=SingleDigit._ordinal}{_out+='_'} ]
+          ?-
+          [ $SingleDigit{_out+=SingleDigit._ordinal}{_out+='_'}
+            $SingleDigit{_out+=SingleDigit._ordinal}{_out+='_'}
+            $SingleDigit{_out+=SingleDigit._ordinal}{_out+='_'}
+            $SingleDigit{_out+=SingleDigit._ordinal} ];
+
+####### WWW ######
+Website = ?(www .){_out='wletter_wletter_wletter_dot_'} $Word{_out+=Word._out} .{_out+='_dot_'} $DomainName{_out+=DomainName._out};
+
+DomainName = com{_out='com'} |
+             (co . uk){_out='kletter_oletter_dot_uletter_kletter'} |
+             dk{_out='dletter_kletter'} |
+             (gov{_out='gov'} ?(. uk){_out='_dot_uletter_kletter'}) |
+             org{_out='org'} |
+             net{_out='net'} |
+             de{_out='dletter_eletter'} |
+             ca{_out='cletter_aletter'};
+
+######## Maths #############
+
+Maths = $Expression{_out=Expression._out}
+        *$Expression{_out+='_'}{_out+=Expression._out}
+        ?-{_out+='_minus'}
+        $DigitMaybeWithDecimal{_out+='_'}{_out+=DigitMaybeWithDecimal._out}
+        ?(is{_out+='_is_'} $DigitMaybeWithDecimal{_out+=DigitMaybeWithDecimal._out});
+
+# Digit first
+Expression = $DigitMaybeWithDecimal{_out=DigitMaybeWithDecimal._out} |
+              (
+               -{_out='minus_'}
+               $DigitMaybeWithDecimal{_out+=DigitMaybeWithDecimal._out}
+              )
+             $MathsChar{_out+='_'}{_out+=MathsChar._out};
+
+MathsChar = (/|÷){_out='divided_by'} |
+            (\*|×|x){_out='times'} |
+            \+{_out='plus'} |
+            %{_out='percent'} |
+            \={_out='equals'} |
+            \^{_out='to_the_power_of'} |
+            -{_out='minus'};
+
+
+####### Abbreviations ######
+Abbreviation = $Degrees{_out=Degrees._out} |
+               $StatesSafe{_out=StatesSafe._out} |
+               $TwoLA{_out=TwoLA._out} |
+               $TLA{_out=TLA._out} |
+               $FLA{_out=FLA._out} |
+               $RomanNumeralSafe{_out=RomanNumeralSafe._out} |
+               (rocky{_out='rocky_'} $RomanNumeralUnsafe{_out+=RomanNumeralUnsafe._out}) |
+               (in $StatesUnsafe{_out='in_'}{_out+=StatesUnsafe._out}) |
+               (no . $handle:Digit){_out='number_'}{_out+=Digit._ordinal} |
+               (approx ?.){_out='approximately'} |
+               (world war i){_out='world_war_one'} |
+               (world war ii){_out='world_war_two'} |
+               $MonthAbbrev{_out=MonthAbbrev._out} |
+               ([$CharacterLetter] .){_out=CharacterLetter._out} |
+               (n .){_out='north'}~0.1 |
+               (s .){_out='south'}~0.1 |
+               (e .){_out='east'}~0.1 |
+               (w .){_out='west'}~0.1 |
+               (n . w .){_out='north_west'} |
+               (s . w .){_out='south_west'} |
+               (s . e .){_out='south_east'} |
+               (n . e .){_out='north_east'} |
+               (s . q .){_out='square'} |
+               (2 NE 1){_out='two_nletter_eletter_one'} |
+               (un){_out='uletter_nletter'} |
+               (p .){_out='page'} |
+               ((capt | cpt) .){_out='captain'} |
+               $DistanceSafe{_out=DistanceSafe._plural} |
+               $WeightSafe{_out=WeightSafe._plural} |
+               $VolumesSafe{_out=VolumesSafe._plural} |
+               $US{_out=US._out} |
+               $LetterAbbreviations{_out=LetterAbbreviations._out}~0.1 |
+               (s & p){_out='sletter_nletter_pletter'} |
+               (cd - rom){_out='cletter_dletter_rom'} |
+               (e - mail){_out='email'} |
+               (t - shirt){_out='tshirt'} |
+               (to - do){_out='todo'} |
+               (lo - fi){_out='lofi'} |
+               (hi - fi){_out='hifi'} |
+               (wi - fi){_out='wifi'} |
+               (sci - fi){_out='scifi'} |
+               (uh ?,){_out='uh_\[spau\]'} |
+               (um ?,){_out='um_\[spau\]'} |
+               (re - $Word){_out='re'}{_out+=Word._out} |
+               (co - $Word){_out='co'}{_out+=Word._out} |
+               (anti - $Word){_out='anti'}{_out+=Word._out} |
+               (un - $Word{_out='un'}{_out+=Word._out}) |
+               ($DigitMaybeWithDecimal{_out=DigitMaybeWithDecimal._out} mya){_out+='_million_years_ago'} |
+               (blade runner 2049 ``){_out='blade_runner_twenty_forty_nine'} |
+               (st . helena){_out='saint_helena'};
+
+#Three letter acronyms to be spoken letter-by-letter
+#Note that these must contain at least one vowel - pure consonant TLA's are already covered by LetterAbbreviations
+TLA = (aaa){_out='aletter_aletter_aletter'} |
+     (abc){_out='aletter_bletter_cletter'} |
+     (abb){_out='aletter_bletter_bletter'} |
+     (adf){_out='aletter_dletter_fletter'} |
+     (adt){_out='aletter_dletter_tletter'} |
+     (atm){_out='aletter_tletter_mletter'} |
+     (adj .){_out='adjective'} |
+     (adv .){_out='adverb'} |
+     (aol){_out='aletter_oletter_lletter'} |
+     (atm){_out='aletter_tletter_mletter'} |
+     (bba){_out='bletter_bletter_aletter'} |
+     (bce){_out='bletter_cletter_eletter'} |
+     (bnp){_out='bletter_nletter_pletter'} |
+     (btw){_out='by_the_way'} |
+     (ceo){_out='cletter_eletter_oletter'} |
+     (ces){_out='cletter_eletter_sletter'} |
+     (cto){_out='cletter_tletter_oletter'} |
+     (cia){_out='cletter_iletter_aletter'} |
+     (cio){_out='cletter_iletter_oletter'} |
+     (dui){_out='dletter_uletter_iletter'} |
+     (diy){_out='dletter_iletter_yletter'} |
+     (dna){_out='dletter_nletter_aletter'} |
+     (dna\'s){_out='dletter_nletter_aletter_\'s'} |
+     (dob){_out='dletter_oletter_bletter'} |
+     (ebm){_out='eletter_bletter_mletter'} |
+     (edt){_out='eletter_dletter_tletter'} |
+     (eta){_out='eletter_tletter_aletter'} |
+     (etc){_out='etcetera'} |
+     (esl){_out='eletter_sletter_lletter'} |
+     (efl){_out='eletter_fletter_lletter'} |
+     (fbi){_out='fletter_bletter_iletter'} |
+     (fyi){_out='fletter_yletter_iletter'} |
+     (fig .){_out='figure'} |
+     (gao){_out='gletter_aletter_oletter'} |
+     (gmt){_out='gletter_mletter_tletter'} |
+     (gop){_out='gletter_oletter_pletter'} |
+     (gov .){_out='governor'} |
+     (gnp){_out='gletter_nletter_pletter'} |
+     (gmo){_out='gletter_mletter_oletter'} |
+     (hiv){_out='hletter_iletter_vletter'} |
+     (ibm){_out='iletter_bletter_mletter'} |
+     (inc ?.){_out='incorporated'} |
+     (irs){_out='iletter_rletter_sletter'} |
+     (ira){_out='iletter_rletter_aletter'} |
+     (ltd .){_out='limited'} |
+     (mba){_out='mletter_bletter_aletter'} |
+     (mec){_out='mletter_eletter_cletter'} |
+     (mit){_out='mletter_iletter_tletter'} |
+     (myf){_out='mletter_yletter_fletter'} |
+     (mrs ?.){_out='misses'} |
+     (nba){_out='nletter_bletter_aletter'} |
+     (ocd){_out='oletter_cletter_dletter'} |
+     (rip){_out='rest_in_peace'} |
+     (sos){_out='sletter_oletter_sletter'} |
+     (suv){_out='sletter_uletter_vletter'} |
+     (sgt .){_out='sergeant'} |
+     (tba){_out='tletter_bletter_aletter'} |
+     (ufc){_out='uletter_fletter_cletter'} |
+     (url){_out='uletter_rletter_lletter'} |
+     (uss){_out='uletter_sletter_sletter'} |
+     (vol .){_out='volume'} |
+     (ww 1){_out='world_war_one'} |
+     (ww 2){_out='world_war_two'};
+
+#Two letter acronyms to be spoken letter-by-letter
+#Note that these must contain at least one vowel - pure consonant TwoLA's are already covered by LetterAbbreviations
+TwoLA = (3 d){_out='three_dletter'} |
+       (2 d){_out='two_dletter'} |
+       (ad){_out='aletter_dletter'} |
+       (ap){_out='aletter_pletter'} |
+       (ch .){_out='chapter'} |
+       (ce){_out='cletter_eletter'} |
+       (d ?. j .){_out='dletter_jletter'} |
+       (eu){_out='eletter_uletter'}~0.1 |
+       (ed .){_out='edition'} |
+       (fa){_out='fletter_aletter'} |
+       (id | (i . d .)){_out='iletter_dletter'} |
+       (iq){_out='iletter_qletter'} |
+       (jr .){_out='junior'} |
+       (l . a .){_out='los_angeles'} |
+       (mr ?.){_out='mister'} |
+       (mt .){_out='mount'} |
+       (ms ?.){_out='miss'}~0.1 |
+       (mc | (m . c .)){_out='mletter_cletter'} |
+       ((n . b .) | (nb \!)){_out='nletter_bletter'} |
+       (ok){_out='oletter_kletter'} |
+       (pt .){_out='part'} |
+       (uk){_out='uletter_kletter'} |
+       (vw){_out='volkswagen'};
+
+# Roman numerals
+# This only covers some lower ones and some super bowl ones
+RomanNumeralUnsafe = i{_out='one'} |
+                     v{_out='five'} |
+                     x{_out='ten'} |
+                     l{_out='fifty'} |
+                     $RomanNumeralSafe{_out=RomanNumeralSafe._out};
+
+RomanNumeralSafe = ii{_out='two'} |
+                    iii{_out='three'} |
+                    iv{_out='four'} |
+                    vi{_out='six'} |
+                    vii{_out='seven'} |
+                    viii{_out='eight'} |
+                    ix{_out='nine'} |
+                    xi{_out='eleven'} |
+                    xii{_out='twelve'} |
+                    xiii{_out='thirteen'} |
+                    xiv{_out='fourteen'} |
+                    xv{_out='fifteen'} |
+                    xvi{_out='sixteen'} |
+                    xvii{_out='seventeen'} |
+                    xviii{_out='eighteen'} |
+                    xix{_out='nineteen'} |
+                    xx{_out='twenty'} |
+                    li{_out='fifty_one'} |
+                    lii{_out='fifty_two'} |
+                    liii{_out='fifty_three'};
+
+
+#Four letter acronyms to be spoken letter-by-letter
+#Note that these must contain at least one vowel - pure consonant FLA's are already covered by LetterAbbreviations
+FLA = (byob){_out='bletter_yletter_oletter_bletter'} |
+     (espn){_out='eletter_sletter_pletter_nletter'} |
+     (rsvp){_out='rletter_sletter_vletter_pletter'} |
+     (subj .){_out='subject'} |
+     (usaf){_out='uletter_sletter_air_force'} |
+     (uscg){_out='uletter_sletter_coastal_guard'} |
+     (usmc){_out='uletter_sletter_marine_corps'} |
+     (ussr){_out='uletter_sletter_sletter_rletter'} |
+     (ywca){_out='yletter_wletter_cletter_aletter'} |
+     (ymca){_out='yletter_mletter_cletter_aletter'} |
+     (ncaa){_out='nletter_cletter_aletter_aletter'} |
+     (wnba){_out='wletter_nletter_bletter_aletter'};
+
+LetterAbbreviations = $DotAbbreviation{_out=DotAbbreviation._out} |
+                      [$ConsonantAbbreviation{_out=ConsonantAbbreviation._out}] |
+                      [$VowelAbbreviation{_out=VowelAbbreviation._out}];
+
+#Two or more letters with dots between (e.g. i.t.l. or m.n.)
+DotAbbreviation = ([$CharacterLetter{_out=CharacterLetter._out}] .)
+                  +([$CharacterLetter{_out+='_'}{_out+=CharacterLetter._out}] .);
+
+#A word consisting of two or more consonants (e.g. BT LTS MNKT)
+ConsonantAbbreviation [$ConsonantLetter{_out=ConsonantLetter._out} 
+                      +$ConsonantLetter{_out+='_'}{_out+=ConsonantLetter._out}];
+
+#A word consisting of four or more vowels (e.g. aaaa uuuu ouie)
+VowelAbbreviation [$VowelLetter{_out=VowelLetter._out}
+                  $VowelLetter{_out+='_'}{_out+=VowelLetter._out}
+                  $VowelLetter{_out+='_'}{_out+=VowelLetter._out}
+                  +$VowelLetter{_out+='_'}{_out+=VowelLetter._out}];
+
+CharacterLetter [$VowelLetter{_out=VowelLetter._out} | $ConsonantLetter{_out=ConsonantLetter._out}];
+
+ConsonantLetter [b{_out='bletter'} |
+            c{_out='cletter'} |
+            d{_out='dletter'} |
+            f{_out='fletter'} |
+            g{_out='gletter'} |
+            h{_out='hletter'} |
+            j{_out='jletter'} | 
+            k{_out='kletter'} | 
+            l{_out='lletter'} | 
+            m{_out='mletter'} | 
+            n{_out='nletter'} | 
+            p{_out='pletter'} | 
+            q{_out='qletter'} | 
+            r{_out='rletter'} | 
+            s{_out='sletter'} | 
+            t{_out='tletter'} | 
+            v{_out='vletter'} | 
+            w{_out='wletter'} | 
+            x{_out='xletter'} | 
+            z{_out='zletter'}];
+
+#We can argue if y is a vowel or consonant ('yes' vs 'symbol')
+#It is safer and more conservative to consider it a vowel for these purposes
+VowelLetter [a{_out='aletter'} |
+            e{_out='eletter'} |
+            i{_out='iletter'} |
+            o{_out='oletter'} |
+            u{_out='uletter'} |
+            y{_out='yletter'}];
+
+Degrees = $handle:Digit{_out=Digit._ordinal}
+          °{_out+='_degrees_'}
+          $handle:Digit{_out+=Digit._ordinal}
+          ′{_out+='_minutes_'}
+          ?(
+            $handle:Digit{_out+=Digit._ordinal}
+            (" | ″){_out+='_seconds_'}
+           )
+          ?($NWES{_out+=NWES._out});
+
+# A number of override special cases. E.g. we generally want 'oz' to be ounce but not when it's the Wizard of Oz.
+Overrides = (of oz){_out='of_oz'} |
+            (obama ii){_out='obama_the_second'} |
+            (bowl $RomanNumeralUnsafe){_out='bowl_'}{_out+=RomanNumeralUnsafe._out} |
+            (xi jinping){_out='shii_jinping'} |
+            (r 2 ?- d 2){_out='rletter_two_dletter_two'} |
+            (c ?- 3 po){_out='cletter_three_pletter_oletter'} |
+            (j . k . rowling){_out='jletter_kletter_rowling'} |
+            (washington ?, d . c .){_out='washington_dletter_cletter'} |
+            (st{_out='saint_'} ?. (patrick{_out+='patrick'} | patrick\'s{_out+='patrick\'s'} | patricks{_out+='patricks'}) ) |
+            (dr . seuss){_out='doctor_seuss'} |
+            (hm | hmm){_out='hm'} |
+            ((i\'m{_out='i\'m'} | am{_out='am'}) ken .){_out+='_ken_\[lpau\]'} |
+            (spelled{_out='spelled'} +[$CharacterLetter]{_out+='_\[spau\]_'}{_out+=CharacterLetter._out} ?.) |
+            (
+              -{_out='minus_'}
+              (
+                $handle:Digit{_out+=Digit._ordinal} |
+                $DigitWithDecimal{_out+=DigitWithDecimal._out}
+              )
+            ) |
+            (
+              $handle:Digit{_out=Digit._ordinal}
+              –{_out+='_to_'}
+              $handle:Digit{_out+=Digit._ordinal}
+            ) |
+            (9 - 1 - 1){_out='nine_one_one'} |
+            (roche broes){_out='roche_brothers'} |
+            (ups{_out='uletter_pletter_sletter_'} (store{_out+='store'}|van{_out+='van'}|delivery{_out+='delivery'}|car{_out+='car'})) |
+            (3 (,|.) 2 (,|.) 1 .){_out='three_\[spau\]_two_\[spau\]_one_\[lpau\]'} |
+            ([$Year] to present){_out=Year._out}{_out+='_to_present2'};
+
+US = (the us){_out='the_uletter_sletter'} |
+     (us dollar){_out='uletter_sletter_dollar'} |
+     (us jobs){_out='uletter_sletter_jobs'} |
+     (northern us){_out='northern_uletter_sletter'} |
+     (us dollars){_out='uletter_sletter_dollars'} |
+     (us marines){_out='uletter_sletter_marines'} |
+     (us army){_out='uletter_sletter_army'} |
+     (us navy){_out='uletter_sletter_navy'} |
+     (us air force){_out='uletter_sletter_air_force'} |
+     (us{_out='uletter_sletter_'} $USMeasure{_out+=USMeasure._out});
+
+USMeasure = quart{_out='quart'} |
+            quarts{_out='quarts'} |
+            cup{_out='cup'} |
+            cups{_out='cups'} |
+            gallon{_out='gallon'} |
+            gallons{_out='gallons'} |
+            ounce{_out='ounce'} |
+            ounces{_out='ounces'} |
+            fluid{_out='fluid'} |
+            teaspoon{_out='teaspoon'} |
+            teaspoons{_out='teaspoons'} |
+            tablespoon{_out='tablespoon'} |
+            tablespoons{_out='tablespoons'};
+
+######## Special Character Base Rules ##########
+SpecChar = &{_out='and'} |
+          %{_out='percent'} |
+          \+{_out='plus'} |
+          \={_out='equals'} |
+          \>{_out='greater_than'} |
+          \<{_out='less_than'} |
+          ⋅{_out='times'} |
+          \~{_out='infinity'} |
+          \#{_out='hashtag'} |
+          \@{_out='at'} |
+          ((infty|infinity) \^ \~){_out='complex_infinity'} |
+          ($Punc{_out=Punc._out} *$Punc)~1;
+
+Punc = .{_out='\[lpau\]'} | ,{_out='\[spau\]'} |
+       \;{_out='\[lpau\]'} | :{_out='\[lpau\]'} |
+       -{_out=''}~0.1 | \?{_out='\[qpau\]'} |
+       \!{_out='\[lpau\]'} | "{_out=''} |
+       ``{_out=''} | \({_out='\[spau\]'} | \){_out='\[spau\]'} |
+       `{_out=''} | /{_out=''} | \\{_out=''} |
+       \^{_out=''}~0.1 | \|{_out=''} |
+       –{_out=''}~0.1;

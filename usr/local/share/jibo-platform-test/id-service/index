@@ -1,0 +1,4 @@
+describe('Identity Service API Tests', function() {
+   require('./ids-HTTPTest');
+   require('./ids-WSTest');
+});

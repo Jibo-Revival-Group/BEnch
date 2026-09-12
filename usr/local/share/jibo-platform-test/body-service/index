@@ -1,0 +1,4 @@
+describe('Body Service API Tests', function() {
+   require('./bs-HTTPTest');
+   require('./bs-WSTest')
+});

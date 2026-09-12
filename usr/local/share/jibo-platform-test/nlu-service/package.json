@@ -1,0 +1,15 @@
+{
+  "name": "nlu_service_http_test",
+  "version": "1.0.0",
+  "description": "NLU Service HTTP Test",
+  "main": "nlu-HTTPTest",
+  "scripts": {
+    "test": "XUNIT_FILE='/usr/local/lib/jibo-platform-test/nlu-report.xml' mocha index --reporter xunit-file"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.jibo.com:ramon/jibo-nlu-service.git"
+  },
+  "author": "Russell Kirmayer",
+  "license": "ISC"
+}

@@ -1,0 +1,61 @@
+{"list" :
+    [
+        {"type": "POST", "url": "/identity/create", "args":
+            {
+                "name": "platform-test",
+                "kind": "face"
+            }
+        },
+        {"type": "POST", "url": "/identity/remove", "args":
+            {
+                "name": "platform-test",
+                "kind": "face"
+            }
+        },
+        {"type": "POST", "url": "/identity/train", "args":
+            {
+                "name": "platform-test",
+                "kind": "face"
+            },
+            "statusExpect": 400
+            },
+        {"type": "POST", "url": "/identity/forget", "args":
+            {
+                "name": "platform-test",
+                "kind": "face",
+                "index": 0
+            },
+            "statusExpect": 400
+        },
+        {"type": "GET", "url": "/identity/list"},
+        {"type": "GET", "url": "/identity/pending"},
+        {"type": "POST", "url": "/identity/recognize", "args":
+            {
+                "kind": "face"
+            },
+            "statusExpect": 400
+        },
+        {"type": "GET",
+            "url": "/identity/detection?name=foo&kind=face&index=0",
+            "statusExpect": 400
+        },
+        {"type": "GET",
+            "url": "/identity/photo?name=foo&kind=face&index=0",
+            "statusExpect": 400
+        },
+        {"type": "GET",
+            "url": "/identity/download?name=foo&kind=face&index=0"
+        },
+        {"type": "POST", "url": "/identity/upload", "args":
+            {
+                "kind": "face"
+            },
+            "statusExpect": 400
+        },
+        {"type": "POST", "url": "/identity/retrain", "args":
+            {
+                "kind": "face"
+            }
+        }
+    ]
+}

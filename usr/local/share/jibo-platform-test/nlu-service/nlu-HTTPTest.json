@@ -1,0 +1,296 @@
+{"list" : 
+    [
+        {"type": "POST", "url": "/nlu_interface", "args":
+        {
+            "REQ_TYPE":"REMOVE_FROM_MEM",
+            "REQ_CONTENT":
+            {
+                "URI":"handle:my_handle_name"
+            }
+        }, "result":
+        {
+            "Message": "OK",
+            "Stats": 
+            {
+                "REMOVE_TIME": 0
+            },
+            "Status": "OK"
+        }
+    },
+    {"type": "POST", "url": "/nlu_interface", "args":
+        {
+            "REQ_TYPE":"PARSE_FROM_TEXT",
+            "REQ_CONTENT":
+            {
+                "RULE_STRING":"TopRule = $* $factory:date {nl=date._date_nl} $*;",
+                "TXT_STRING":"July 3rd 1995"
+            }
+        }, "result":
+        {
+            "Message": "OK",
+            "Result": [
+                {
+                    "Input": "July 3rd 1995",
+                    "NLParse": 
+                    {
+                "nl": "07/03/1995"
+            },
+            "heuristic_score": 14,
+            "index": 0
+        }
+    ],
+    "Rule_name": [
+        ""
+    ],
+    "Rule_version": [
+        ""
+    ],
+    "Stats": {
+        "COMP_TIME": 1,
+        "PARSE_TIME": 0,
+        "REMOVE_TIME": 0
+    },
+    "Status": "OK"
+}},
+                {"type": "POST", "url": "/nlu_interface", "args":
+{
+        "REQ_TYPE":"COMPILE",
+        "REQ_CONTENT":{
+                "RULE_STRING":"TopRule = $* $factory:date {nl=date._date_nl} $*;",
+                "URI":"handle:my_handle_name"
+        }
+}, "result":
+{
+    "Message": "OK",
+    "Stats": {
+        "COMP_TIME": 8
+    },
+    "Status": "OK"
+}},
+                {"type": "POST", "url": "/nlu_interface", "args":
+{
+        "REQ_TYPE":"PARSE_FROM_URI",
+        "REQ_CONTENT":{
+                "URI":"handle:my_handle_name",
+                "TXT_STRING":"hello jibo july 3rd 1995"
+        }
+}, "result":
+{
+    "Message": "OK",
+    "Result": [
+        {
+            "Input": "hello jibo july 3rd 1995",
+            "NLParse": {
+                "nl": "07/03/1995"
+            },
+            "heuristic_score": 14,
+            "index": 0
+        }
+    ],
+    "Rule_name": [
+        ""
+    ],
+    "Rule_version": [
+        ""
+    ],
+    "Stats": {
+        "COMP_TIME": 0,
+        "PARSE_TIME": 1
+    },
+    "Status": "OK"
+}},
+                {"type": "POST", "url": "/nlu_interface", "args":
+{
+        "REQ_TYPE":"REMOVE_FROM_MEM",
+        "REQ_CONTENT":{
+                "URI":"handle:my_handle_name"
+        }
+}, "result":
+{
+    "Message": "OK",
+    "Stats": {
+        "REMOVE_TIME": 0
+    },
+    "Status": "OK"
+}},
+                {"type": "POST", "url": "/nlu_interface", "args":
+{
+        "REQ_TYPE":"COMPILE",
+        "REQ_CONTENT":{
+            "RULE_BINARYFST":
+"1v2yfgYAAAB2ZWN0b3IIAAAAc3RhbmRhcmQCAAAAAwAAAAMAghkAAAAAAAAAAAAAAAAHAAAAAAAAAAAAAAAAAAAAdPuyfgAAAAAAypo7AAAAAAQAAAAAAAAAAQAAACAqAAAAAAAAAAIAAADPgwEAAAAAAAAAAgAAAM61AAAAAAAAAAAFAAAAMS4wLjD/yZo7AAAAAHT7sn4NAAAAPHVuc3BlY2lmaWVkPtEHAAAAAAAACAAAAAAAAAARAAAARTp7fSBmYWN0b3J5OmRhdGUtAQAAAAAAAAIAAABTOiwBAAAAAAAAAwAAAEM6ICoAAAAAAAAAAgAAAEg6BgAAAAAAAAAXAAAATjp7fSBubCA9IGRhdGUuX2RhdGVfbmzQBwAAAAAAAAIAAADPgwEAAAAAAAAADgAAAEc6ZmFjdG9yeTpkYXRl3AUAAAAAAAACAAAAzrUAAAAAAAAAAAAAgH8CAAAAAAAAAAAAAAAsAQAAAAAAAAIAAAABAAAAAQAAAAAAAEABAAAAAACAfwIAAAAAAAAAAQAAAAEAAAAAAIA/AQAAACoAAAAqAAAAAAAAAAAAAAAAAIB/AQAAAAAAAAAAAAAA3AUAAAAAAAADAAAAAACAfwEAAAAAAAAAAAAAAC0BAAAAAAAABAAAAAAAgH8BAAAAAAAAAAAAAADQBwAAAAAAAAUAAAAAAAAAAQAAAAAAAAABAAAAAQAAAAAAAEAGAAAAAACAfwIAAAAAAAAAAQAAAAEAAAAAAIA/BgAAACoAAAAqAAAAAAAAAAUAAAA=",
+                "URI":"handle:my_handle_name"
+        }
+}, "result":
+{
+    "Message": "OK",
+    "Stats": {
+        "COMP_TIME": 1
+    },
+    "Status": "OK"
+}},
+                {"type": "POST", "url": "/nlu_interface", "args":
+{
+        "REQ_TYPE":"COMPILE",
+        "REQ_CONTENT":{
+                "RULE_STRING":"TopRule = $* $factory:date {nl=date._date_nl} $*;",
+                "URI":"handle:union_fst_1"
+        }
+}, "result":
+{
+    "Message": "OK",
+    "Stats": {
+        "COMP_TIME": 8
+    },
+    "Status": "OK"
+}},
+                {"type": "POST", "url": "/nlu_interface", "args":
+{
+        "REQ_TYPE":"COMPILE",
+        "REQ_CONTENT":{
+                "RULE_STRING":"TopRule = $* $factory:date {nl=date._date_nl} $*;",
+                "URI":"handle:union_fst_2"
+        }
+}, "result":
+{
+    "Message": "OK",
+    "Stats": {
+        "COMP_TIME": 8
+    },
+    "Status": "OK"
+}},
+                {"type": "POST", "url": "/nlu_interface", "args":
+{
+        "REQ_TYPE":"COMPILE",
+        "REQ_CONTENT":{
+                "RULE_STRING":"TopRule = $* $factory:date {nl=date._date_nl} $*;",
+                "URI":"handle:union_fst_3"
+        }
+}, "result":
+{
+    "Message": "OK",
+    "Stats": {
+        "COMP_TIME": 8
+    },
+    "Status": "OK"
+}},
+                {"type": "POST", "url": "/nlu_interface", "args":
+{
+        "REQ_TYPE":"UNION",
+        "REQ_CONTENT":{
+                "URIS":["handle:union_fst_1", "handle:union_fst_2", "handle:union_fst_3"],
+                "URI":"handle:union_fst"
+        }
+}, "result":
+{
+    "Message": "OK",
+    "Stats": {
+        "COMP_TIME": 2
+    },
+    "Status": "OK"
+}},
+                {"type": "POST", "url": "/nlu_interface", "args":
+{
+        "REQ_TYPE":"REMOVE_FROM_MEM",
+        "REQ_CONTENT":{
+                "URI":"handle:union_fst_1"
+        }
+}, "result":
+{
+    "Message": "OK",
+    "Stats": {
+        "REMOVE_TIME": 0
+    },
+    "Status": "OK"
+}},
+                {"type": "POST", "url": "/nlu_interface", "args":
+{
+        "REQ_TYPE":"REMOVE_FROM_MEM",
+        "REQ_CONTENT":{
+                "URI":"handle:union_fst_2"
+        }
+}, "result":
+{
+    "Message": "OK",
+    "Stats": {
+        "REMOVE_TIME": 0
+    },
+    "Status": "OK"
+}},
+                {"type": "POST", "url": "/nlu_interface", "args":
+{
+        "REQ_TYPE":"REMOVE_FROM_MEM",
+        "REQ_CONTENT":{
+                "URI":"handle:union_fst_3"
+        }
+}, "result":
+{
+    "Message": "OK",
+    "Stats": {
+        "REMOVE_TIME": 0
+    },
+    "Status": "OK"
+}},
+                {"type": "POST", "url": "/nlu_interface", "args":
+{
+        "REQ_TYPE":"REMOVE_FROM_MEM",
+        "REQ_CONTENT":{
+                "URI":"handle:union_fst"
+        }
+}, "result":
+{
+    "Message": "OK",
+    "Stats": {
+        "REMOVE_TIME": 0
+    },
+    "Status": "OK"
+}},
+                {"type": "POST", "url": "/nlu_interface", "args":
+{
+        "REQ_TYPE":"COMPILE",
+        "REQ_CONTENT":{
+                "BINARYFST_PATH":"/usr/local/share/nlu-data/en-us/factory_rules/yes_no.fst",
+                "URI":"handle:my_handle_name"
+        }
+}, "result":
+{
+    "Message": "OK",
+    "Stats": {
+        "COMP_TIME": 0
+    },
+    "Status": "OK"
+}},
+                {"type": "POST", "url": "/nlu_interface", "args":
+{
+        "REQ_TYPE":"REMOVE_FROM_MEM",
+        "REQ_CONTENT":{
+                "URI":"handle:my_handle_name"
+        }
+}, "result":
+{
+    "Message": "OK",
+    "Stats": {
+        "REMOVE_TIME": 0
+    },
+    "Status": "OK"
+}},
+    {"type": "POST", "url": "/nlu_interface", "args":
+{
+        "REQ_TYPE":"COMPILE",
+        "REQ_CONTENT":{
+            "RULE_BINARYFST":"1v2yfgYAAAB2ZWN0b3IIAAAAc3RhbmRhcmQCAAAAAwAAAAMAghkAAAAAAAAAAAAAAAAHAAAAAAAAAAAAAAAAAAAAdPuyfgAAAAArAAAAAAAAAAMAAAAAAAAAAQAAACAqAAAAAAAAAAIAAADPgwEAAAAAAAAAAgAAAM61AAAAAAAAAAB0+7J+DQAAADx1bnNwZWNpZmllZD7RBwAAAAAAAAgAAAAAAAAAEQAAAEU6e30gZmFjdG9yeTpkYXRlLQEAAAAAAAACAAAAUzosAQAAAAAAAAMAAABDOiAqAAAAAAAAAAIAAABIOgYAAAAAAAAAFwAAAE46e30gbmwgPSBkYXRlLl9kYXRlX25s0AcAAAAAAAACAAAAz4MBAAAAAAAAAA4AAABHOmZhY3Rvcnk6ZGF0ZdwFAAAAAAAAAgAAAM61AAAAAAAAAAAAAIB/AgAAAAAAAAAAAAAALAEAAAAAAAACAAAAAQAAAAEAAAAAAABAAQAAAAAAgH8CAAAAAAAAAAEAAAABAAAAAACAPwEAAAAqAAAAKgAAAAAAAAAAAAAAAACAfwEAAAAAAAAAAAAAANwFAAAAAAAAAwAAAAAAgH8BAAAAAAAAAAAAAAAtAQAAAAAAAAQAAAAAAIB/AQAAAAAAAAAAAAAA0AcAAAAAAAAFAAAAAAAAAAEAAAAAAAAAAQAAAAEAAAAAAABABgAAAAAAgH8CAAAAAAAAAAEAAAABAAAAAACAPwYAAAAqAAAAKgAAAAAAAAAFAAAA",
+                    "URI":"handle:my_handle_name"
+            }
+    }, "result":
+{
+    "Message": {
+        "exception": "Exception. String has bad format",
+        "info": {
+            "msg": "Expecting fst format version:1.0.0 or higher but the fst did not have a format version in it. You probably need to recompile your rules."
+        }
+    },
+    "Status": "ERROR"
+}, "expectError": true}
+
+]
+}

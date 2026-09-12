@@ -1,0 +1,4 @@
+echo boot1
+echo 1 >  /sys/class/gpio/gpio81/value
+sleep 0.2 
+cat /sys/class/gpio/gpio81/value

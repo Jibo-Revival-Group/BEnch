@@ -1,0 +1,14 @@
+type = SENSORY_SPEAKER_ID_TI
+backgroundModel = /../sensory_data_ti/text-independent.ubm
+clientModel = /../sensory_data_ti/client_model.bin
+threshold = 12.0
+isPCM = false
+liveInputMode = false
+sampleRate = 16000
+beginSample = 0
+endSample = -1
+showTiming = false
+restartEngine = false
+maxUtterances = 10000
+VADlevel = LOW
+PHRASEver = OFF

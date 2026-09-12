@@ -1,0 +1,28 @@
+#!/bin/sh
+
+CONVERT="jibo-audio-convert -f planar -F interleaved -w"
+
+if [ -z "$1" ]; then
+    LOC="/tmp"
+else
+    LOC="$1"
+fi
+
+if [ -s $LOC/sin.raw ]; then
+    $CONVERT --infile $LOC/sin.raw --outfile $LOC/sin.wav -c 6 -r 16000
+fi
+if [ -s $LOC/sout.raw ]; then
+    $CONVERT --infile $LOC/sout.raw --outfile $LOC/sout.wav -c 2 -r 16000
+fi
+if [ -s $LOC/ref.raw ]; then
+    $CONVERT --infile $LOC/ref.raw --outfile $LOC/ref.wav -c 2 -r 16000
+fi
+if [ -s $LOC/rin.raw ]; then
+    $CONVERT --infile $LOC/rin.raw --outfile $LOC/rin.wav -c 1 -r 48000
+fi
+if [ -s $LOC/rout.raw ]; then
+    $CONVERT --infile $LOC/rout.raw --outfile $LOC/rout.wav -c 1 -r 48000
+fi
+if [ -s $LOC/hotphrase.raw ]; then
+    $CONVERT --infile $LOC/hotphrase.raw --outfile $LOC/hotphrase.wav -c 2 -r 16000
+fi

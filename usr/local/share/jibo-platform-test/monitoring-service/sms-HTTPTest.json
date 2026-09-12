@@ -1,0 +1,44 @@
+{"list": 
+    [
+        {"type": "GET", "url": "/storage/mounts" },
+        {"type": "GET", "url": "/storage/semantic"},
+        {"type": "GET", "url": "/info/system"},
+        {"type": "GET", "url": "/storage/test"},
+        {"type": "POST", "url": "/perf", "args":
+            {
+                "time": 1500000000,
+                "type": "TTS",
+                "description": "SPEAK_REQUEST_RECIEVED"
+            }
+        },
+        {"type": "POST", "url": "/perf", "args":
+            {
+                "time": 1,
+                "type": "ASR",
+                "description": "SPEAK_REQUEST_COMPLETE"
+            }
+        },
+        {"type": "POST", "url": "/perf", "args":
+            {
+                "time": 100,
+                "type": "NLU",
+                "description": "SPEAK_REQUEST_RECIEVED"
+            }
+        },
+        {"type": "POST", "url": "/perf", "args":
+            {
+                "time": 0,
+                "type": "BOGUS",
+                "description": "BOGUS"
+            }
+        },
+        {"type": "POST", "url": "/perf", "args":
+            {
+                "time": 123456789,
+                "type": "BOGUS",
+                "description": "BOGUS"
+            }
+        },
+        {"type": "GET", "url": "/health"}
+    ]
+}

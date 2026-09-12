@@ -1,0 +1,195 @@
+#!/usr/bin/env node
+
+var fs = require('fs')
+var jibo = require("@jibo/jibo-server-client");
+var request = require('request');
+var path = require('path')
+var minimist = require('minimist');
+var stream = require('stream');
+
+//==============================================================================
+// Usage
+var usage = function() {
+    console.log("Usage:", process.argv[1], "<arguments>");
+    console.log("");
+    console.log("OPTIONS:");
+    console.log("  -h,--help                print this message");
+    console.log("  --credentials FILE       path to credentials.json");
+    console.log("  --filename PATH          path to the backup file");
+    console.log("  --keydir PATH            path to the keys directory");
+    console.log("  --encrypt                encrypt the backup file");
+};
+
+var backup, argv;
+Error.stackTraceLimit = 120;
+
+//==============================================================================
+// Main Function
+var main = function() {
+    
+    //=================
+    // Parse Arugments
+    argv = minimist(process.argv.slice(2));
+    if (argv.h || argv.help){
+        usage()
+        process.exit(0);
+    }
+    if (!argv.credentials) 
+        throw new Error("Missing argument: credentials not specified");
+
+    if (!argv.filename)
+        throw new Error("Missing argument: filename not specified");
+
+    if (!argv.keydir) {
+        throw new Error("Missing argument: keydir not specified");
+    }
+    
+    //=======================
+    // Script initialization
+    jibo.Key.prototype.storage = {
+        load: function(name, callback) {
+            var filename = path.join(argv.keydir,name + '.json')
+            fs.readFile(filename, {encoding: 'utf8'}, callback);
+        },
+        save: function(name, value, callback) {
+            var filename = path.join(argv.keydir,name + '.json')
+            fs.writeFile(filename, value, callback);
+        }
+    };
+    
+    var credentials = require(argv.credentials);
+    jibo.config.update(credentials);
+    var loop = new jibo.Loop(credentials);
+    var key = new jibo.Key(credentials);
+    
+    var loopId;
+    var uploadUrl;
+    var etag;
+    
+    //===========================
+    // jibo.Backup.list callback
+    var callbackBackupList = function(err, response){
+        if (err)
+            throw(err);
+        
+        if (response.length == 0)
+            throw new Error("Couldn't find any uploaded files");
+        
+        var entry = response.reduce(function(aa,bb) {
+            return Math.max( new Date(aa.modified), new Date(bb.modified) );
+        });
+        
+        if (entry === null){
+            throw new Error("Couldn't find uploaded backup file");
+        }
+        
+        if (entry.etag != etag){
+            throw Error('Failed to upload backup file')
+        }
+        
+        etag = entry.etag.replace(/['"]+/g,'')
+        console.log(etag);
+    };
+    
+    //==============================================
+    // jibo.Key.loadOrCreateSymmetricalKey callback
+    var callbackKey = function(err, result){
+        if (err)
+            throw (err);
+        if (result === null)
+            throw new Error('No key');
+        
+        var rstream = fs.createReadStream(argv.filename);
+       
+        var options = {
+            url: uploadUrl,
+            method: 'PUT',
+            headers: {
+                Accept: '*/*',
+                'Content-Type': 'application/octet-stream',
+                'Content-Length': 0
+            }
+        };
+        
+        var callbackUpload = function (err, response, body) {
+            if (err)
+                throw (err);
+            etag = response.headers.etag;
+            backup.list({ loopId : loopId }, callbackBackupList);
+        };
+        
+        if (argv.encrypt){
+            // TODO: Ideally it would be this simpler version, but the 
+            // Content-Length header does not get set correctly so the uploaded
+            // file is incomplete. Thus, we have to calculate the size of
+            // the uploaded file by putting the entire buffer in memory. This
+            // is also less than ideal.
+            // TODO: One possible solution is setting the http header 
+            // 'Transfer-Encoding': 'chunked', however that doesn't seem to
+            // just work.
+//             var params = {Key: result, Body: rstream};
+//             var estream = key.encryptSymmetricStream(params)
+//             estream.pipe(request(options, callbackUpload));
+            
+            var params = {Key: result, Body: rstream};
+            var estream = key.encryptSymmetricStream(params)
+            var body = []
+            estream.on('data',function(chunk){
+                body.push(chunk);
+            });
+            estream.on('end', function() {
+                body = Buffer.concat(body);
+                options.body = body;
+                options.headers['Content-Length'] = body.length;
+                request(options, callbackUpload);
+            });
+        } else {
+            var stat = fs.statSync(argv.filename);
+            options.headers['Content-Length'] = stat.size
+            rstream.pipe(request(options, callbackUpload));
+        }
+    };
+    
+    //==========================
+    // jibo.Backup.new callback
+    var callbackBackupNew = function(err, result){
+        if (err)
+            throw (err);
+        
+        uploadUrl = result.uploadUrl;
+        
+        key.loadOrCreateSymmetricKey({ loopId: loopId }, callbackKey);
+    };
+    
+    //=========================
+    // jibo.Loop.list callback
+    var callbackLoopList = function (err, list){
+        if (err) {
+            throw (err);
+        }
+        
+        if (list === null) {
+            throw new Error("Couldn't find any loop");
+        }
+        
+        if (list.length !== 1) {
+            throw new Error("Too many loop members");
+        }
+        
+        loopId = list[0].id;
+
+        backup = new jibo.Backup(credentials);
+        backup.new({ loopId: loopId }, callbackBackupNew);
+    };
+    
+    loop.list({}, callbackLoopList);
+};
+
+if (require.main === module){
+    try {
+        main();
+    } catch (err){
+        console.log(err);
+        process.exit(1);
+    }
+}

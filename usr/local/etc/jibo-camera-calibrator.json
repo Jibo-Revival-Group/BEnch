@@ -1,0 +1,208 @@
+{
+    "calibrator" : {
+        "setup" : {
+            "output": "/var/jibo/lps",
+            "num_distances": 3,
+            "circleDistance": 0.117,
+            "pixSize": 4e-6,
+            "recordDelay" : 1000,
+            "maxTries": 5,
+            "num_calibrators": 2,
+            "calibrators" : [
+                {
+                    "filename": "CameraModelParamsR.json",
+                    "frame_name" : "right_eye",
+                    "debug":false
+                },
+                {
+                    "filename": "CameraModelParamsL.json",
+                    "frame_name" : "left_eye",
+                    "debug":false
+                }
+            ],
+            "num_transforms": 1,
+            "transforms" : [
+                {
+                    "filename": "InterCameraTransform.json",
+                    "cameraA": 0,
+                    "cameraB": 1
+
+                }
+            ],
+            "num_positions" : 10,
+            "positions": [
+                {
+                    "message" : "Wide Position 1 - press Enter",
+                    "num_cameras": 1,
+                    "cameras" : [ 0 ],
+                    "saveBlobData" : true,
+                    "fileMessage" : "wide_pos_1",
+                    "saveImage" : true,
+                    "saveBlobToCal": true
+                },
+                {
+                    "message" : "Wide Position 2 - press Enter",
+                    "num_cameras": 1,
+                    "cameras" : [ 0 ],
+                    "saveBlobData" : true,
+                    "fileMessage" : "wide_pos_2",
+                    "saveImage" : true,
+                    "saveBlobToCal": true
+                },
+                {
+                    "message" : "Wide Position 3 - press Enter",
+                    "num_cameras": 1,
+                    "cameras" : [ 0 ],
+                    "saveBlobData" : true,
+                    "fileMessage" : "wide_pos_3",
+                    "saveImage" : true,
+                    "saveBlobToCal": true
+                },
+                {
+                    "message" : "Wide Position 4 - press Enter",
+                    "num_cameras": 1,
+                    "cameras" : [ 0 ],
+                    "saveBlobData" : true,
+                    "fileMessage" : "wide_pos_4",
+                    "saveImage" : true,
+                    "saveBlobToCal" : true
+                },
+                {
+                    "message" : "Wide Position 5- press Enter",
+                    "num_cameras": 1,
+                    "cameras" : [ 0 ],
+                    "saveBlobData" : true,
+                    "fileMessage" : "wide_pos_5",
+                    "saveImage" : true,
+                    "saveBlobToCal" : true
+                },
+                {
+                    "message" : "Both Position 1 - press Enter",
+                    "num_cameras": 2,
+                    "cameras" : [ 0, 1 ],
+                    "saveBlobData" : true,
+                    "fileMessage" : "both_pos_1",
+                    "saveImage" : true,
+                    "saveBlobToCal": true
+                },
+                {
+                    "message" : "Both Position 2 - press Enter",
+                    "num_cameras": 2,
+                    "cameras" : [ 0, 1 ],
+                    "saveBlobData" : true,
+                    "fileMessage" : "both_pos_2",
+                    "saveImage" : true,
+                    "saveBlobToCal": true
+                },
+                {
+                    "message" : "Both Position 3 - press Enter",
+                    "num_cameras": 2,
+                    "cameras" : [ 0, 1 ],
+                    "saveBlobData" : true,
+                    "fileMessage" : "both_pos_3",
+                    "saveImage" : true,
+                    "saveBlobToCal": true
+                },
+                {
+                    "message" : "Both Position 4 - press Enter",
+                    "num_cameras": 2,
+                    "cameras" : [ 0, 1 ],
+                    "saveBlobData" : true,
+                    "fileMessage" : "both_pos_4",
+                    "saveImage" : true,
+                    "saveBlobToCal": true
+                },
+                {
+                    "message" : "Both Position 5 - press Enter",
+                    "num_cameras": 2,
+                    "cameras" : [ 0, 1 ],
+                    "saveBlobData" : true,
+                    "fileMessage" : "both_pos_5",
+                    "saveImage" : true,
+                    "saveBlobToCal": true
+                }
+            ]
+        },
+        "camera": {
+            "type": "CUDA",
+            "cuda": {
+                "devices": [
+                    {
+                        "enabled": true,
+                        "name": "Camera-0",
+                        "path": "/dev/video1",
+                        "bufferPoolSize": 4,
+                        "width": 1280,
+                        "height": 720,
+                        "hFlip":true,
+                        "vFlip":true,
+                        "gamma" : {
+                            "R": 1.0,
+                            "G": 1.0,
+                            "B": 1.0
+                        },
+                        "ae" : {
+                            "exposureP":0.05,
+                            "gainP":0.02,
+                            "targetY":0.35,
+                            "errorY":0.0001
+                        },
+                        "awb" : {
+                            "grayThreshold":0.3,
+                            "numSamples":1000,
+                            "P":0.15,
+                            "targetU":0.5,
+                            "targetV":0.53,
+                            "seed":0
+                        }
+                    },
+                    {
+                        "enabled": true,
+                        "name": "Camera-1",
+                        "path": "/dev/video0",
+                        "bufferPoolSize": 4,
+                        "width": 1280,
+                        "height": 720,
+                        "hFlip":true,
+                        "vFlip":true,
+                        "gamma" : {
+                            "R": 1.0,
+                            "G": 1.0,
+                            "B": 1.0
+                        },
+                        "ae" : {
+                            "exposureP":0.05,
+                            "gainP":0.02,
+                            "targetY":0.35,
+                            "errorY":0.0001
+                        },
+                        "awb" : {
+                            "grayThreshold":0.3,
+                            "numSamples":1000,
+                            "P":0.15,
+                            "targetU":0.5,
+                            "targetV":0.53,
+                            "seed":0
+                        }
+                    }
+                ],
+                "cuda" : {
+                    
+                }
+            },
+            "file": {
+                "videos": [
+                    "videos/video-000/video.json",
+                    "videos/video-001/video.json"
+                ],
+                "format": "YUV420p"
+            },
+            "v4l2": {
+                "devices": {
+                    "left": "/dev/video0",
+                    "right": "/dev/video1"
+                }
+            }
+        }
+    }
+}

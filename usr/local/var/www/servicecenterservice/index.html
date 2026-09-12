@@ -1,0 +1,49 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<script src="jquery-3.2.1.min.js"></script>
+<script src="sc.js"></script>
+<title>Service Center Service</title>
+</head>
+<body>
+
+Test:
+<select id="test_select">
+    <option value="/test/finish">Finish</option>
+    <option value="/test/identity">Set Identity</option>
+    <option value="/test/drive">Drive</option>
+    <option value="/test/battery">Battery</option>
+    <option value="/test/temperature">Temperature</option>
+    <option value="/test/audio">Audio</option>
+    <option value="/test/led">LED</option>
+    <option value="/test/touch">Touch</option>
+    <option value="/test/hatch">Hatch</option>
+    <option value="/test/info">Info</option>
+    <option value="/test/camera">Camera</option>
+    <option value="/test/fan">Fan</option>
+    <option value="/test/board_flash">Board Flash</option>
+    <option value="/test/screen">Screen</option>
+</select>
+<select id="op_select">
+    <option value="GET">GET</option>
+    <option value="POST">POST</option>
+</select>
+<button id="go">Go</button>
+
+<br>
+Request
+<br>
+<textarea id="input_txt" rows="10" cols="50"></textarea>
+
+<br>
+Response
+<br>
+<textarea id="results_txt" rows="10" cols="50" readonly="true"></textarea>
+
+<br>
+Camera
+<br>
+<img id="results_img" src="">
+
+</body>
+</html>

@@ -1,0 +1,817 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<script src="jquery-2.1.3.js"></script>
+<link href="asr.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript">
+$(document).ready(function() {
+
+    connectAsr();
+
+    initTaskSettings();
+
+    connectSpkrID();
+	
+});
+ 
+var host = window.location.host;
+var socket = new WebSocket("ws://"+host+"/port");
+var wsMsgLog = ""
+var enrolledspeakers = [];
+
+function connectAsr() {
+ 
+    socket.onopen = function() {
+        console.log("ASR message socket open!");
+    };
+    socket.onmessage = function(msg) {
+        console.log("Got message!!");
+        var data = JSON.parse(msg.data);
+        var data_str = JSON.stringify(data, null, 4);
+        data_str = data_str.concat("\n");
+        data_str = data_str.concat(wsMsgLog);
+        wsMsgLog = data_str;
+        //state.appendTouchState(data);
+        console.log(data.content);
+        //$("#asr").html($("<p>").text(JSON.stringify(data, null, 2)));
+        $("#asrState").val(wsMsgLog);
+
+      
+    };
+    socket.onclose = function() {
+        console.log("Asr message socket close!");
+        setTimeout(function() { connectAsr(); }, 3000);
+    };
+}
+	
+function isEmpty(obj) {
+    return Object.keys(obj).length === 0;
+}
+
+function connectSpkrID() {
+	socket.onopen = function() {
+		console.log("Touch state socket open!");
+	};
+	socket.onmessage = function(msg) {
+    console.log("Got message from Spkr-ID");
+    var data = JSON.parse(msg.data);
+    var resultjson = {};
+        var data_str = JSON.stringify(data, null, 4);
+        data_str = data_str.concat("\n");
+        data_str = data_str.concat(wsMsgLog);
+        wsMsgLog = data_str;
+        //state.appendTouchState(data);
+        console.log(data.content);
+
+       if(data.hasOwnProperty('Text-Dependent')){
+         console.log("List speakers found!");
+         console.log(data);
+        $("#enrolledusers").val(data["Text-Dependent"]);
+        enrolledspeakers = data["Text-Dependent"];
+       } 
+       
+      if(data["simple_recog_name"] == "Speaker ID TD"){
+        
+         console.log("Result found!");
+         //console.log(result);
+        var result_str = data["speaker_ids"][0].speaker_id + "\n";
+        result_str = result_str + "score:" + data["speaker_ids"][0].score + "\n";
+        result_str = result_str + "Hypothesis:" + data["speaker_idstatus"]; 
+        resultjson['exp_name'] =  $("#experimentname").val(); 
+        resultjson['true_speaker'] =  $("#firstname").val().toLowerCase(); 
+        resultjson['age'] =  $("#age").val(); 
+        resultjson['gender'] = getRadioVal( document.getElementById('demoForm'), 'sex' );
+        
+        resultjson['taskid'] = data["task_id"];
+        resultjson['speaker_ids'] = data["speaker_ids"][0].speaker_id.toLowerCase();
+        resultjson['score'] = data["speaker_ids"][0].score;
+        resultjson['hypothesis'] = data["speaker_idstatus"];
+        resultjson['enrolledusers'] = enrolledspeakers; 
+        resultjson['human_timestamp'] = data["human_timestamp"];
+
+        postResult(resultjson);
+        resultjson = {};
+        if ( (data["speaker_idstatus"]) == "ACCEPTED" && ($("#firstname").val().toLowerCase() == data["speaker_ids"][0].speaker_id.toLowerCase())) {
+           var ele = document.getElementById("result");
+           ele.style.color = "lime";  
+        } else {
+           var ele = document.getElementById("result");
+           ele.style.color = "red";             
+        }
+        $("#result").val(result_str); 
+
+        $("#identify").attr('disabled', false);
+       }
+
+      if(data["simple_recog_name"] == "Speaker Enroll TD"){
+        
+         console.log("Enroll response received!");
+         //console.log(result);
+        var result_str = data["speaker_idstatus"]; 
+        $("#result").val(result_str); 
+        $("#enroll").attr('disabled', false);
+        if (data["speaker_idstatus"] == "ENROLLMENT-DONE") {
+           alert("You are enrolled!");
+           ListEnrolledUsers();
+                //$("#enrollname").val("");      
+  
+        }
+       }
+
+        //$("#asr").html($("<p>").text(JSON.stringify(data, null, 2)));
+        $("#asrState").val(wsMsgLog);
+	};
+	socket.onclose = function() {
+		console.log("Spkr-ID state socket close!");
+		setTimeout(function() {connectSpkrID(); }, 3000);
+	};
+}
+
+function sendSocketMsg() {
+    console.log("Sending socket msg");
+    socket.send('10');
+}
+
+
+function postResult(jsonresult) {
+
+$.ajax({
+            type: "POST",
+            url: "http://10.0.1.238",
+            //dataType: "json",
+            crossDomain: true,
+            data: JSON.stringify(jsonresult), 
+            success: function() {
+            },
+            error: function(xhr, status, error) {
+                console.log("ERROR " + status + " " + error + JSON.stringify(data));
+            }
+        });
+
+}
+
+
+function ListEnrolledUsers() {
+
+$.ajax({
+            type: "POST",
+            url: "/spkr_id_interface",
+            dataType: "json",
+            data: packListSpkrSettings(), 
+            success: function() {
+            },
+            error: function(xhr, status, error) {
+                console.log("ERROR " + status + " " + error + JSON.stringify(data));
+            }
+        });
+
+}
+
+function ListDeleteSpkrs() {
+	$("#list_button").click(function() {
+        $.ajax({
+            type: "POST",
+            url: "/spkr_id_interface",
+            dataType: "json",
+            data: packListSpkrSettings(), 
+            success: function() {
+            },
+            error: function(xhr, status, error) {
+                console.log("ERROR " + status + " " + error + JSON.stringify(data));
+            }
+        });
+    }
+
+);
+	
+	$("#delete_button").click(function() {
+        $.ajax({
+            type: "POST",
+            url: "/spkr_id_interface",
+            dataType: "json",
+            data: packDeleteSpkrSettings(), 
+            success: function() {
+            },
+            error: function(xhr, status, error) {
+                console.log("ERROR " + status + " " + error + JSON.stringify(data));
+            }
+        });
+    });
+}
+
+
+function clearSPK() {
+
+$.ajax({
+            type: "POST",
+            url: "/asr_interface",
+            dataType: "json",
+            data: packIdentifyClearSPK(), 
+            success: function() {
+            },
+            error: function(xhr, status, error) {
+                 console.log("ERROR " + status + " " + error + JSON.stringify(data));
+            }
+        });
+
+}
+
+function enrollSPK() {
+    console.log("clicked!");
+  //  var d = packIdentifyTask();
+//    debugger;
+    $.ajax({
+            type: "POST",
+            url: "/asr_interface",
+            //dataType: "json",
+            data: packEnrollTask(), 
+            success: function() {
+             console.log("Executed Enrollment!");
+            },
+            error: function(xhr, status, error) {
+      //debugger;
+                
+console.log("ERROR " + status + " " + error + JSON.stringify(data));
+            }
+        });
+        
+ }
+
+function getRadioVal(form, name) {
+    var val;
+    // get list of radio buttons with specified name
+    var radios = form.elements[name];
+    
+    // loop through list of radio buttons
+    for (var i=0, len=radios.length; i<len; i++) {
+        if ( radios[i].checked ) { // radio checked?
+            val = radios[i].value; // if so, hold its value in val
+            break; // and break out of for loop
+        }
+    }
+    return val; // return value of checked radio or undefined if none checked
+}
+
+function makeid() {
+    var text = "";
+    var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+    for( var i=0; i < 16; i++ )
+        text += possible.charAt(Math.floor(Math.random() * possible.length));
+
+    return text;
+}
+
+function identifySPK() {
+    console.log("clicked!");
+  //  var d = packIdentifyTask();
+//    debugger;
+    $.ajax({
+            type: "POST",
+            url: "/asr_interface",
+            //dataType: "json",
+            data: packIdentifyTask(), 
+            success: function() {
+             console.log("Executed Identify!");
+            },
+            error: function(xhr, status, error) {
+      //debugger;
+                
+console.log("ERROR " + status + " " + error + JSON.stringify(data));
+            }
+        });
+        
+ }
+
+function initTaskSettings() {
+
+$("#remove").click(function() {
+      $("#remove").attr('disabled', true);
+    console.log("remove clicked!");
+  //  var d = packIdentifyTask();
+//    debugger;
+    $.ajax({
+            type: "POST",
+            url: "/spkr_id_interface",
+            //dataType: "json",
+            data: packDeleteSpkr(),
+            success: function() {
+             console.log("Removed an enrollment!");
+             ListEnrolledUsers();
+            },
+            error: function(xhr, status, error) {
+      //debugger;
+                
+console.log("ERROR " + status + " " + error + JSON.stringify(data));
+            }
+        });
+              $("#remove").attr('disabled', false);
+              $("#removename").val("");
+ });
+
+$("#enroll").click(function() {
+      $("#enroll").attr('disabled', true);
+    console.log("enroll clicked!");
+  //  var d = packIdentifyTask();
+//    debugger;
+    $.ajax({
+            type: "POST",
+            url: "/asr_interface",
+            //dataType: "json",
+            data: packIdentifyClearSPK(),
+            success: function() {
+             console.log("Executed enroll!");
+             enrollSPK();
+             
+            },
+            error: function(xhr, status, error) {
+      //debugger;
+                
+console.log("ERROR " + status + " " + error + JSON.stringify(data));
+            }
+        });
+ });
+
+$("#identify").click(function() {
+      $("#identify").attr('disabled', true);
+    console.log("clicked!");
+  //  var d = packIdentifyTask();
+//    debugger;
+    $.ajax({
+            type: "POST",
+            url: "/asr_interface",
+            //dataType: "json",
+            data: packIdentifyClearSPK(), 
+            success: function() {
+             console.log("Executed clearSPK!");
+             identifySPK();
+             
+            },
+            error: function(xhr, status, error) {
+      //debugger;
+                
+console.log("ERROR " + status + " " + error + JSON.stringify(data));
+            }
+        });
+             
+ });
+
+    $("#init_and_start_task_button").click(function() {
+        $.ajax({
+            type: "POST",
+            url: "/asr_interface",
+            dataType: "json",
+            data: packTaskSettings(), 
+            success: function() {
+            },
+            error: function(xhr, status, error) {
+                console.log("ERROR " + status + " " + error + JSON.stringify(data));
+            }
+        });
+    });
+
+    $("#init_task_button").click(function() {
+    $.ajax({
+            type: "POST",
+            url: "/asr_interface",
+            dataType: "json",
+            data: packInitTaskSettings(), 
+            success: function() {
+            },
+            error: function(xhr, status, error) {
+                console.log("ERROR " + status + " " + error + JSON.stringify(data));
+            }
+        });
+    });
+
+    $("#start_task").click(function() {
+         $.ajax({
+            type: "POST",
+            url: "/asr_interface",
+            dataType: "json",
+            data: packStartTaskSettings(), 
+            success: function() {
+            },
+            error: function(xhr, status, error) {
+                 console.log("ERROR " + status + " " + error + JSON.stringify(data));
+            }
+        });
+    });
+
+    $("#stop_task").click(function() {
+         $.ajax({
+            type: "POST",
+            url: "/asr_interface",
+            dataType: "json",
+            data: packStopTaskSettings(), 
+            success: function() {
+            },
+            error: function(xhr, status, error) {
+                 console.log("ERROR " + status + " " + error + JSON.stringify(data));
+            }
+        });
+    });
+
+    $("#clear_task").click(function() {
+         $.ajax({
+            type: "POST",
+            url: "/asr_interface",
+            dataType: "json",
+            data: packClearTaskSettings(), 
+            success: function() {
+            },
+            error: function(xhr, status, error) {
+                 console.log("ERROR " + status + " " + error + JSON.stringify(data));
+            }
+        });
+    });
+
+    
+    $("#submit_audio_source_command").click(function() {
+      if ( $("#firstname").val() != "") {
+            
+      $("#submit_audio_source_command").attr('disabled', true);
+        $.ajax({
+            type: "POST",
+            url: "/audio_source",
+            data: packAudioSourceCommand(), 
+            success: function() {
+             ListEnrolledUsers();
+            },
+            error: function(xhr, status, error) {
+                console.log("ERROR " + status + " " + error + JSON.stringify(audio_source_data));
+            }
+        });
+      $("#enroll").attr('disabled', false);
+      $("#stop_audio_source").attr('disabled', false);
+      $("#identify").attr('disabled', false);
+      $("#remove").attr('disabled', false);
+
+      $("#firstname").attr('disabled', true);
+      $("#lastname").attr('disabled', true);
+      $("#age").attr('disabled', true);
+      $("#gender").attr('disabled', true);
+ } else {
+                alert("Please enter your first name, before clicking start.");
+
+}
+    });
+
+    $("#stop_audio_source").click(function() {
+      $("#submit_audio_source_command").attr('disabled', false);
+        $.ajax({
+            type: "POST",
+            url: "/audio_source",
+            dataType: "json",
+            data: packStopAudioSourceCommand(), 
+            success: function() {
+            },
+            error: function(xhr, status, error) {
+                console.log("ERROR " + status + " " + error + JSON.stringify(audio_source_data));
+            }
+        });
+     $("#identify").attr('disabled', true);
+     $("#enroll").attr('disabled', true);
+     $("#stop_audio_source").attr('disabled', true);
+     $("#remove").attr('disabled', true);
+     $("#firstname").val("");
+     $("#lastname").val("");
+     $("#age").val("");
+     $("#enrolledusers").val("");
+     $("#result").val("");
+
+      $("#firstname").attr('disabled', false);
+      $("#lastname").attr('disabled', false);
+      $("#age").attr('disabled', false);
+      $("#gender").attr('disabled', false);
+
+
+    });
+
+ $("#upload_logs").click(function() {
+        $.ajax({
+            type: "POST",
+            url: "/asr_control",
+            dataType: "json",
+            data: packUploadLogsControlCommand(), 
+            success: function() {
+            },
+            error: function(xhr, status, error) {
+                console.log("ERROR " + status + " " + error + JSON.stringify(control_command_data));
+            }
+        });
+    });
+}
+  
+var data = {task: "default", action: "default", request_id:"default_task_request_id"};
+
+function packListSpkrSettings() {
+	data.action = "list";
+	data.task_id = "id";
+	data.spkr_id_type = "Text-Dependent";
+	data.speaker_name = "";
+	console.log(JSON.stringify(data));
+	return JSON.stringify(data);
+}
+
+function packDeleteSpkr() {
+	data.action = "delete";
+	data.task_id = "id";
+	data.spkr_id_type = "Text-Dependent";
+	data.speaker_name = $("#removename").val();
+	console.log(JSON.stringify(data));
+	return JSON.stringify(data);
+}
+	
+function packDeleteSpkrSettings() {
+	data.action = "delete";
+	data.task_id = "id";
+	data.spkr_id_type = $("#spkr_id_type").val();
+	data.speaker_name = $("#speaker_name").val();
+	console.log(JSON.stringify(data));
+	return JSON.stringify(data);
+}
+	
+function packTaskSettings() {
+    data.task = $("#task_spec").val();
+    data.task_id = $("#task_id").val();
+    data.action = "init_and_start";
+    data.audio_source_id = $("#audio_source_id").val();
+    return JSON.stringify(data);
+}
+
+function packIdentifyTask() {
+    data.task = "{\"name\":\"hey jibo\",\"path\":\"/var/jibo/asr/hey_jibo\",\"timeout\":0,\"bargein\":true,\"nbest\":1,\"speaker_name\":\"\",\"incremental\":false,\"speaker_id\":true}";
+    //data.task_id = "task1";
+    data.task_id = makeid();
+    data.action = "init_and_start";
+    data.audio_source_id = "alsa1";
+    return JSON.stringify(data);
+}
+
+function packEnrollTask() {
+   var rec_1 = '{\"name\":\"hey jibo\",\"path\":\"/var/jibo/asr/hey_jibo\",\"timeout\":0,\"bargein\":true,\"nbest\":1,\"speaker_name\":\"\",\"incremental\":false,\"delay\":300}';
+   var rec_2_json = {};
+   rec_2_json.name = "Speaker Enroll TD";
+   rec_2_json.path = "/var/jibo/asr/sensory_spkr_enroll_td";
+   rec_2_json.timeout = 5000;
+   rec_2_json.bargein = false;
+   rec_2_json.nbest = 1;
+   rec_2_json.speaker_name = $("#firstname").val();
+   rec_2_json.incremental = false;
+   rec_2_json.audio_tail_length = 1;
+   
+   var final_task = rec_1 + "*" + JSON.stringify(rec_2_json);
+    data.task = final_task;
+    data.task_id = "task1";
+    //data.task_id = makeid();
+    data.action = "init_and_start";
+    data.audio_source_id = "alsa1";
+    return JSON.stringify(data);
+}
+
+function packInitTaskSettings() {
+    data.task = $("#task_spec").val();
+    data.task_id = $("#task_id").val();
+    data.action = "init";
+    data.audio_source_id = $("#audio_source_id").val();
+    return JSON.stringify(data);
+}
+
+function packStartTaskSettings() {
+    data.task = "";
+    data.task_id = $("#stop_task_id").val();
+    data.action = "start";
+    data.audio_source_id = "";
+    return JSON.stringify(data);
+}
+
+function packStopTaskSettings() {
+    data.task = "";
+    data.action = "stop";
+    //data.task_id = $("#stop_task_id").val();
+    data.task_id = "task1";
+    data.audio_source_id = "";
+    return JSON.stringify(data);
+}
+
+function packIdentifyClearSPK() {
+    data.task = "";
+    data.action = "clear";
+    data.task_id = "task1";
+    //data.task_id = makeid();
+    data.audio_source_id = "";
+    return JSON.stringify(data);
+}
+
+function packClearTaskSettings() {
+    data.task = "";
+    data.action = "clear";
+    data.task_id = $("#stop_task_id").val();
+    data.audio_source_id = "";
+    return JSON.stringify(data);
+}
+
+var audio_source_data = {action: "default", audio_source_id:"default_id", 
+    audio_source:"default_source", request_id:"defaut_request_id"}
+
+function packAudioSourceCommand() {
+    audio_source_data.action = "start";
+    audio_source_data.audio_source_id = "alsa1";
+    audio_source_data.wav_files = [];
+    audio_source_data.audio_source = "alsa";
+    return JSON.stringify(audio_source_data);
+}
+
+var control_command_data = {action: "default", request_id:"default_request_id"}
+
+function packUploadLogsControlCommand() {
+    control_command_data.action = "upload_logs";
+    control_command_data.request_id = $("#control_id").val();
+    return JSON.stringify(control_command_data);
+}
+
+
+function packStopAudioSourceCommand() {
+    audio_source_data.action = "stop";
+    audio_source_data.audio_source_id = "alsa1";
+    audio_source_data.wav_files = [];
+    audio_source_data.audio_source = "default_source";
+    audio_source_data.request_id = "default_request_id";
+    return JSON.stringify(audio_source_data);
+}
+
+
+function showCSTemplates(sel){   
+
+locations =[ "", /*this remains blank for first selection in drop-down list*/ 
+
+/*option 1*/                 
+"{\"name\":\"hey jibo\",\"path\":\"/var/jibo/asr/hey_jibo\",\"timeout\":12,\"bargein\":true,\"nbest\":1,\"speaker_name\":\"\",\"incremental\":false} * {\"name\":\"uber and jot\",\"path\":\"/var/jibo/asr/uber_and_jot_grm\",\"timeout\":12,\"bargein\":false,\"nbest\":1,\"speaker_name\":\"\",\"incremental\":false}",
+
+/*option 2*/                
+"{\"name\":\"hey jibo\",\"path\":\"/var/jibo/asr/hey_jibo\",\"timeout\":12,\"bargein\":true,\"nbest\":1,\"speaker_name\":\"\",\"incremental\":false} * {\"name\":\"nuance curl\",\"path\":\"/var/jibo/asr/uber_and_jot_grm\",\"timeout\":12,\"bargein\":false,\"nbest\":1,\"speaker_name\":\"\",\"incremental\":false}",
+
+/*option 3*/                
+"{\"name\":\"hey jibo\",\"path\":\"/var/jibo/asr/hey_jibo\",\"timeout\":0,\"bargein\":true,\"nbest\":1,\"speaker_name\":\"\",\"incremental\":false} * {\"name\":\"nuance curlmulti\",\"path\":\"/var/jibo/asr/nuance_curlmulti\",\"timeout\":5000,\"bargein\":false,\"nbest\":1,\"speaker_name\":\"\",\"incremental\":false}",
+
+/*option 4*/                
+"{\"name\":\"hey jibo\",\"path\":\"/var/jibo/asr/hey_jibo\",\"timeout\":0,\"bargein\":true,\"nbest\":1,\"speaker_name\":\"\",\"incremental\":false} * {\"name\":\"sensory_sdet\",\"path\":\"/var/jibo/asr/sensory_speech_detector\",\"timeout\":5000,\"bargein\":false,\"nbest\":1,\"speaker_name\":\"\",\"incremental\":false}",
+
+/*option 5*/                
+"{\"name\":\"sensory_sdet\",\"path\":\"/var/jibo/asr/sensory_speech_detector\",\"timeout\":5000,\"bargein\":false,\"nbest\":1,\"speaker_name\":\"\",\"incremental\":false} | {\"name\":\"nuance curlmulti\",\"path\":\"/var/jibo/asr/nuance_curlmulti\",\"timeout\":5000,\"bargein\":false,\"nbest\":1,\"speaker_name\":\"\",\"incremental\":false}",
+
+/*option 6*/                
+"{\"name\":\"hey jibo\",\"path\":\"/var/jibo/asr/hey_jibo\",\"timeout\":0,\"bargein\":true,\"nbest\":1,\"speaker_name\":\"\",\"incremental\":false} * ({\"name\":\"sensory_sdet\",\"path\":\"/var/jibo/asr/sensory_speech_detector\",\"timeout\":50000,\"bargein\":false,\"nbest\":1,\"speaker_name\":\"\",\"incremental\":false} | {\"name\":\"nuance curlmulti\",\"path\":\"/var/jibo/asr/nuance_curlmulti\",\"timeout\":50000,\"bargein\":false,\"nbest\":1,\"speaker_name\":\"\",\"incremental\":false})",
+
+/*option 7*/                
+"{\"name\":\"hey jibo\",\"path\":\"/var/jibo/asr/hey_jibo\",\"timeout\":0,\"bargein\":true,\"nbest\":1,\"speaker_name\":\"\",\"incremental\":false} * ({\"name\":\"sensory_sdet\",\"path\":\"/var/jibo/asr/sensory_speech_detector\",\"timeout\":50000,\"bargein\":false,\"nbest\":1,\"speaker_name\":\"\",\"incremental\":false} | {\"name\":\"pcmwriter\",\"path\":\"/var/jibo/asr/pcm_writer\",\"timeout\":50000,\"bargein\":false,\"nbest\":1,\"speaker_name\":\"\",\"incremental\":false,\"audiolog_path\":\"/home/maxim/j/eardrum/audiologs/audiolog1.pcm\"})",
+
+/*option 8*/                
+"{\"name\":\"hey jibo\",\"path\":\"/var/jibo/asr/hey_jibo\",\"timeout\":0,\"bargein\":true,\"nbest\":1,\"speaker_name\":\"\",\"incremental\":false} * ({\"name\":\"sensory_sdet\",\"path\":\"/var/jibo/asr/sensory_speech_detector\",\"timeout\":50000,\"bargein\":false,\"nbest\":1,\"speaker_name\":\"\",\"incremental\":false} | {\"name\":\"pcmwriter\",\"path\":\"/var/jibo/asr/pcm_writer\",\"timeout\":50000,\"bargein\":false,\"nbest\":1,\"speaker_name\":\"\",\"incremental\":false,\"audiolog_path\":\"/home/maxim/j/eardrum/audiologs/audiolog1.pcm\"} | {\"name\":\"nuance curlmulti\",\"path\":\"/var/jibo/asr/nuance_curlmulti\",\"timeout\":50000,\"bargein\":false,\"nbest\":1,\"speaker_name\":\"\",\"incremental\":false})",
+
+/*option 9*/                
+"{\"name\":\"hey jibo\",\"path\":\"/var/jibo/asr/hey_jibo\",\"timeout\":0,\"bargein\":true,\"nbest\":1,\"speaker_name\":\"\",\"incremental\":false} & {\"name\":\"pcmwriter\",\"path\":\"/var/jibo/asr/pcm_writer\",\"timeout\":10000,\"bargein\":false,\"nbest\":1,\"speaker_name\":\"\",\"incremental\":false,\"audiolog_path\":\"/home/maxim/j/eardrum/audiologs/audiolog1.pcm\"}",
+
+/*option 10*/                
+"{\"name\":\"hey jibo\",\"path\":\"/var/jibo/asr/hey_jibo\",\"timeout\":0,\"bargein\":true,\"nbest\":1,\"speaker_name\":\"\",\"incremental\":false} * {\"name\":\"pcmwriter\",\"path\":\"/var/jibo/asr/pcm_writer\",\"timeout\":10000,\"bargein\":false,\"nbest\":1,\"speaker_name\":\"\",\"incremental\":false,\"audiolog_path\":\"/home/maxim/j/eardrum/audiologs/audiolog1.pcm\",\"audio_tail_length\":4000, \"audio_overshoot_duration\":8000}",
+
+/*option 11*/                
+"{\"name\":\"pcmwriter\",\"path\":\"/var/jibo/asr/pcm_writer\",\"timeout\":10000,\"bargein\":false,\"nbest\":1,\"speaker_name\":\"\",\"incremental\":false,\"audiolog_path\":\"/home/maxim/j/eardrum/audiologs/audiolog1.pcm\"} & ({\"name\":\"nuance curlmulti\",\"path\":\"/var/jibo/asr/nuance_curlmulti\",\"timeout\":50000,\"bargein\":false,\"nbest\":1,\"speaker_name\":\"\",\"incremental\":false} | {\"name\":\"sensory_sdet\",\"path\":\"/var/jibo/asr/sensory_speech_detector\",\"timeout\":50000,\"bargein\":false,\"nbest\":1,\"speaker_name\":\"\",\"incremental\":false})",
+
+/*option 12*/                
+"{\"name\":\"hey jibo\",\"path\":\"/var/jibo/asr/hey_jibo\",\"timeout\":0,\"bargein\":true,\"nbest\":1,\"speaker_name\":\"\",\"incremental\":false} * ({\"name\":\"pcmwriter\",\"path\":\"/var/jibo/asr/pcm_writer\",\"timeout\":10000,\"bargein\":false,\"nbest\":1,\"speaker_name\":\"\",\"incremental\":false,\"audiolog_path\":\"/home/maxim/j/eardrum/audiologs/audiolog1.pcm\"} & ({\"name\":\"nuance curlmulti\",\"path\":\"/var/jibo/asr/nuance_curlmulti\",\"timeout\":50000,\"bargein\":false,\"nbest\":1,\"speaker_name\":\"\",\"incremental\":false} | {\"name\":\"sensory_sdet\",\"path\":\"/var/jibo/asr/sensory_speech_detector\",\"timeout\":50000,\"bargein\":false,\"nbest\":1,\"speaker_name\":\"\",\"incremental\":false}))",
+
+/*option 13*/                
+"{\"name\":\"hey jibo\",\"path\":\"/var/jibo/asr/hey_jibo\",\"timeout\":0,\"bargein\":true,\"nbest\":1,\"speaker_name\":\"\",\"incremental\":false,\"speaker_id\":true} * {\"name\":\"nuance curlmulti\",\"path\":\"/var/jibo/asr/nuance_curlmulti\",\"timeout\":5000,\"bargein\":false,\"nbest\":1,\"speaker_name\":\"\",\"incremental\":false}",
+
+/*option 14*/			
+"{\"name\":\"hey jibo\",\"path\":\"/var/jibo/asr/hey_jibo\",\"timeout\":0,\"bargein\":true,\"nbest\":1,\"speaker_name\":\"\",\"incremental\":false,\"delay\":300} * {\"name\":\"Speaker Enroll TD\",\"path\":\"/var/jibo/asr/sensory_spkr_enroll_td\",\"timeout\":5000,\"bargein\":false,\"nbest\":1,\"speaker_name\":\"Vijendra\",\"incremental\":false,\"audio_tail_length\":1}",
+			
+/*option 15*/
+"{\"name\":\"hey jibo\",\"path\":\"/var/jibo/asr/hey_jibo\",\"timeout\":0,\"bargein\":true,\"nbest\":1,\"speaker_name\":\"\",\"incremental\":false} * ({\"name\":\"Speaker ID TD\",\"path\":\"/var/jibo/asr/sensory_spkr_id_td\",\"timeout\":5000,\"bargein\":false,\"nbest\":1,\"speaker_name\":\"\",\"incremental\":false,\"audio_tail_length\":1} | {\"name\":\"pcmwriter\",\"path\":\"/var/jibo/asr/pcm_writer\",\"timeout\":50000,\"bargein\":false,\"nbest\":1,\"speaker_name\":\"\",\"incremental\":false,\"audiolog_path\":\"/var/jibo/asr/audiolog1.pcm\"})",
+		   
+/*option 16*/			
+"{\"name\":\"hey jibo\",\"path\":\"/var/jibo/asr/hey_jibo\",\"timeout\":0,\"bargein\":true,\"nbest\":1,\"speaker_name\":\"\",\"incremental\":false} * {\"name\":\"Speaker Enroll TI\",\"path\":\"/var/jibo/asr/sensory_spkr_enroll_ti\",\"timeout\":5000,\"bargein\":false,\"nbest\":1,\"speaker_name\":\"Vijendra\",\"incremental\":false}",
+
+/*option 17*/
+"{\"name\":\"hey jibo\",\"path\":\"/var/jibo/asr/hey_jibo\",\"timeout\":0,\"bargein\":true,\"nbest\":1,\"speaker_name\":\"\",\"incremental\":false} * {\"name\":\"Speaker ID TI\",\"path\":\"/var/jibo/asr/sensory_spkr_id_ti\",\"timeout\":5000,\"bargein\":false,\"nbest\":1,\"speaker_name\":\"Vijendra\",\"incremental\":false,\"audio_tail_length\":0}",
+
+/*option 18*/
+"{\"name\":\"Speaker ID TD\",\"path\":\"/var/jibo/asr/sensory_spkr_id_td\",\"timeout\":0,\"bargein\":true,\"nbest\":1,\"speaker_name\":\"\",\"incremental\":false} * {\"name\":\"Speaker ID TI\",\"path\":\"/var/jibo/asr/sensory_spkr_id_ti\",\"timeout\":5000,\"bargein\":false,\"nbest\":1,\"speaker_name\":\"\",\"incremental\":false}",
+
+/*option 19*/
+"{\"name\":\"hey jibo\",\"path\":\"/var/jibo/asr/hey_jibo\",\"timeout\":0,\"bargein\":true,\"nbest\":1,\"speaker_name\":\"\",\"incremental\":false} * {\"name\":\"Speaker ID TD\",\"path\":\"/var/jibo/asr/sensory_spkr_id_td\",\"timeout\":5000,\"bargein\":false,\"nbest\":1,\"speaker_name\":\"\",\"incremental\":false,\"audio_tail_length\":1}",
+            
+/*option 20*/			
+"{\"name\":\"Speaker Enroll TD\",\"path\":\"/var/jibo/asr/sensory_spkr_enroll_td\",\"timeout\":5000,\"bargein\":false,\"nbest\":1,\"speaker_name\":\"CrewMember1\",\"incremental\":false}",
+
+/*option 21*/			
+"{\"name\":\"Speaker Enroll TD\",\"path\":\"/var/jibo/asr/sensory_spkr_enroll_td\",\"timeout\":5000,\"bargein\":false,\"nbest\":1,\"speaker_name\":\"CrewMember2\",\"incremental\":false}",
+            
+/*option 22*/                
+"{\"name\":\"hey jibo\",\"path\":\"/var/jibo/asr/hey_jibo\",\"timeout\":0,\"bargein\":true,\"nbest\":1,\"speaker_name\":\"\",\"incremental\":false,\"speaker_id\":true}",
+
+];
+
+    srcLocation = locations    [sel.selectedIndex];    
+    if (srcLocation != undefined) {      
+    //document.getElementById('task_spec').innerHTML= srcLocation; 
+    document.getElementById('task_spec').value= srcLocation;
+ } 
+}
+
+
+function showWavFileTemplates(sel){   
+
+locations =[ "[]", /*this remains blank for first selection in drop-down list*/ 
+
+/*option 1*/                 
+"[\"/var/jibo/asr/audio/HEYJIBO_1_maxim.wav\", \"/var/jibo/asr/audio/CAN_YOU_SEND_THIS_MESSAGE_TO_RICH_SADOWSKY_1_maxim.wav\"]",
+
+/*option 2*/
+"[\"/var/jibo/asr/audio/test/enroll/td/CrewMember1.wav\"]",
+
+/*option 3*/
+"[\"/var/jibo/asr/audio/test/enroll/td/CrewMember2.wav\"]",
+
+/*option 4*/
+"[\"/var/jibo/asr/audio/test/sid/td/CrewMember1.wav\"]",
+
+/*option 5*/
+"[\"/var/jibo/asr/audio/test/sid/td/CrewMember2.wav\"]",
+
+/*option 6*/
+"[\"/var/jibo/asr/audio/test/sid/td/Imposter.wav\"]",
+            
+];
+    srcLocation = locations    [sel.selectedIndex];    
+    if (srcLocation != undefined) {      
+    //document.getElementById('task_spec').innerHTML= srcLocation; 
+    document.getElementById('wav_files').value= srcLocation;
+ } 
+}
+
+$(function () {
+    $("select#wav_files_dropdown").change();
+});
+
+
+</script>
+<title>SpeakerID Test Page</title>
+</head>
+<body>
+
+<!--<div class="section">-->
+
+
+Experiment Name: <input type="text" id="experimentname" value="" />
+<br><br>
+
+ First name:<br>
+  <input type="text" id="firstname">
+  <br>
+  Last name:<br>
+  <input type="text" id="lastname">
+
+   <br>Age:<br> <input type="number" id="age" step="1" min="0" max="108">
+
+<form action="#" method="post" class="demoForm" id="demoForm">
+    
+    
+    <p>Gender:</p>
+    <p>
+        <label><input type="radio" name="sex" value="male" /> male </label>
+        <label><input type="radio" name="sex" value="female" /> female</label>
+    </p>
+        
+    
+</form>
+
+<br>
+<button id="submit_audio_source_command">Start</button>
+<button id="identify" disabled="true">Identify</button>
+<button id="stop_audio_source" disabled="true">Stop</button>
+
+<br><br>
+
+<textarea id="enrolledusers" disabled="true" rows="10" cols="20"> Users</textarea>
+
+<textarea id="result" disabled="true" rows="5" cols="30" style="background-color: black"> Result</textarea>
+
+<br>
+
+
+<br><br>
+<button id="enroll" disabled="true">Enroll</button> <br><br>
+<button id="remove" disabled="true">Remove</button> <input type="text" id="removename" value="" /><br>
+
+<h1>ASR Logs</h1>
+<textarea id="asrState" disabled="true" rows="15" cols="120" align="bottom"></textarea>
+
+
+<!--<button id="submit_audio_source_command">Submit audio source</button> -->
+
+
+</body>
+</html>

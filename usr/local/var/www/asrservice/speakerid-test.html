@@ -1,0 +1,622 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<script src="jquery-2.1.3.js"></script>
+<link href="asr.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript">
+$(document).ready(function() {
+
+    connectAsr();
+
+    initTaskSettings();
+
+    connectSpkrID();
+	
+});
+ 
+var host = window.location.host;
+var socket = new WebSocket("ws://"+host+"/port");
+var wsMsgLog = ""
+var enrolledspeakers = [];
+var enrollment_status = false;
+var running_task = true;
+  
+function connectAsr() {
+ 
+    socket.onopen = function() {
+        console.log("ASR message socket open!");
+    };
+    socket.onmessage = function(msg) {
+        console.log("Got message!!");
+        var data = JSON.parse(msg.data);
+        var data_str = JSON.stringify(data, null, 4);
+        data_str = data_str.concat("\n");
+        data_str = data_str.concat(wsMsgLog);
+        wsMsgLog = data_str;
+        //state.appendTouchState(data);
+        console.log(data.content);
+        //$("#asr").html($("<p>").text(JSON.stringify(data, null, 2)));
+        $("#asrState").val(wsMsgLog);
+
+      
+    };
+    socket.onclose = function() {
+        console.log("Asr message socket close!");
+        setTimeout(function() { connectAsr(); }, 3000);
+    };
+}
+	
+function isEmpty(obj) {
+    return Object.keys(obj).length === 0;
+}
+
+function connectSpkrID() {
+	socket.onopen = function() {
+		console.log("Touch state socket open!");
+	};
+	socket.onmessage = function(msg) {
+    
+    console.log("Got message from Spkr-ID");
+    var data = JSON.parse(msg.data);
+    
+    var resultjson = {};
+    var data_str = JSON.stringify(data, null, 4);
+    data_str = data_str.concat("\n");
+    data_str = data_str.concat(wsMsgLog);
+    wsMsgLog = data_str;
+    //console.log(data["speaker_id_record"]);
+    var data2 = JSON.stringify(data["speaker_id_record"], null, 4);
+    //console.log(data2);
+    //var prop = JSON.stringify(data["speaker_id_record"]["speaker_id"], null, 4);
+    //var prop_list_spk = JSON.stringify(data["speaker_id_record"]["utt_status"], null, 4);
+    //console.log(data["speaker_id_record"]["speaker_id"]);
+    
+    if(data["speaker_id_record"]["utt_status"]=='LISTING-TD-SPEAKERS'){
+      var user_id = [];
+      var temp_id;
+      for( var i=0; i < data["speaker_id_record"]["speaker_id"].length; i++ ){
+        temp_id = data["speaker_id_record"]["speaker_id"][i];
+        user_id[i] = temp_id["id"];
+        //console.log(user_id[i]);
+      }
+      console.log("List speakers found!");
+      $("#enrolledusers").val(user_id);
+      enrolledspeakers = user_id;
+    } 
+       
+    if(data["simple_recog_name"] == "Speaker ID TD" && data["task_id"] == "task1"){
+      console.log("SID Result found!");
+      
+      var result_str = data["speaker_id_record"]["speaker_id"][0]["id"] + "\n";
+      result_str = result_str + "score:" + data["speaker_id_record"]["speaker_id"][0]["score"] + "\n";
+      result_str = result_str + "Hypothesis:" + data["speaker_id_record"]["utt_status"]; 
+      resultjson['exp_name'] =  $("#experimentname").val(); 
+      resultjson['true_speaker'] =  $("#firstname").val().toLowerCase(); 
+      resultjson['age'] =  $("#age").val(); 
+      resultjson['gender'] = getRadioVal( document.getElementById('demoForm'), 'sex' );
+        
+      resultjson['taskid'] = data["task_id"];
+      resultjson['speaker_ids'] = data["speaker_id_record"]["speaker_id"][0]["id"].toLowerCase();
+      resultjson['score'] = data["speaker_id_record"]["speaker_id"][0]["score"];
+      resultjson['hypothesis'] = data["speaker_id_record"]["utt_status"];
+      resultjson['enrolledusers'] = enrolledspeakers; 
+      resultjson['human_timestamp'] = data["human_timestamp"];
+
+      postResult(resultjson);
+      resultjson = {};
+      if ( (data["speaker_id_record"]["utt_status"]) == "ACCEPTED" && ($("#firstname").val().toLowerCase() == data["speaker_id_record"]["speaker_id"][0]["id"].toLowerCase())) {
+         var ele = document.getElementById("result");
+         ele.style.color = "lime";  
+      } else {
+         var ele = document.getElementById("result");
+         ele.style.color = "red";             
+      }
+      $("#result").val(result_str); 
+      $("#identify").attr('disabled', true);
+      $("#enroll").attr('disabled', true);
+      
+      clearSPK();
+	  sleep(200).then(()=>{
+      identifySPK()});
+    }
+
+    if(data["simple_recog_name"] == "Speaker Enroll TD" && data["task_id"] == "task1"){
+      console.log("Enroll response received!");
+      
+      var result_str = data["speaker_id_record"]["utt_status"]; 
+      $("#result").val(result_str); 
+      $("#enroll").attr('disabled', true);
+      $("#identify").attr('disabled', true);
+      
+      if (data["speaker_id_record"]["utt_status"] == "ENROLLMENT-DONE") {
+        enrollment_status = (data["speaker_id_record"]["utt_status"] == "ENROLLMENT-DONE"); 
+        alert("You are enrolled!");
+        ListEnrolledUsers();
+        $("#enroll").attr('disabled', false);
+      }
+      else if (data["speaker_id_record"]["utt_status"] == "ENROLLMENT-STARTED") {
+        console.log("Enrollment started: waiting for new ws message");
+        $("#result").val(""); 
+      }
+      else if (data["speaker_id_record"]["utt_status"] != "ENROLLMENT-DONE"){
+        clearSPK();
+        sleep(200).then(()=>{
+        enrollSPK(2)});
+      } 
+    }
+
+        //$("#asr").html($("<p>").text(JSON.stringify(data, null, 2)));
+        $("#asrState").val(wsMsgLog);
+	};
+	socket.onclose = function() {
+		console.log("Spkr-ID state socket close!");
+		setTimeout(function() {connectSpkrID(); }, 3000);
+	};
+}
+
+function sendSocketMsg() {
+    console.log("Sending socket msg");
+    socket.send('10');
+}
+
+
+function postResult(jsonresult) {
+
+$.ajax({
+            type: "POST",
+            url: "http://10.0.1.238",
+            //dataType: "json",
+            crossDomain: true,
+            data: JSON.stringify(jsonresult), 
+            success: function() {
+            },
+            error: function(xhr, status, error) {
+                console.log("ERROR " + status + " " + error + JSON.stringify(data));
+            }
+        });
+
+}
+
+
+function ListEnrolledUsers() {
+
+$.ajax({
+            type: "POST",
+            url: "/spkr_id_interface",
+            dataType: "json",
+            data: packListSpkrSettings(), 
+            success: function() {
+            },
+            error: function(xhr, status, error) {
+                console.log("ERROR " + status + " " + error + JSON.stringify(data));
+            }
+        });
+
+}
+
+
+function clearSPK() {
+
+$.ajax({
+            type: "POST",
+            url: "/asr_interface",
+            dataType: "json",
+            data: packIdentifyClearSPK(), 
+            success: function() {
+            },
+            error: function(xhr, status, error) {
+                 console.log("ERROR " + status + " " + error + JSON.stringify(data));
+            }
+        });
+
+}
+
+function enrollSPK(mode) {
+    console.log("entering enroll!");
+  //  var d = packIdentifyTask();
+//    debugger;
+  console.log(enrollment_status);
+    $.ajax({
+            type: "POST",
+            url: "/asr_interface",
+            //dataType: "json",
+            data: packEnrollTask(mode), 
+            success: function() {
+             console.log("Executed Enrollment!");
+              //packIdentifyClearSPK();
+            },
+            error: function(xhr, status, error) {
+              console.log("ERROR " + status + " " + error + JSON.stringify(data));
+              //packIdentifyClearSPK();
+            }
+        });       
+}
+
+  // For Gender input only
+function getRadioVal(form, name) {
+    var val;
+    // get list of radio buttons with specified name
+    var radios = form.elements[name];
+    console.log(radios);
+    // loop through list of radio buttons
+    for (var i=0, len=radios.length; i<len; i++) {
+        if ( radios[i].checked ) { // radio checked?
+            val = radios[i].value; // if so, hold its value in val
+            break; // and break out of for loop
+        }
+    }
+    return val; // return value of checked radio or undefined if none checked
+}
+
+function makeid() {
+    var text = "";
+    var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+    for( var i=0; i < 16; i++ )
+        text += possible.charAt(Math.floor(Math.random() * possible.length));
+
+    return text;
+}
+
+function identifySPK() {
+    console.log("clicked to identify speaker task!");
+    $.ajax({
+            type: "POST",
+            url: "/asr_interface",
+            //dataType: "json",
+            data: packIdentifyTask(), 
+            success: function() {
+             console.log("Executed Identify!");
+            },
+            error: function(xhr, status, error) {
+              console.log("ERROR " + status + " " + error + JSON.stringify(data));
+            }
+        });
+        
+ }
+
+function initTaskSettings() {
+
+$("#remove").click(function() {
+      $("#remove").attr('disabled', true);
+    console.log("remove clicked!");
+    $.ajax({
+            type: "POST",
+            url: "/spkr_id_interface",
+            //dataType: "json",
+            data: packDeleteSpkr(),
+            success: function() {
+             console.log("Removed an enrollment!");
+             ListEnrolledUsers();
+            },
+            error: function(xhr, status, error) {
+              console.log("ERROR " + status + " " + error + JSON.stringify(data));
+            }
+        });
+              $("#remove").attr('disabled', false);
+              $("#removename").val("");
+ });
+  
+$("#compress_sid_data").click(function() {
+        $.ajax({
+            type: "POST",
+            url: "/spkr_id_interface",
+            dataType: "json",
+            data: packCompressSidDataSettings(), 
+            success: function() {
+            },
+            error: function(xhr, status, error) {
+                console.log("ERROR " + status + " " + error + JSON.stringify(data));
+            }
+        });
+    });
+
+$("#enroll").click(function() {
+  
+    $("#enroll").attr('disabled', true);
+    $("#identify").attr('disabled', true);
+    console.log("enroll clicked here!");
+    $.ajax({
+            type: "POST",
+            url: "/asr_interface",
+            //dataType: "json",
+            data: packIdentifyClearSPK(),
+            success: function() {
+             console.log("Executing enroll!");
+             sleep(200);
+              enrollSPK(0);
+             
+            },
+            error: function(xhr, status, error) {
+              console.log("ERROR " + status + " " + error + JSON.stringify(data));
+            }
+        });
+ });
+
+$("#identify").click(function() {
+      $("#enroll").attr('disabled', true);
+      $("#identify").attr('disabled', true);
+    console.log("clicked identify!");
+    if (running_task==true){
+    $.ajax({
+            type: "POST",
+            url: "/asr_interface",
+            //dataType: "json",
+            
+            data: packIdentifyClearSPK(),
+            
+            success: function() {
+             console.log("Executed clearSPK!");
+             identifySPK();
+             
+            },
+            error: function(xhr, status, error) {
+              console.log("ERROR " + status + " " + error + JSON.stringify(data));
+            }
+        });
+  } else {
+    identifySPK();
+    running_task = true;
+  }
+             
+ });
+    
+    $("#submit_audio_source_command").click(function() {
+      if ( $("#firstname").val() != "") {
+            
+      $("#submit_audio_source_command").attr('disabled', true);
+        $.ajax({
+            type: "POST",
+            url: "/audio_source",
+            data: packAudioSourceCommand(), 
+            success: function() {
+             ListEnrolledUsers();
+            },
+            error: function(xhr, status, error) {
+                console.log("ERROR " + status + " " + error + JSON.stringify(data));
+            }
+        });
+      $("#enroll").attr('disabled', false);
+      $("#stop_audio_source").attr('disabled', false);
+      $("#identify").attr('disabled', false);
+      $("#remove").attr('disabled', false);
+      $("#compress_sid_data").attr('disabled', false);
+      $("#firstname").attr('disabled', true);
+      $("#lastname").attr('disabled', true);
+      $("#age").attr('disabled', true);
+      $("#gender").attr('disabled', true);
+ } else {
+                alert("Please enter your first name, before clicking start.");
+
+}
+    });
+
+    $("#stop_audio_source").click(function() {
+      $("#submit_audio_source_command").attr('disabled', false);
+      //data=[];
+        $.ajax({
+            type: "POST",
+            url: "/audio_source",
+            dataType: "json",
+            data: packStopAudioSourceCommand(), 
+            success: function() {
+              
+            },
+            error: function(xhr, status, error) {
+                console.log("ERROR " + status + " " + error + JSON.stringify(data));
+            }
+        });
+     $("#identify").attr('disabled', true);
+     $("#enroll").attr('disabled', true);
+     $("#stop_audio_source").attr('disabled', true);
+     $("#remove").attr('disabled', true);
+     $("#firstname").val("");
+     $("#lastname").val("");
+     $("#age").val("");
+     $("#enrolledusers").val("");
+     $("#result").val("");
+      console.log("Now clearing task");
+      clearSPK();
+      $("#firstname").attr('disabled', false);
+      $("#lastname").attr('disabled', false);
+      $("#age").attr('disabled', false);
+      $("#gender").attr('disabled', false);
+
+
+    });
+
+ $("#upload_logs").click(function() {
+        $.ajax({
+            type: "POST",
+            url: "/asr_control",
+            dataType: "json",
+            data: packUploadLogsControlCommand(), 
+            success: function() {
+            },
+            error: function(xhr, status, error) {
+                console.log("ERROR " + status + " " + error + JSON.stringify(control_command_data));
+            }
+        });
+    });
+}
+  
+var data = {task: "default", action: "default", request_id:"default_task_request_id"};
+
+function packCompressSidDataSettings() {
+	data.action = "compress-sid-data";
+	data.task_id = "id";
+	data.spkr_id_type = "Text-Dependent";
+  data.speaker_name = "";
+	console.log(JSON.stringify(data));
+	return JSON.stringify(data);
+}
+  
+function packListSpkrSettings() {
+	data.action = "list-speakers";
+	data.task_id = "id";
+	data.spkr_id_type = "Text-Dependent";
+	data.speaker_name = "";
+	console.log(JSON.stringify(data));
+	return JSON.stringify(data);
+}
+
+function packDeleteSpkr() {
+	data.action = "delete-speaker";
+	data.task_id = "id";
+	data.spkr_id_type = "Text-Dependent";
+	data.speaker_name = $("#removename").val();
+	console.log(JSON.stringify(data));
+	return JSON.stringify(data);
+}
+	
+//function packIdentifyTask() {
+//    data.command = "command";
+//    data.task_id = "task1";
+//    //data.task_id = makeid();
+//    data.hotphrase = "hey_jibo";
+//    data.audio_source_id = "alsa1";
+//    data.request_id = "hey_jibo_start1";
+//    return JSON.stringify(data);
+//}
+
+function packIdentifyTask() {
+    data.task = "{\"name\":\"hey jibo\",\"path\":\"/home/vijendra/JIBO-SpeakerID/asrresources-product/hey_jibo\",\"timeout\":0} * ({\"name\":\"pcmwriter\",\"path\":\"/home/vijendra/JIBO-SpeakerID/asrresources-product/pcm_writer\",\"timeout\":0,\"audio_tail_length\":4000, \"audio_overshoot_duration\":4000} | {\"name\":\"Speaker ID TD\",\"path\":\"/home/vijendra/JIBO-SpeakerID/asrresources-product/sensory_spkr_id_td\",\"audio_tail_length\":1})";
+    data.task_id = "task1";
+    //data.task_id = makeid();
+    data.action = "init_and_start";
+    data.audio_source_id = "alsa1";
+    return JSON.stringify(data);
+}
+
+function packEnrollTask(mode) {
+   var rec_1 = '{\"name\":\"hey jibo\",\"path\":\"/home/vijendra/JIBO-SpeakerID/asrresources-product/hey_jibo\",\"timeout\":0,\"bargein\":true,\"nbest\":1,\"speaker_name\":\"\",\"incremental\":false,\"delay\":300}';
+   var rec_2_json = {};
+   rec_2_json.name = "Speaker Enroll TD";
+   rec_2_json.path = "/home/vijendra/JIBO-SpeakerID/asrresources-product/sensory_spkr_enroll_td";
+   rec_2_json.timeout = 5000;
+   rec_2_json.bargein = false;
+   rec_2_json.nbest = 1;
+   rec_2_json.speaker_name = $("#firstname").val();
+   rec_2_json.incremental = false;
+   rec_2_json.audio_tail_length = 1;
+   rec_2_json.enroll_mode = mode;
+   
+   var final_task = rec_1 + "*" + JSON.stringify(rec_2_json);
+    data.task = final_task;
+    data.task_id = "task1";
+    //data.task_id = makeid();
+    data.action = "init_and_start";
+    data.audio_source_id = "alsa1";
+    return JSON.stringify(data);
+}
+
+
+function packIdentifyClearSPK() {
+    console.log("Clearing any previous tasks");
+    data.task = "";
+    data.action = "clear";
+  //data.task_id = makeid();
+    data.task_id = "task1";
+    data.audio_source_id = "alsa1";
+    //running_task = false;
+    return JSON.stringify(data);
+}
+
+var audio_source_data = {action: "default", audio_source_id:"default_id", 
+    audio_source:"default_source", request_id:"defaut_request_id"}
+
+function packAudioSourceCommand() {
+    audio_source_data.action = "start";
+    audio_source_data.audio_source_id = "alsa1";
+    audio_source_data.wav_files = [];
+    audio_source_data.audio_source = "alsa";
+    return JSON.stringify(audio_source_data);
+}
+
+var control_command_data = {action: "default", request_id:"default_request_id"}
+
+function packUploadLogsControlCommand() {
+    control_command_data.action = "upload_logs";
+    control_command_data.request_id = $("#control_id").val();
+    return JSON.stringify(control_command_data);
+}
+
+function sleep (time) {
+  return new Promise((resolve) => setTimeout(resolve, time));
+}
+
+function packStopAudioSourceCommand() {
+  console.log("packing audio source stop");
+    audio_source_data.action = "stop";
+    audio_source_data.audio_source_id = "alsa1";
+    audio_source_data.wav_files = [];
+    audio_source_data.audio_source = "alsa";
+   console.log(JSON.stringify(audio_source_data));
+    return JSON.stringify(audio_source_data);
+}
+
+
+$(function () {
+    $("select#wav_files_dropdown").change();
+});
+
+
+</script>
+<title>SpeakerID Test Page</title>
+</head>
+<body>
+
+<!--<div class="section">-->
+
+
+Experiment Name: <input type="text" id="experimentname" value="" />
+<br><br>
+
+ First name:<br>
+  <input type="text" id="firstname">
+  <br>
+  Last name:<br>
+  <input type="text" id="lastname">
+
+   <br>Age:<br> <input type="number" id="age" step="1" min="0" max="108">
+
+<form action="#" method="post" class="demoForm" id="demoForm">
+    
+    
+    <p>Gender:</p>
+    <p>
+        <label><input type="radio" name="sex" value="male" /> male </label>
+        <label><input type="radio" name="sex" value="female" /> female</label>
+    </p>
+        
+    
+</form>
+
+<br>
+<button id="submit_audio_source_command">Start</button>
+<button id="identify" disabled="true">Identify</button>
+<button id="stop_audio_source" disabled="true">Stop</button>
+
+<br><br>
+
+<textarea id="enrolledusers" disabled="true" rows="10" cols="20"> Users</textarea>
+
+<textarea id="result" disabled="true" rows="5" cols="30" style="background-color: black"> Result</textarea>
+
+<br>
+
+
+<br><br>
+<button id="enroll" disabled="true">Enroll</button> <br><br>
+<button id="remove" disabled="true">Remove</button> <input type="text" id="removename" value="" /><br>
+<button id="compress_sid_data" disabled="true">Compress SID Data</button><br><br>
+
+<h1>ASR Logs</h1>
+<textarea id="asrState" disabled="true" rows="15" cols="120" align="bottom"></textarea>
+
+
+<!--<button id="submit_audio_source_command">Submit audio source</button> -->
+
+
+</body>
+</html>

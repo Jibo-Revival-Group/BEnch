@@ -1,0 +1,163 @@
+{
+    "RecogHJ": {
+        "comment": "Positive margin values widen the HJ Phrase spotter's standard endpoints. The end_margin_ms also compensates for the Phrase Spotter's premature endpoint, which is around the beginning O in jibO",
+        "hj_end_margin_ms": 100,
+        "hj_start_margin_ms": 0,
+        "config_path": "/usr/local/share/asr/hey_jibo"
+    },
+    "AudioChannel": {
+        "block_duration_ms": 50,
+        "buffer_size": 2048,
+        "period_size": 85
+    },
+    "logging": {
+        "channels": {
+            "syslog": {
+                "facility": "SYSLOG_DAEMON",
+                "class": "RFC_5424_Channel",
+                "name": "jibo-jetstream-service"
+            },
+            "console": {
+                "pattern": "%Y-%m-%d %H:%M:%S %s: [%p] %t",
+                "class": "ConsoleChannel"
+            },
+            "splitter": {
+                "channels": "syslog",
+                "class": "SplitterChannel"
+            }
+        },
+        "loggers": {
+            "l2": {
+                "name": "Application",
+                "level": "debug"
+            },
+            "root": {
+                "level": "debug"
+            },
+            "l1": {
+                "name": "JetService",
+                "level": "debug"
+            }
+        },
+        "jibo_message_prefix": "C"
+    },
+    "RecogNameLearning": {
+        "speech_analytics_log_path": "/var/log/jetstream/namelearning_logs",
+        "g2p_service": "http://localhost:8089/tts_nbest_prons",
+        "resource_path": "/usr/local/share/asr/namelearning",
+        "temp_path": "/var/jibo/asr/namelearning_temp/"
+    },
+    "RecogSpeakerID": {
+        "comment": "change next property to 'sensory_log_path' to enable Sensory authenticator logging, 'xxxsensory_log_path' to disable",
+        "id_start_margin_ms": 250,
+        "ubm_path": "/usr/local/share/asr/sensory_data_td/",
+        "xxxsensory_log_path": "/var/jibo/asr/sensory_auth_logs",
+        "confidence_margin": 2,
+        "comment2": "id_end_margin is used when retrying to ID with an audio segment, it also controls the end margin of the logged utts",
+        "margin-comment": "positive values for start and end margins widen the space around the speaker-id HJ",
+        "client_path": "/var/jibo/asr/sensory_data_td/",
+        "PHRASEver": "OFF",
+        "threshold": -1.2,
+        "id_end_margin_ms": 300
+    },
+    "RecogEOS": {
+        "resource_path": "/usr/local/share/asr/jibo_energy_eos"
+    },
+    "JetService": {
+        "log_directory": "/var/log/jetstream"
+    },
+    "RecogSpeakerEnroll": {
+        "comment": "change next property to 'sensory_log_path' to enable Sensory enroller logging, 'xxxsensory_log_path' to disable",
+        "enroll_start_margin_ms": 250,
+        "ubm_path": "/usr/local/share/asr/sensory_data_td/",
+        "xxxsensory_log_path": "/var/jibo/asr/sensory_enroller_logs",
+        "speech_analytics_log_path": "/var/log/jetstream/enroller_logs",
+        "margin-comment": "positive values for the start margin increase the amount of silence fed to the enroller before the HJ occurs",
+        "minEnrollUtts": 6,
+        "client_path": "/var/jibo/asr/sensory_data_td/",
+        "checkQuality": "LOW"
+    },
+    "HJLogger": {
+        "comment-logging-fraction": "The probability that an HJ utterance will be logged -- range 0-1",
+        "speech_analytics_log_path": "/var/log/jetstream/hj_logs",
+        "logging_probability": 0.05,
+        "end_margin_ms": 500,
+        "start_margin_ms": 500
+    },
+    "webCore": {
+        "requestLogging": false,
+        "fileRoot": "/usr/local/var/www/jetstream",
+        "serverPort": 8090
+    },
+    "JetstreamService": {
+        "stacktracing": false,
+        "registryPort": 8181,
+        "serverPort": 8090
+    },
+    "HubClient": {
+        "encoding_type_comment": "This can be either LINEAR16, FLAC, or OGG_OPUS",
+        "xxx_override": {
+            "hub_port": 9000,
+            "entrypoint_hostname": "dev-entrypoint.jibo.com",
+            "hub_hostname": "172.24.84.137"
+        },
+        "proactive_url": "/v1/proactive",
+        "region-settings": {
+            "comment": "This is a switch, selected by the 'region' field setting in the robot's /var/jibo/credentials.json file",
+            "stg-entrypoint": {
+                "hub_port": 443,
+                "entrypoint_hostname": "stg-entrypoint.jibo.com",
+                "hub_hostname": "stg-hub.jibo.com"
+            },
+            "alpha-entrypoint": {
+                "hub_port": 443,
+                "entrypoint_hostname": "alpha-entrypoint.jibo.com",
+                "hub_hostname": "alpha-hub.jibo.com"
+            },
+            "api": {
+                "hub_port": 443,
+                "entrypoint_hostname": "api.jibo.com",
+                "hub_hostname": "neo-hub.jibo.com"
+            },
+            "preprod-entrypoint": {
+                "hub_port": 443,
+                "entrypoint_hostname": "preprod-entrypoint.jibo.com",
+                "hub_hostname": "preprod-hub.jibo.com"
+            },
+            "dev-entrypoint": {
+                "hub_port": 443,
+                "entrypoint_hostname": "dev-entrypoint.jibo.com",
+                "hub_hostname": "dev-hub.jibo.com"
+            }
+        },
+        "listen_language": "en-US",
+        "override": {
+            "hub_port": 24605,
+            "hub_hostname": "192.168.7.142",
+            "entrypoint_hostname": "192.168.7.142"
+        },
+        "encoding_type": "OGG_OPUS",
+        "listen_url": "/v1/listen",
+        "encoding-settings": {
+            "OGG_OPUS": {
+                "channels": 1,
+                "bitrate": 64000,
+                "streaming_rate": 1.2,
+                "sample_rate": 16000,
+                "vbr": true
+            },
+            "FLAC": {
+                "channels": 1,
+                "bps": 16,
+                "streaming_rate": 3,
+                "sample_rate": 16000
+            }
+        }
+    },
+    "HubAsr": {
+        "local_sosTimeout_sec": 2,
+        "global_sosTimeout_sec": 3,
+        "global_maxSpeechTimeout_sec": 20,
+        "local_maxSpeechTimeout_sec": 20
+    }
+}

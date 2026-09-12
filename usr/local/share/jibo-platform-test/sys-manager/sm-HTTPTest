@@ -1,0 +1,134 @@
+"use strict";
+
+const assert = require('assert');
+// const pathToLog = '/usr/local/lib/jibo-platform-test/platformTest.log';
+const Common = require('./../../../lib/jibo-platform-test/common');
+
+const testList = [
+                {'type': "POST", 'url': "/wifi/wpa", 'args':
+                    {"command": "PING"
+                    }
+                },
+                {'type': "POST", 'url': "/wifi/interface", 'args':
+                    {"interface":
+                        {
+                        "method": "static",
+                        "address": "10.10.1.1",
+                        "network": "10.10.1.1",
+                        "netmask": "255.255.255.0",
+                        "broadcast": "10.10.1.255",
+                        "gateway": "10.10.1.1",
+                        "dns": "206.67.222.222"
+                        }
+                    }
+                },
+                {'type': "GET", 'url': "/wifi/interface"},
+                {'type': "GET", 'url': "/version"},
+                {'type': "GET", 'url': "/identity"},
+                {'type': "POST", 'url': "/time/zone", 'args':
+                    {
+                        "timezone": "Etc/UTC"
+                    }
+                },
+                {'type': "GET", 'url': "/time/zone"},
+                {'type': "GET", 'url': "/time/current"},
+                //this interface does not currently work returns 500 (7/13/17)
+                //500 Failed to synchronize time: Failed to get NTP date
+                {'type': "GET", 'url': "/time/synchronize", 'args':{'':""},
+                    // using a GET will give a 405, but proves existance
+                    'statusExpect' : 405
+                },
+                {'type': "POST", 'url': "/credentials", 'args':
+                    {
+                        "accessKeyId": "aO5cbPlPRL7oOvUiDzTe",
+                        "secretAccessKey": "iHD2Rc88NXWFQ6UAkIDiOnODltKGCBXmYvMLNmoH",
+                        "region": "dev1-entrypoint"
+                    }
+                },
+                {'type': "GET", 'url': "/credentials"},
+                {'type': "POST", 'url': "/mode", 'args':
+                    {
+                        "mode": "int-developer"
+                    }
+                },
+                {'type': "GET", 'url': "/mode"},
+                {'type': "GET", 'url': "/storage/mounts"},
+                {'type': "GET", 'url': "/storage/semantic"},
+                {'type': "POST", 'url': "/skill/refresh", 'args': {'':""}},
+                {'type': "GET", 'url': "/skill/list"},
+                {'type': "POST", 'url': "/skill/launch", 'args':
+                    {
+                        "name": "jibo-diagnostics",
+                        "context": "{}"
+                    }
+                },
+                {'type': "POST", 'url': "/skill/terminate", 'args':
+                    {
+                        "name": "jibo-diagnostics"
+                    }
+                },
+                {'type': "POST", 'url': "/system_notify", 'args':
+                    {
+                        "type": "test",
+                        "channel": "GENERAL",
+                        "ts": [Common._getRInt(0, 1000), Common._getRInt(0, 999)],
+                        "data": {}
+                    }
+                },
+                {'type': "GET", 'url': "/service/list"},
+                {'type': "POST", 'url': "/service/start", 'args':
+                    {
+                        "services": []
+                    }
+                },
+                {'type': "POST", 'url': "/service/stop", 'args':
+                    {
+                        "services": []
+                    }
+                },
+                {'type': "POST", 'url': "/service/restart", 'args':
+                    {
+                        "services": []
+                    }
+                },
+                {'type': "GET", 'url': "/mode"},
+                //POST takes too long to properly test the POST (2.7 minutes)
+                {'type': "GET", 'url': "/logs/upload", 'args':{'':""},
+                    //using GET returns a 405 and proves existance
+                    'statusExpect': 405
+                }
+                ];
+
+describe('System Manager HTTP Tests', function() {
+
+    before(function() {
+        this.request = {
+            'POST': Common._post,
+            'GET': Common._get
+        };
+    });
+
+    for(let i = 0; i < testList.length; i++) {
+        const test = testList[i];
+        it('Testing the ' + test.url.substring(1).split("?")[0] + ' API', function(done) {
+            this.request[test.type]("localhost", test.url, 8585, test.args, function(error, response, body) {
+                assert(!error, 'Error ' + error);
+                if (test.statusExpect){
+                    assert(response.statusCode == test.statusExpect,
+                        'Unexpected status code ' + response.statusCode
+                    );
+                }else{
+                    assert(response.statusCode < 300,
+                        'Bad status code ' + response.statusCode);
+                    if (test.type == "GET"){
+                        assert(body, 'Response body is undefined');
+                    }
+                }
+                done();
+            });
+        });
+    }
+    after(function() {
+        console.log("- Finished testing the system manager HTTP APIs");
+    });
+});

@@ -1,0 +1,2 @@
+type = NUANCE_CURLMULTI
+incremental_timeout = 2000

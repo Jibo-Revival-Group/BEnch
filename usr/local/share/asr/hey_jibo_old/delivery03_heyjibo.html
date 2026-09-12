@@ -1,0 +1,327 @@
+
+ <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+ <html>
+ <head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <title>jibo_jibo</title>
+  <!--[if IE]>
+   <script language='javascript' type='text/javascript' 
+    src='https://fluent-speech.com/java/flot/excanvas.pack.js'>
+   </script>
+  <![endif]-->
+  <script language='javascript' type='text/javascript' 
+   src='https://fluent-speech.com/java/flot/jquery.js'>
+  </script>
+  <script language='javascript' type='text/javascript' 
+   src='https://fluent-speech.com/java/flot/jquery.flot.js'>
+  </script>
+ </head>
+ <body>
+ <h1 align='center'>jibo_jibo</h1>
+ <h3 align='center'>Sensory Confidential</h3>
+
+ 
+
+ <table>
+  <tr>
+   <td><b>False Rejects %</b></td>
+   <td><div id='placeholder' style='width:600px;height:600px;'></div></td>
+   <td valign='top'>
+     <b>Select:</b><br><span id='choices'></span><br><br>
+     <span id='format'></span><br>
+     <span id='info'></span>
+   </td>
+  </tr>
+  <tr><td></td><td align='center'><b>False Accepts per Hour</b></td> </tr>
+  <tr><td></td><td align='center'><span id='clickdata'></span></td></tr>
+ </table>
+ <ul>
+  <li>Switch data series on/off by selecting/deselecting it at the top right
+       of graph</li>
+  <li>Hover mouse over data points to show associated phrase spotting 
+       settings</li>
+ 
+ </ul>
+
+ <script id='source' language='javascript' type='text/javascript'>
+  $(function () {
+   // -----
+   var G0 = ["$g1"];
+   var time0 = [[1000, 3, 3], [1000, 3, 3], [1000, 3, 4], [1000, 3, 4], [1000, 3, 4], [1000, 5, 4], [1000, 4, 4], [1000, 5, 4], [1000, 6, 5], [1000, 6, 5], [1000, 6, 5], [1000, 6, 5], [1000, 8, 8], [1000, 8, 8], [1000, 8, 8], [1000, 6, 6]];  // setting, (absBeam, actNoise, actVocab)
+   var dTuning0 = [[0.000000, 15.468750, 0.000000, 0.359375], [0.031250, 13.265625, 0.015625, 0.335938], [0.078125, 11.242188, 0.023438, 0.312500], [0.148438, 9.953125, 0.039062, 0.296875], [0.187500, 9.523438, 0.039062, 0.289062], [0.265625, 7.796875, 0.054688, 0.265625], [0.312500, 7.421875, 0.054688, 0.257812], [0.414062, 6.867188, 0.062500, 0.250000], [0.601562, 5.835938, 0.078125, 0.234375], [0.640625, 5.585938, 0.078125, 0.226562], [0.773438, 5.117188, 0.085938, 0.218750], [0.898438, 4.757812, 0.093750, 0.210938], [1.093750, 4.109375, 0.109375, 0.195312], [1.242188, 3.820312, 0.117188, 0.187500], [1.390625, 3.601562, 0.117188, 0.179688], [1.507812, 3.671875, 0.125000, 0.187500]];  // setting, (fa, fr, dFa, dFr)
+   var abTuning0 = [[[-1900, 800, 0]], [[-2400, 940, 0]], [[-2800, 1060, 0]], [[-2350, 1000, 0]], [[-2150, 980, 0]], [[-3850, 1360, 0]], [[-3500, 1300, 0]], [[-3400, 1300, 0]], [[-4250, 1500, 0]], [[-4300, 1520, 0]], [[-3950, 1460, 0]], [[-4050, 1500, 0]], [[-4950, 1700, 0]], [[-4400, 1600, 0]], [[-4500, 1640, 0]], [[-3700, 1480, 0]]];  // setting, group, (paramA, paramB, paramC)
+   // -----
+   var G1 = ["$g1"];
+   var time1 = [[1000, 2, 3], [1000, 3, 4], [1000, 3, 4], [1000, 3, 4], [1000, 3, 4], [1000, 4, 5], [1000, 4, 5], [1000, 4, 5], [1000, 5, 6], [1000, 5, 6], [1000, 5, 6], [1000, 5, 7], [1000, 7, 8], [1000, 7, 8], [1000, 7, 8], [1000, 5, 7]];  // setting, (absBeam, actNoise, actVocab)
+   var dTuning1 = [[0.0, 37.35498839907193, 0.0, 2.327424901129802], [0.0, 33.64269141531322, 0.0, 2.2732535298112744], [0.10249401161857945, 29.698375870069604, 0.051247005809289724, 2.198402227927604], [0.15374101742786916, 28.306264501160094, 0.06276450753910255, 2.167404703417038], [0.23061152614180375, 26.91415313225058, 0.07687050871393458, 2.1338560961054243], [0.2049880232371589, 24.129930394431554, 0.07247421064651031, 2.058597316969254], [0.28185853195109345, 24.361948955916475, 0.08498354494928874, 2.0653055209940607], [0.3331055377603832, 23.201856148491878, 0.0923868535796975, 2.0309295252112425], [0.4099760464743178, 20.417633410672853, 0.10249401161857945, 1.9394083116967376], [0.4099760464743178, 19.721577726218097, 0.10249401161857945, 1.9143809708136121], [0.4612230522836075, 19.489559164733176, 0.10871131596976547, 1.9058347301394725], [0.4612230522836075, 17.16937354988399, 0.10871131596976547, 1.8143907551164917], [0.7430815842347009, 15.31322505800464, 0.13798678607760223, 1.7326037755003818], [0.7943285900439907, 15.081206496519723, 0.1426656263233532, 1.7217816597751825], [0.8968226016625701, 14.153132250580047, 0.15159068750636376, 1.6770524134869396], [0.922446104567215, 14.385150812064964, 0.15374101742786916, 1.688456530906486]];  // setting, (fa, fr, dFa, dFr)
+   var abTuning1 = [[[-1900, 800, 0]], [[-2400, 940, 0]], [[-2800, 1060, 0]], [[-2350, 1000, 0]], [[-2150, 980, 0]], [[-3850, 1360, 0]], [[-3500, 1300, 0]], [[-3400, 1300, 0]], [[-4250, 1500, 0]], [[-4300, 1520, 0]], [[-3950, 1460, 0]], [[-4050, 1500, 0]], [[-4950, 1700, 0]], [[-4400, 1600, 0]], [[-4500, 1640, 0]], [[-3700, 1480, 0]]];  // setting, group, (paramA, paramB, paramC)
+   // -----
+   var G2 = ["$g1"];
+   var time2 = [[1000, 2, 3], [1000, 3, 3], [1000, 3, 3], [1000, 3, 3], [1000, 3, 3], [1000, 4, 4], [1000, 4, 4], [1000, 4, 4], [1000, 5, 4], [1000, 5, 4], [1000, 5, 4], [1000, 5, 4], [1000, 7, 7], [1000, 7, 6], [1000, 7, 7], [1000, 5, 4]];  // setting, (absBeam, actNoise, actVocab)
+   var dTuning2 = [[0.0, 16.70533642691415, 0.0, 1.7947101911635552], [0.0, 15.081206496519723, 0.0, 1.7217816597751825], [0.10249401161857945, 11.600928074245939, 0.051247005809289724, 1.540736412462223], [0.15374101742786916, 10.904872389791183, 0.06276450753910255, 1.4996689427428762], [0.23061152614180375, 10.440835266821345, 0.07687050871393458, 1.4712306558195556], [0.2049880232371589, 7.424593967517401, 0.07247421064651031, 1.2613694068290873], [0.28185853195109345, 6.728538283062645, 0.08498354494928874, 1.2052936872009845], [0.3331055377603832, 5.800464037122969, 0.0923868535796975, 1.1246409104547015], [0.4099760464743178, 4.408352668213457, 0.10249401161857945, 0.9876572701464578], [0.4099760464743178, 3.944315545243619, 0.10249401161857945, 0.9364950532337465], [0.4612230522836075, 3.944315545243619, 0.10871131596976547, 0.9364950532337465], [0.4612230522836075, 3.944315545243619, 0.10871131596976547, 0.9364950532337465], [0.7430815842347009, 2.784222737819025, 0.13798678607760223, 0.7915502509844831], [0.7943285900439907, 2.784222737819025, 0.1426656263233532, 0.7915502509844831], [0.8968226016625701, 2.5522041763341066, 0.15159068750636376, 0.758755486092366], [0.922446104567215, 2.784222737819025, 0.15374101742786916, 0.7915502509844831]];  // setting, (fa, fr, dFa, dFr)
+   var abTuning2 = [[[-1900, 800, 0]], [[-2400, 940, 0]], [[-2800, 1060, 0]], [[-2350, 1000, 0]], [[-2150, 980, 0]], [[-3850, 1360, 0]], [[-3500, 1300, 0]], [[-3400, 1300, 0]], [[-4250, 1500, 0]], [[-4300, 1520, 0]], [[-3950, 1460, 0]], [[-4050, 1500, 0]], [[-4950, 1700, 0]], [[-4400, 1600, 0]], [[-4500, 1640, 0]], [[-3700, 1480, 0]]];  // setting, group, (paramA, paramB, paramC)
+   // -----
+   var G3 = ["$g1"];
+   var time3 = [[1000, 5, 5], [1000, 5, 5], [1000, 5, 5], [1000, 5, 5], [1000, 5, 5], [1000, 5, 5], [1000, 5, 5], [1000, 5, 5], [1000, 5, 5], [1000, 5, 5], [1000, 5, 5], [1000, 5, 5], [1000, 5, 5], [1000, 5, 5], [1000, 5, 5], [1000, 5, 5], [1000, 5, 6]];  // setting, (absBeam, actNoise, actVocab)
+   var dTuning3 = [[0.031250, 24.929688, 0.015625, 1.000000], [0.046875, 22.585938, 0.015625, 0.968750], [0.070312, 21.046875, 0.023438, 0.937500], [0.125000, 19.500000, 0.031250, 0.914062], [0.210938, 17.953125, 0.046875, 0.882812], [0.304688, 16.250000, 0.054688, 0.851562], [0.367188, 15.078125, 0.062500, 0.828125], [0.437500, 14.492188, 0.062500, 0.812500], [0.570312, 13.156250, 0.078125, 0.781250], [0.679688, 12.523438, 0.085938, 0.765625], [0.742188, 12.250000, 0.085938, 0.757812], [0.953125, 11.562500, 0.101562, 0.734375], [1.031250, 11.031250, 0.101562, 0.726562], [1.132812, 10.765625, 0.109375, 0.718750], [1.171875, 10.546875, 0.109375, 0.710938], [1.375000, 10.492188, 0.117188, 0.710938], [1.484375, 10.179688, 0.125000, 0.695312]];  // setting, (fa, fr, dFa, dFr)
+   var abTuning3 = [[[-3100, 1680, 0]], [[-2100, 1340, 0]], [[-2050, 1360, 0]], [[-2750, 1660, 0]], [[-1200, 1100, 0]], [[-1300, 1180, 0]], [[-1450, 1260, 0]], [[-1650, 1360, 0]], [[-1850, 1480, 0]], [[-2050, 1580, 0]], [[-1750, 1460, 0]], [[-2050, 1620, 0]], [[-2450, 1800, 0]], [[-2500, 1840, 0]], [[-2650, 1900, 0]], [[-2300, 1780, 0]], [[-3000, 2060, 0]]];  // setting, group, (paramA, paramB, paramC)
+   // -----
+   var G4 = ["$g1"];
+   var time4 = [[1000, 5, 5], [1000, 5, 5], [1000, 5, 5], [1000, 5, 5], [1000, 5, 5], [1000, 5, 5], [1000, 5, 5], [1000, 5, 5], [1000, 5, 5], [1000, 5, 5], [1000, 5, 5], [1000, 5, 5], [1000, 5, 6], [1000, 5, 6], [1000, 5, 6], [1000, 5, 6], [1000, 5, 6]];  // setting, (absBeam, actNoise, actVocab)
+   var dTuning4 = [[0.10249401161857945, 29.523809523809526, 0.051247005809289724, 3.1402641416828443], [0.1281175145232243, 27.61904761904762, 0.05729589431644922, 3.0780471516652375], [0.1281175145232243, 25.71428571428571, 0.05729589431644922, 3.008836970151604], [0.17936452033251402, 24.761904761904763, 0.06779341640403148, 2.971458662301549], [0.23061152614180375, 23.809523809523807, 0.07687050871393458, 2.9321384371765737], [0.3331055377603832, 21.904761904761905, 0.0923868535796975, 2.8473464793253536], [0.3843525435696729, 21.904761904761905, 0.09923940002118692, 2.8473464793253536], [0.4099760464743178, 21.428571428571427, 0.10249401161857945, 2.8248000133782636], [0.5893405668068318, 19.047619047619047, 0.12288600296779084, 2.7032980676486766], [0.6149640697114767, 18.571428571428573, 0.1255290150782051, 2.6771323148261006], [0.6149640697114767, 18.571428571428573, 0.1255290150782051, 2.6771323148261006], [0.7174580813300561, 15.714285714285714, 0.13558683280806297, 2.505434657750564], [0.9480696074718599, 15.714285714285714, 0.15586168336336134, 2.505434657750564], [0.9993166132811496, 14.761904761904763, 0.1600187243514627, 2.442006637382182], [0.9993166132811496, 14.761904761904763, 0.1600187243514627, 2.442006637382182], [1.0505636190904393, 14.285714285714285, 0.1640704724966625, 2.4089975456543304], [1.1274341278043738, 14.761904761904763, 0.16996708989857748, 2.442006637382182]];  // setting, (fa, fr, dFa, dFr)
+   var abTuning4 = [[[-3100, 1680, 0]], [[-2100, 1340, 0]], [[-2050, 1360, 0]], [[-2750, 1660, 0]], [[-1200, 1100, 0]], [[-1300, 1180, 0]], [[-1450, 1260, 0]], [[-1650, 1360, 0]], [[-1850, 1480, 0]], [[-2050, 1580, 0]], [[-1750, 1460, 0]], [[-2050, 1620, 0]], [[-2450, 1800, 0]], [[-2500, 1840, 0]], [[-2650, 1900, 0]], [[-2300, 1780, 0]], [[-3000, 2060, 0]]];  // setting, group, (paramA, paramB, paramC)
+   // -----
+   var G5 = ["$g1"];
+   var time5 = [[1000, 5, 5], [1000, 5, 5], [1000, 5, 5], [1000, 5, 5], [1000, 5, 5], [1000, 5, 5], [1000, 5, 5], [1000, 5, 5], [1000, 5, 5], [1000, 5, 5], [1000, 5, 5], [1000, 5, 5], [1000, 5, 5], [1000, 5, 5], [1000, 5, 5], [1000, 5, 5], [1000, 5, 5]];  // setting, (absBeam, actNoise, actVocab)
+   var dTuning5 = [[0.10249401161857945, 16.666666666666664, 0.051247005809289724, 2.5656211325294973], [0.1281175145232243, 13.333333333333334, 0.05729589431644922, 2.3402065323401198], [0.1281175145232243, 12.380952380952381, 0.05729589431644922, 2.267436132999424], [0.17936452033251402, 11.904761904761903, 0.06779341640403148, 2.2294377274131048], [0.23061152614180375, 6.666666666666667, 0.07687050871393458, 1.717242115854812], [0.3331055377603832, 5.238095238095238, 0.0923868535796975, 1.5337774854312984], [0.3843525435696729, 4.285714285714286, 0.09923940002118692, 1.3943081343858208], [0.4099760464743178, 3.8095238095238098, 0.10249401161857945, 1.3178323241532597], [0.5893405668068318, 3.8095238095238098, 0.12288600296779084, 1.3178323241532597], [0.6149640697114767, 3.8095238095238098, 0.1255290150782051, 1.3178323241532597], [0.6149640697114767, 2.857142857142857, 0.1255290150782051, 1.1469122371217175], [0.7174580813300561, 2.380952380952381, 0.13558683280806297, 1.049545836906222], [0.9480696074718599, 3.3333333333333335, 0.15586168336336134, 1.2357667808280852], [0.9993166132811496, 2.857142857142857, 0.1600187243514627, 1.1469122371217175], [0.9993166132811496, 3.3333333333333335, 0.1600187243514627, 1.2357667808280852], [1.0505636190904393, 2.380952380952381, 0.1640704724966625, 1.049545836906222], [1.1274341278043738, 3.3333333333333335, 0.16996708989857748, 1.2357667808280852]];  // setting, (fa, fr, dFa, dFr)
+   var abTuning5 = [[[-3100, 1680, 0]], [[-2100, 1340, 0]], [[-2050, 1360, 0]], [[-2750, 1660, 0]], [[-1200, 1100, 0]], [[-1300, 1180, 0]], [[-1450, 1260, 0]], [[-1650, 1360, 0]], [[-1850, 1480, 0]], [[-2050, 1580, 0]], [[-1750, 1460, 0]], [[-2050, 1620, 0]], [[-2450, 1800, 0]], [[-2500, 1840, 0]], [[-2650, 1900, 0]], [[-2300, 1780, 0]], [[-3000, 2060, 0]]];  // setting, group, (paramA, paramB, paramC)
+   // -----
+   var G6 = ["$g1"];
+   var time6 = [[1000, 7, 7], [1000, 8, 8], [1000, 8, 8], [1000, 8, 8], [1000, 8, 8], [1000, 8, 8], [1000, 8, 8], [1000, 8, 8], [1000, 8, 8], [1000, 8, 8], [1000, 8, 8], [1000, 8, 8], [1000, 8, 8], [1000, 8, 8], [1000, 8, 8], [1000, 8, 9], [1000, 8, 9]];  // setting, (absBeam, actNoise, actVocab)
+   var dTuning6 = [[0.046875, 25.203125, 0.015625, 1.000000], [0.054688, 20.617188, 0.023438, 0.929688], [0.101562, 17.687500, 0.031250, 0.882812], [0.132812, 16.039062, 0.031250, 0.843750], [0.187500, 14.226562, 0.039062, 0.804688], [0.257812, 13.156250, 0.046875, 0.781250], [0.289062, 12.789062, 0.054688, 0.773438], [0.304688, 12.789062, 0.054688, 0.773438], [0.414062, 11.773438, 0.062500, 0.742188], [0.570312, 11.031250, 0.078125, 0.726562], [0.726562, 10.390625, 0.085938, 0.703125], [0.898438, 9.804688, 0.093750, 0.687500], [0.937500, 9.640625, 0.101562, 0.679688], [1.109375, 9.375000, 0.109375, 0.671875], [1.289062, 9.109375, 0.117188, 0.664062], [1.445312, 8.789062, 0.125000, 0.656250], [1.578125, 8.578125, 0.132812, 0.648438]];  // setting, (fa, fr, dFa, dFr)
+   var abTuning6 = [[[-2550, 1400, 0]], [[-2250, 1380, 0]], [[-2450, 1500, 0]], [[-1550, 1240, 0]], [[-2100, 1460, 0]], [[-2550, 1640, 0]], [[-1800, 1400, 0]], [[-1900, 1440, 0]], [[-2150, 1540, 0]], [[-3400, 1980, 0]], [[-3150, 1920, 0]], [[-950, 1220, 0]], [[-2400, 1720, 0]], [[-2250, 1700, 0]], [[-1750, 1540, 0]], [[-2850, 1920, 0]], [[-3100, 2020, 0]]];  // setting, group, (paramA, paramB, paramC)
+   // -----
+   var G7 = ["$g1"];
+   var time7 = [[1000, 7, 7], [1000, 8, 8], [1000, 8, 8], [1000, 8, 8], [1000, 8, 8], [1000, 8, 8], [1000, 8, 8], [1000, 8, 8], [1000, 8, 8], [1000, 8, 9], [1000, 8, 9], [1000, 8, 9], [1000, 8, 9], [1000, 8, 9], [1000, 8, 9], [1000, 8, 9], [1000, 8, 9]];  // setting, (absBeam, actNoise, actVocab)
+   var dTuning7 = [[0.07687050871393458, 29.04761904761905, 0.0443812088987336, 3.1253418637092336], [0.07687050871393458, 26.666666666666668, 0.0443812088987336, 3.0443448898441376], [0.1281175145232243, 23.333333333333332, 0.05729589431644922, 2.911725672661883], [0.23061152614180375, 21.428571428571427, 0.07687050871393458, 2.8248000133782636], [0.30748203485573833, 19.523809523809526, 0.0887624177974672, 2.7288191759561706], [0.4355995493789626, 18.095238095238095, 0.1056484089741717, 2.650302824332667], [0.3843525435696729, 19.047619047619047, 0.09923940002118692, 2.7032980676486766], [0.4099760464743178, 18.571428571428573, 0.10249401161857945, 2.6771323148261006], [0.5124700580928973, 16.666666666666664, 0.11459178863289844, 2.5656211325294973], [0.6149640697114767, 16.666666666666664, 0.1255290150782051, 2.5656211325294973], [0.6918345784254113, 16.666666666666664, 0.1331436266962008, 2.5656211325294973], [0.7943285900439907, 13.80952380952381, 0.1426656263233532, 2.3750773827319343], [0.8711990987579252, 14.761904761904763, 0.14940941281441303, 2.442006637382182], [0.9736931103765047, 13.80952380952381, 0.157953880110509, 2.3750773827319343], [1.0505636190904393, 12.380952380952381, 0.1640704724966625, 2.267436132999424], [1.2299281394229533, 12.857142857142856, 0.1775248355949344, 2.304341835556578], [1.3067986481368878, 12.380952380952381, 0.1829884120820811, 2.267436132999424]];  // setting, (fa, fr, dFa, dFr)
+   var abTuning7 = [[[-2550, 1400, 0]], [[-2250, 1380, 0]], [[-2450, 1500, 0]], [[-1550, 1240, 0]], [[-2100, 1460, 0]], [[-2550, 1640, 0]], [[-1800, 1400, 0]], [[-1900, 1440, 0]], [[-2150, 1540, 0]], [[-3400, 1980, 0]], [[-3150, 1920, 0]], [[-950, 1220, 0]], [[-2400, 1720, 0]], [[-2250, 1700, 0]], [[-1750, 1540, 0]], [[-2850, 1920, 0]], [[-3100, 2020, 0]]];  // setting, group, (paramA, paramB, paramC)
+   // -----
+   var G8 = ["$g1"];
+   var time8 = [[1000, 7, 7], [1000, 8, 8], [1000, 8, 8], [1000, 8, 8], [1000, 8, 8], [1000, 8, 8], [1000, 8, 8], [1000, 8, 8], [1000, 8, 8], [1000, 8, 8], [1000, 8, 8], [1000, 8, 8], [1000, 8, 8], [1000, 8, 8], [1000, 8, 8], [1000, 8, 9], [1000, 8, 9]];  // setting, (absBeam, actNoise, actVocab)
+   var dTuning8 = [[0.07687050871393458, 9.523809523809524, 0.0443812088987336, 2.0208369582959773], [0.07687050871393458, 6.666666666666667, 0.0443812088987336, 1.717242115854812], [0.1281175145232243, 6.190476190476191, 0.05729589431644922, 1.65899190480324], [0.23061152614180375, 4.761904761904762, 0.07687050871393458, 1.4660692185882855], [0.30748203485573833, 4.285714285714286, 0.0887624177974672, 1.3943081343858208], [0.4355995493789626, 3.8095238095238098, 0.1056484089741717, 1.3178323241532597], [0.3843525435696729, 3.8095238095238098, 0.09923940002118692, 1.3178323241532597], [0.4099760464743178, 3.8095238095238098, 0.10249401161857945, 1.3178323241532597], [0.5124700580928973, 3.3333333333333335, 0.11459178863289844, 1.2357667808280852], [0.6149640697114767, 4.285714285714286, 0.1255290150782051, 1.3943081343858208], [0.6918345784254113, 3.3333333333333335, 0.1331436266962008, 1.2357667808280852], [0.7943285900439907, 2.857142857142857, 0.1426656263233532, 1.1469122371217175], [0.8711990987579252, 2.857142857142857, 0.14940941281441303, 1.1469122371217175], [0.9736931103765047, 2.857142857142857, 0.157953880110509, 1.1469122371217175], [1.0505636190904393, 2.380952380952381, 0.1640704724966625, 1.049545836906222], [1.2299281394229533, 2.857142857142857, 0.1775248355949344, 1.1469122371217175], [1.3067986481368878, 2.857142857142857, 0.1829884120820811, 1.1469122371217175]];  // setting, (fa, fr, dFa, dFr)
+   var abTuning8 = [[[-2550, 1400, 0]], [[-2250, 1380, 0]], [[-2450, 1500, 0]], [[-1550, 1240, 0]], [[-2100, 1460, 0]], [[-2550, 1640, 0]], [[-1800, 1400, 0]], [[-1900, 1440, 0]], [[-2150, 1540, 0]], [[-3400, 1980, 0]], [[-3150, 1920, 0]], [[-950, 1220, 0]], [[-2400, 1720, 0]], [[-2250, 1700, 0]], [[-1750, 1540, 0]], [[-2850, 1920, 0]], [[-3100, 2020, 0]]];  // setting, group, (paramA, paramB, paramC)
+   // -----
+   var datasets = { "heyjibo": { group: G0, time: time0, abTuning: abTuning0, dTuning: dTuning0, format: "2", label: "heyjibo", useC: 0, minParamA: -5000, maxParamA: -1000, minParamB: 600, maxParamB: 2200}, "heyjibo@IndependentNoiseHeyJiboData-6bda": { group: G1, time: time1, abTuning: abTuning1, dTuning: dTuning1, format: "2", label: "heyjibo@IndependentNoiseHeyJiboData-6bda", useC: 0, minParamA: -5000, maxParamA: -1000, minParamB: 600, maxParamB: 2200}, "heyjibo@IndependentNoiseHeyJiboData-INF": { group: G2, time: time2, abTuning: abTuning2, dTuning: dTuning2, format: "2", label: "heyjibo@IndependentNoiseHeyJiboData-INF", useC: 0, minParamA: -5000, maxParamA: -1000, minParamB: 600, maxParamB: 2200}, "jibo": { group: G3, time: time3, abTuning: abTuning3, dTuning: dTuning3, format: "2", label: "jibo", useC: 0, minParamA: -5000, maxParamA: -1000, minParamB: 600, maxParamB: 2200}, "jibo@IndependentNoiseJeeboData-6dba": { group: G4, time: time4, abTuning: abTuning4, dTuning: dTuning4, format: "2", label: "jibo@IndependentNoiseJeeboData-6dba", useC: 0, minParamA: -5000, maxParamA: -1000, minParamB: 600, maxParamB: 2200}, "jibo@IndependentNoiseJeeboData-INF": { group: G5, time: time5, abTuning: abTuning5, dTuning: dTuning5, format: "2", label: "jibo@IndependentNoiseJeeboData-INF", useC: 0, minParamA: -5000, maxParamA: -1000, minParamB: 600, maxParamB: 2200}, "paujibo": { group: G6, time: time6, abTuning: abTuning6, dTuning: dTuning6, format: "2", label: "paujibo", useC: 0, minParamA: -5000, maxParamA: 1000, minParamB: 900, maxParamB: 2800}, "paujibo@IndependentNoiseJeeboData-6dba": { group: G7, time: time7, abTuning: abTuning7, dTuning: dTuning7, format: "2", label: "paujibo@IndependentNoiseJeeboData-6dba", useC: 0, minParamA: -5000, maxParamA: 1000, minParamB: 900, maxParamB: 2800}, "paujibo@IndependentNoiseJeeboData-INF": { group: G8, time: time8, abTuning: abTuning8, dTuning: dTuning8, format: "2", label: "paujibo@IndependentNoiseJeeboData-INF", useC: 0, minParamA: -5000, maxParamA: 1000, minParamB: 900, maxParamB: 2800} };
+   var currentDS = datasets;
+   var currentItem;   
+   var format = "Tune";
+
+   var previousPoint = null;
+   var errorBar = null;
+
+   function addInfo(key, value) {
+    return "<tr><td>"+key+"</td><td><b>"+value+"</b></td></tr>";
+   }
+
+   $("#placeholder").bind("plothover", function (event, pos, item, series) {
+    var v = $(":radio[name=format]").filter(":checked").val()
+    if (item) {
+     currentItem = item.series.label;
+     if (previousPoint != item.datapoint) {
+      previousPoint = item.datapoint;
+      errorBar = null;
+      var x = item.datapoint[0].toFixed(2),
+      y = item.datapoint[1].toFixed(2);
+      var d = datasets[item.series.label];
+      var cur = currentDS[item.series.label];
+
+      errCol=item.series.color;
+      for(i=0; i<item.series.data.length; i++) 
+       if(item.series.data[i][0]==item.datapoint[0] &&
+          item.series.data[i][1]==item.datapoint[1]) {
+            errorBar= item.series.data[i]; break;  
+       }
+      $("#format").text("");
+      var newInfo = "<table>"
+      newInfo += addInfo("Series:", item.series.label)
+      if (d.format == "1") {
+       newInfo += addInfo("ParamA,ParamB:", d.tags[item.dataIndex][0]+","+d.tags[item.dataIndex][1]);
+       newInfo += addInfo("False Accepts:", x + '/h')
+       newInfo += addInfo("False Rejects:", y + '%')
+       newInfo += addInfo("Search Index:", item.dataIndex+1)
+       if(d.tags[item.dataIndex][3]>0)
+        newInfo += addInfo("Active Noise:", d.tags[item.dataIndex][3])
+       else 
+        newInfo += addInfo("Active Noise:", "")
+       if(d.tags[item.dataIndex][4]>0)  
+        newInfo += addInfo("Active Vocab:", d.tags[item.dataIndex][4]);
+       else 
+        newInfo += addInfo("Active Vocab:", "")
+       newInfo += addInfo("Abs Beam:", d.tags[item.dataIndex][2]);
+      } else if (d.format == "2") {
+       if (cur.abTuning[item.dataIndex].length == 1) {
+        var s = ""; 
+        if (cur.abTuning[item.dataIndex][0][0] == d.minParamA || cur.abTuning[item.dataIndex][0][0] == d.maxParamA)
+         s += "<font color=\"ff0000\">"+cur.abTuning[item.dataIndex][0][0]+"</font>,";
+        else
+         s += cur.abTuning[item.dataIndex][0][0] + ",";
+        if (cur.abTuning[item.dataIndex][0][1] == d.minParamB || cur.abTuning[item.dataIndex][0][1] == d.maxParamB)
+         s += "<font color=\"ff0000\">"+cur.abTuning[item.dataIndex][0][1]+"</font>";
+        else
+         s += cur.abTuning[item.dataIndex][0][1];
+        if (d.useC)
+         newInfo += addInfo("ParamA,ParamB,ParamC:", s+","+cur.abTuning[item.dataIndex][0][2]);
+        else
+         newInfo += addInfo("ParamA,ParamB:",s);
+       } else {
+        var i
+        for (i = 0; i < cur.abTuning[item.dataIndex].length; i++) {
+         var s = ""; 
+         if (cur.abTuning[item.dataIndex][i][0] == d.minParamA || cur.abTuning[item.dataIndex][i][0] == d.maxParamA)
+           s += "<font color=\"ff0000\">"+cur.abTuning[item.dataIndex][i][0]+"</font>,";
+         else
+          s += cur.abTuning[item.dataIndex][i][0] + ",";
+         if (cur.abTuning[item.dataIndex][i][1] == d.minParamB || cur.abTuning[item.dataIndex][i][1] == d.maxParamB)
+          s += "<font color=\"ff0000\">"+cur.abTuning[item.dataIndex][i][1]+"</font>";
+         else
+          s += cur.abTuning[item.dataIndex][i][1];
+         if (d.useC)
+          newInfo += addInfo("A,B,C for " + d.group[i] + ":", s+","+cur.abTuning[item.dataIndex][i][2]);
+         else 
+          newInfo += addInfo("A,B for " + d.group[i] + ":", s);
+        }
+       }
+       newInfo += addInfo("False Accepts:", x + '/h')
+       newInfo += addInfo("False Rejects:", y + '%')
+       newInfo += addInfo("Search Index:", item.dataIndex+1)
+       if(cur.time[item.dataIndex][1]>0)
+        newInfo += addInfo("Active Noise:", cur.time[item.dataIndex][1])
+       else 
+        newInfo += addInfo("Active Noise:", "")
+       if(cur.time[item.dataIndex][2]>0)  
+        newInfo += addInfo("Active Vocab:", cur.time[item.dataIndex][2]);
+       else 
+        newInfo += addInfo("Active Vocab:", "")
+       newInfo += addInfo("Abs Beam:", cur.time[item.dataIndex][0]);
+      }
+      newInfo += "</table>";      
+      $("#info").html(newInfo);
+     }
+    } else {
+     previousPoint = null;            
+     errorBar=null;
+    }
+   });
+
+   
+
+   var i=0;
+   $.each(datasets, function(key,val) { val.color=i; ++i; });
+   var choiceContainer = $("#choices");
+   $.each(datasets, function(key,val) {
+    choiceContainer.append('<br/><input type="checkbox" name="' + key +
+                               '" checked="checked" >' + val.label + '</input>');
+   });
+   choiceContainer.find("input").click(plotAccordingToChoices);
+
+   function mergePhrases(data) {
+    var res = {data: [[]], tags: data.tags, format: data.format, label: data.label};
+    if (data.format == "1") {
+     res.data = data.data;
+    } else if (data.format == "2") {
+     res.data = data.dTuning;
+     res.time = data.time;
+     res.abTuning = data.abTuning;
+    }
+    return res;
+   }
+
+   function plotAccordingToChoices() {
+    // should be replaced with a flot.setData/flot.redraw?
+    var data = [];
+    currentDS = {};
+    var axismax = 0;
+    var defaultMaxFR = 44.82598607888631;
+    var defaultMaxFA = 1.8937499999999998;
+    var maxFA = 0;
+    var maxFR = 0;
+    choiceContainer.find("input:checked").each(function () {
+     var key = $(this).attr("name");
+     if (key && datasets[key]) {
+      currentDS[key] = mergePhrases(datasets[key]);
+      data.push(currentDS[key]);
+      if(!axismax) {
+       for (var i = 0; i < data.length; i++) {
+        var series = data[i];
+        for (var j = 0; j < series.data.length; j++) {        
+          var ds = datasets[series.label];
+         var fa = 1.2 * ds.dTuning[j][0];
+         var fr = 1.2 * ds.dTuning[j][1];
+         if (fa > maxFA) { maxFA = fa; }
+         if (fr > maxFR) { maxFR = fr; }
+        }
+       }
+      }
+     }
+    });
+    if (data.length > 0) {
+     function raw(plot, ctx) {
+      var data = plot.getData();
+      var axes = plot.getAxes();
+      var offset = plot.getPlotOffset();
+      for (var i = 0; i < data.length; i++) {
+       var series = data[i];
+       for (var j = 0; j < series.data.length; j++) {        
+        var ds = datasets[series.label];
+        var bad = 0;
+        for (var k = 0; k < ds.abTuning[j].length; k++) {
+          var paramA = ds.abTuning[j][k][0];
+         var paramB = ds.abTuning[j][k][1];
+         if (paramA == ds.minParamA || paramA == ds.maxParamA || paramB == ds.minParamB || paramB == ds.maxParamB) {
+          bad = 1;
+          break;
+         }
+        }
+        if (bad) {
+         var color = "#ff0000";
+         var d = (series.data[j]);
+         var x = offset.left + axes.xaxis.p2c(d[0]);
+         var y = offset.top + axes.yaxis.p2c(d[1]);
+         var r = 4;
+         ctx.lineWidth = 2;
+         ctx.beginPath();
+         ctx.arc(x,y,r,0,Math.PI*2,true);
+         ctx.closePath();            
+         ctx.fillStyle = color;
+         ctx.fill();
+        }
+       }    
+      }
+     };
+
+     if (maxFA == 0) {maxFA = defaultMaxFA;}
+     if (maxFR == 0) {maxFR = defaultMaxFR;}
+
+     var flot = $.plot($("#placeholder"), data, {
+      lines: { show: true }, 
+      points: { show: true }, 
+      selection: { mode: "xy" }, 
+      grid: { hoverable: true, clickable: true }, 
+      yaxis: { min: 0, max: maxFR, ticks: 10 }, 
+      xaxis: { min: 0, max: maxFA, ticks: 10 },
+      hooks: {draw : [raw] }
+     });
+     var axes=flot.getAxes();
+     xp2c=axes.xaxis.p2c;  yp2c=axes.yaxis.p2c;
+     flot.hooks.drawOverlay.push(function (plot, ctx) {
+        if(errorBar==null || errorBar.length == 2) return;
+        ctx.save();
+        ctx.strokeStyle="rgba(10,10,10,0.5)";
+        ctx.lineWidth="1";
+        ctx.lineJoin="round";
+        var off=plot.getPlotOffset();
+        ctx.translate(off.left,off.top);
+        ctx.beginPath();
+        ctx.moveTo(xp2c(errorBar[0]-errorBar[2]),yp2c(errorBar[1]));
+        ctx.lineTo(xp2c(errorBar[0]+errorBar[2]),yp2c(errorBar[1]));
+        ctx.moveTo(xp2c(errorBar[0]-errorBar[2]),yp2c(errorBar[1])-5);
+        ctx.lineTo(xp2c(errorBar[0]-errorBar[2]),yp2c(errorBar[1])+5);
+        ctx.moveTo(xp2c(errorBar[0]+errorBar[2]),yp2c(errorBar[1])-5);
+        ctx.lineTo(xp2c(errorBar[0]+errorBar[2]),yp2c(errorBar[1])+5);
+        ctx.moveTo(xp2c(errorBar[0]),yp2c(errorBar[1]-errorBar[3]));
+        ctx.lineTo(xp2c(errorBar[0]),yp2c(errorBar[1]+errorBar[3]));
+        ctx.moveTo(xp2c(errorBar[0])-5,yp2c(errorBar[1]-errorBar[3]));
+        ctx.lineTo(xp2c(errorBar[0])+5,yp2c(errorBar[1]-errorBar[3]));
+        ctx.moveTo(xp2c(errorBar[0])-5,yp2c(errorBar[1]+errorBar[3]));
+        ctx.lineTo(xp2c(errorBar[0])+5,yp2c(errorBar[1]+errorBar[3]));
+        ctx.stroke();
+        ctx.restore();
+     });
+    }
+   }
+   plotAccordingToChoices();
+  });
+ </script>
+ </body>
+ </html>
+

@@ -1,0 +1,70 @@
+{"list" : 
+    [
+        {"type": "GET", "url": "/media/preview/control"},
+        {"type": "POST", "url": "/media/preview/control", "args":
+            {
+                "enable" : false
+            }
+        },
+        {"type": "GET", "url": "/media/screening"},
+        {"type": "POST", "url": "/media/screening", "args":
+            {
+                "enable": false
+            }
+        },
+        {"type": "GET", "url": "/media/recording/start"},
+        {"type": "POST", "url": "/media/recording/start", "args":
+            {
+                "audioRec": {
+                    "volume": 1,
+                    "source": "MediaIn"
+                },
+                "videoRec": {
+                    "height": 360,
+                    "width": 640,
+                    "camera": 0,
+                    "flip": "horizontal-flip"
+                },
+                "meta": {}
+            }
+        },
+        {"type": "POST", "url": "/media/recording/control", "args":
+            {}
+        },
+        {"type": "POST", "url": "/media/recording/play", "args":
+            {
+                "source": "c9734714-d209-430e-8a92-2057369ee462",
+                "audio": 
+                {
+                    "volume": 1
+                }
+                },
+                "statusExpect": 400
+            },
+        {"type": "GET", "url": "/media/stream"},
+        {"type": "POST", "url": "/media/stream", "args":
+            {
+                "enable" : false
+            }
+        },
+        {"type": "GET", "url": "/media/photo",
+            "statusExpect": 400
+        },
+        {"type": "POST", "url": "/media/photo", "args":
+            {
+                "camera" : 0,
+                "width": 1280,
+                "height": 720,
+                "type": 2,
+                "filters": []
+            }
+        },
+        {"type": "POST", "url": "/media/photo/store", "args":
+            {
+                "":""
+            }
+        },
+        {"type": "GET", "url": "/media/photo/get",
+        "statusExpect": 400}
+    ]
+}

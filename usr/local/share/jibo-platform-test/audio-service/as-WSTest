@@ -1,0 +1,26 @@
+"use strict";
+
+var fs = require('fs');
+var WebSocket = require('ws');
+var path = require('path');
+const assert = require('assert');
+const Common = require('./../../../lib/jibo-platform-test/common');
+var hostname = "localhost";
+
+const JSONlist = require("./as-WSTest.json");
+const paths = JSONlist.list;
+
+describe('Audio Service WS Tests', function() {
+
+    for(let i = 0; i < paths.length; i++) {
+	    it('Testing the ' + paths[i].substring(1) + ' API', function() {
+	        Common._testJSON(hostname, ":8383", paths[i], (err) => {
+		    assert(!err, 'Error parsing JSON for ' + paths[i] + ': ' + err.message);
+	        })
+	    });
+    }
+
+    after(function() {
+        console.log("- Finished testing audio service WS APIs");
+    });
+});

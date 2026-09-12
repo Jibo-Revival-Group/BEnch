@@ -1,0 +1,25 @@
+div.header {
+    clear: left;
+    text-align: center;
+    border-bottom: 1px solid gray;
+}
+
+div.left {
+    float: left;
+    width: 610px;
+    overflow: scroll;
+    height:100vh;
+    border-right: 1px solid gray;
+}
+
+div.right {
+    margin-left: 620px;
+    overflow: scroll;
+    height:100vh;
+}
+
+div.plot {
+    width: 600px;
+    height: 200px;
+}
+

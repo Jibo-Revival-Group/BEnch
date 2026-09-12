@@ -1,0 +1,676 @@
+{
+    "WebCore": {
+        "serverPort": 8585,
+        "fileRoot": "/usr/local/var/www/system"
+    },
+    "ManagementCore": {
+        "authenticate": false,
+        "validate": false
+    },
+    "SystemManager": {
+        "registryPort": 8181,
+        "serverPort": 8585,
+        "service": {
+            "connection_timeout": 210000,
+            "backup":{
+                "file": "/opt/tmp/backup.tar.bz2",
+                "directory" : "/opt/tmp/backup",
+                "executable" : "/usr/local/bin/jibo-system-backup"
+            },
+            "restore":{
+                "file" : "/opt/tmp/restore.tar.bz2",
+                "directory": "/opt/tmp/restore",
+                "executable": "/usr/local/bin/jibo-system-restore"
+            },
+            "services" : [
+                {
+                    "name": "body",
+                    "order": 0,
+                    "executable": "/usr/local/bin/jibo-body-service",
+                    "modes": {
+                        "default": {
+                            "arguments": ["-c","/usr/local/etc/jibo-body-service.json"],
+                            "environment": {
+                                "DISPLAY": ":0",
+                                "XAUTHORITY": "/tmp/.Xauthority"
+                            },
+                            "directory": "",
+                            "enabled":true
+                        },
+                        "certification": {
+                            "enabled": false
+                        }
+                    },
+                    "startup_timeout":10000,
+                    "shutdown_timeout":10000,
+                    "crash_code": "SERVICE_CRASH_BODY"
+                },
+                {
+                    "name": "audio",
+                    "order": 1,
+                    "executable": "/usr/local/bin/jibo-audio-service",
+                    "modes": {
+                        "default": {
+                            "arguments": ["-c","/usr/local/etc/jibo-audio-service.json"],
+                            "environment": {},
+                            "directory": "",
+                            "enabled":true
+                        },
+                        "certification": {
+                            "enabled": false
+                        }
+                    },
+                    "startup_timeout":10000,
+                    "shutdown_timeout":10000,
+                    "crash_code": "SERVICE_CRASH_AUDIO"
+                },
+                {
+                    "name": "tts",
+                    "order": 2,
+                    "executable": "/usr/local/bin/jibo-tts-service",
+                    "modes": {
+                        "default": {
+                            "arguments": ["-c","/usr/local/etc/jibo-tts-service.json"],
+                            "environment": {},
+                            "directory": "",
+                            "enabled":true
+                        },
+                        "certification": {
+                            "enabled": false
+                        },
+                        "service": {
+                            "enabled": false
+                        }
+                    },
+                    "startup_timeout":10000,
+                    "shutdown_timeout":10000,
+                    "crash_code": "SERVICE_CRASH_TTS"
+                },
+                {
+                    "name": "asr",
+                    "order": 2,
+                    "executable": "/usr/local/bin/jibo-asr-service",
+                    "modes": {
+                        "default": {
+                            "arguments": ["-c","/usr/local/etc/jibo-asr-service.json"],
+                            "environment": {},
+                            "directory": "",
+                            "enabled":true
+                        },
+                        "certification": {
+                            "enabled": false
+                        },
+                        "service": {
+                            "enabled": false
+                        }
+                    },
+                    "startup_timeout":10000,
+                    "shutdown_timeout":10000,
+                    "crash_code": "SERVICE_CRASH_ASR"
+                },
+                {
+                    "name": "jetstream",
+                    "order": 2,
+                    "executable": "/usr/local/bin/jibo-jetstream-service",
+                    "modes": {
+                        "default": {
+                            "arguments": ["-c","/usr/local/etc/jibo-jetstream-service.json"],
+                            "environment": {},
+                            "directory": "",
+                            "enabled": true
+                        },
+                        "certification": {
+                            "enabled": false
+                        },
+                        "service": {
+                            "enabled": true
+                        }
+                    },
+                    "startup_timeout":10000,
+                    "shutdown_timeout":10000,
+                    "crash_code": "SERVICE_CRASH_JETSTREAM"
+                },
+                {
+                    "name": "nlu",
+                    "order": 2,
+                    "executable": "/usr/local/bin/jibo-nlu-service",
+                    "modes": {
+                        "default": {
+                            "arguments": ["-c","/usr/local/etc/jibo-nlu-service.json"],
+                            "environment": {},
+                            "directory": "",
+                            "enabled":false
+                        },
+                        "certification": {
+                            "enabled": false
+                        },
+                        "service": {
+                            "enabled": false
+                        }
+                    },
+                    "startup_timeout":10000,
+                    "shutdown_timeout":10000,
+                    "crash_code": "SERVICE_CRASH_NLU"
+                },
+                {
+                    "name": "identity",
+                    "order": 2,
+                    "executable": "/usr/local/bin/jibo-identity-service",
+                    "modes": {
+                        "default": {
+                            "arguments": ["-c","/usr/local/etc/jibo-identity-service.json"],
+                            "environment": {
+                                "GLOG_minloglevel": "2" 
+                            },
+                            "directory": "",
+                            "enabled":true
+                        },
+                        "certification": {
+                            "enabled": false
+                        },
+                        "service": {
+                            "enabled": false
+                        }
+                    },
+                    "startup_timeout":10000,
+                    "shutdown_timeout":10000,
+                    "crash_code": "SERVICE_CRASH_IDENTITY"
+                },
+                {
+                    "name": "lps",
+                    "order": 3,
+                    "executable": "/usr/local/bin/jibo-lps-service",
+                    "modes": {
+                        "default": {
+                            "arguments": ["-c","/usr/local/etc/jibo-lps-service.json"],
+                            "environment": {
+                                "DISPLAY": ":0",
+                                "XAUTHORITY": "/tmp/.Xauthority",
+                                "GST_REGISTRY": "/usr/share/gstreamer-1.0/registry.$(uname -m).bin",
+                                "GST_GL_XINITTHREADS": "1",
+                                "GST_REGISTRY_UPDATE": "no"
+                            },
+                            "directory": "",
+                            "enabled":true
+                        },
+                        "certification": {
+                            "enabled": false
+                        }
+                    },
+                    "startup_timeout":60000,
+                    "shutdown_timeout":10000,
+                    "crash_code": "SERVICE_CRASH_LPS"
+                },
+                {
+                    "name": "secure-transfer",
+                    "order": 4,
+                    "executable": "/usr/bin/node",
+                    "modes": {
+                        "default": {
+                            "arguments": ["/usr/local/bin/jibo-sts/index.js"],
+                            "environment": {},
+                            "directory": "",
+                            "enabled":true
+                        },
+                        "int-developer": {
+                            "arguments": [
+                                "--inspect=10775",
+                                "/usr/local/bin/jibo-sts/index.js"
+                            ],
+                            "environment": {},
+                            "directory" : "",
+                            "enabled":true
+                        },
+                        "certification": {
+                            "enabled": false
+                        },
+                        "service": {
+                            "enabled": false
+                        }
+                    },
+                    "startup_timeout":10000,
+                    "shutdown_timeout":10000,
+                    "crash_code": "SERVICE_CRASH_SECURE_TRANSFER"
+                },
+                {
+                    "name": "security-controller-service",
+                    "order": 4,
+                    "executable": "/usr/bin/node",
+                    "modes": {
+                        "default": {
+                            "arguments": [
+                                "/usr/local/bin/jibo-ssm/jibo-scs.js"
+                            ],
+                            "environment": {},
+                            "directory": "",
+                            "enabled":true
+                        },
+                        "int-developer": {
+                            "arguments": [
+                                "--inspect=10226",
+                                "/usr/local/bin/jibo-ssm/jibo-scs.js"
+                            ],
+                            "environment": {},
+                            "directory": "",
+                            "enabled":true
+                        },
+                        "certification": {
+                            "enabled": false
+                        },
+                        "service": {
+                            "enabled": false
+                        }
+                    },
+                    "startup_timeout":10000,
+                    "shutdown_timeout":10000,
+                    "crash_code": "SERVICE_CRASH_SECURITY_CONTROLLER_SERVICE"
+                },
+                {
+                    "name": "media-manager",
+                    "order": 4,
+                    "executable": "/usr/bin/node",
+                    "modes": {
+                        "default": {
+                            "arguments": [
+                                "/usr/local/bin/jibo-ssm/jibo-mms.js"
+                            ],
+                            "environment": {},
+                            "directory": "",
+                            "enabled":true
+                        },
+                        "int-developer": {
+                            "arguments": [
+                                "--inspect=10225",
+                                "/usr/local/bin/jibo-ssm/jibo-mms.js"
+                            ],
+                            "environment": {},
+                            "directory": "",
+                            "enabled":true
+                        },
+                        "certification": {
+                            "enabled": false
+                        },
+                        "service": {
+                            "enabled": false
+                        }
+                    },
+                    "startup_timeout":10000,
+                    "shutdown_timeout":10000,
+                    "crash_code": "SERVICE_CRASH_MEDIA_MANAGER"
+                },
+                {
+                    "name": "monitor",
+                    "order": 4,
+                    "executable": "/usr/local/bin/jibo-system-monitoring-service",
+                    "modes": {
+                        "default": {
+                            "arguments": ["-c","/usr/local/etc/jibo-system-monitoring-service.json"],
+                            "environment": {},
+                            "directory": "",
+                            "enabled":true
+                        },
+                        "certification": {
+                            "enabled": false
+                        }
+                    },
+                    "startup_timeout":10000,
+                    "shutdown_timeout":10000,
+                    "crash_code": "SERVICE_CRASH_MONITOR"
+                },
+                {
+                    "name": "server",
+                    "order": 4,
+                    "executable": "/usr/local/bin/jibo-server-service",
+                    "modes": {
+                        "default": {
+                            "arguments": ["-c","/usr/local/etc/jibo-server-service.json"],
+                            "environment": {},
+                            "directory": "",
+                            "enabled":true
+                        },
+                        "certification": {
+                            "enabled": false
+                        },
+                        "service": {
+                            "enabled": false
+                        }
+                    },
+                    "startup_timeout":10000,
+                    "shutdown_timeout":10000,
+                    "crash_code": "SERVICE_CRASH_SERVER"
+                },
+                {
+                    "name": "ssm",
+                    "order": 5,
+                    "executable": "/usr/bin/node",
+                    "modes": {
+                        "default": {
+                            "arguments": [
+                                "/usr/local/bin/jibo-ssm/jibo-ssm.js"
+                            ],
+                            "environment": {
+                                "DISPLAY": ":0",
+                                "XAUTHORITY": "/tmp/.Xauthority",
+                                "NODE_PATH": "/usr/lib/node_modules",
+                                "RUNMODE": "ON_ROBOT",
+                                "XDG_CONFIG_HOME": "/tmp/.config"
+                            },
+                            "directory" : "",
+                            "enabled":true
+                        },
+                        "int-developer": {
+                            "arguments": [
+                                "--inspect=10223",
+                                "/usr/local/bin/jibo-ssm/jibo-ssm.js"
+                            ],
+                            "environment": {
+                                "DISPLAY": ":0",
+                                "XAUTHORITY": "/tmp/.Xauthority",
+                                "NODE_PATH": "/usr/lib/node_modules",
+                                "RUNMODE": "ON_ROBOT",
+                                "XDG_CONFIG_HOME": "/tmp/.config"
+                            },
+                            "directory" : "",
+                            "enabled":true
+                        },
+                        "certification": {
+                            "enabled": false
+                        },
+                        "service": {
+                            "enabled": false
+                        }
+                    },
+                    "startup_timeout":60000,
+                    "shutdown_timeout":10000,
+                    "crash_code": "SERVICE_CRASH_SSM"
+                },
+                {
+                    "name": "expression",
+                    "order": 4,
+                    "executable": "/usr/bin/node",
+                    "modes": {
+                        "default": {
+                            "arguments": [
+                                "/usr/local/bin/jibo-ssm/lib/expression-process.js"
+                            ],
+                            "environment": {
+                                "NODE_PATH": "/usr/lib/node_modules",
+                                "RUNMODE": "ON_ROBOT"
+                            },
+                            "directory" : "",
+                            "enabled":true
+                        },
+                        "int-developer": {
+                            "arguments": [
+                                "--inspect=10224",
+                                "/usr/local/bin/jibo-ssm/jibo-expression.js"
+                            ],
+                            "environment": {
+                                "NODE_PATH": "/usr/lib/node_modules",
+                                "RUNMODE": "ON_ROBOT"
+                            },
+                            "directory" : "",
+                            "enabled":true
+                        },
+                        "certification": {
+                            "enabled": false
+                        },
+                        "service": {
+                            "enabled": false
+                        }
+                    },
+                    "startup_timeout":60000,
+                    "shutdown_timeout":10000,
+                    "crash_code": "SERVICE_CRASH_EXPRESSION"
+                },
+                {
+                    "name": "certification",
+                    "order": 0,
+                    "executable": "/usr/local/bin/jibo-certification-service",
+                    "modes": {
+                        "default": {
+                            "arguments": [
+                                "-c", "/usr/local/etc/jibo-certification-service.json"
+                            ],
+                            "environment": {},
+                            "directory": "",
+                            "enabled": false
+                        },
+                        "certification": {
+                            "arguments": [
+                                "-c", "/usr/local/etc/jibo-certification-service.json"
+                            ],
+                            "environment": {},
+                            "directory": "",
+                            "enabled": true
+                        },
+                        "service": {
+                            "arguments": [
+                                "-c", "/usr/local/etc/jibo-certification-service.json"
+                            ],
+                            "environment": {},
+                            "directory": "",
+                            "enabled": true
+                        }
+                    },
+                    "startup_timeout": 10000,
+                    "shutdown_timeout": 10000,
+                    "crash_code": "SERVICE_CRASH_CERTIFICATION"
+                },
+                {
+                    "name": "service-center",
+                    "order": 5,
+                    "executable": "/usr/local/bin/jibo-service-center-service",
+                    "modes": {
+                        "default": {
+                            "arguments": [
+                                "-c", "/usr/local/etc/jibo-service-center-service.json"
+                            ],
+                            "environment": {
+                                "DISPLAY": ":0",
+                                "XAUTHORITY": "/tmp/.Xauthority"
+                            },
+                            "environment": {},
+                            "directory": "",
+                            "enabled": false
+                        },
+                        "service": {
+                            "arguments": [
+                                "-c", "/usr/local/etc/jibo-service-center-service.json"
+                            ],
+                            "environment": {
+                                "DISPLAY": ":0",
+                                "XAUTHORITY": "/tmp/.Xauthority"
+                            },
+                            "directory": "",
+                            "enabled": true
+                        }
+                    },
+                    "startup_timeout": 10000,
+                    "shutdown_timeout": 10000,
+                    "crash_code": "SERVICE_CRASH_SERVICE_CENTER"
+                }
+            ]
+        },
+        "session": {
+
+        },
+        "skill":{
+            "executable": "/usr/bin/electron/electron",
+            "arguments": [
+                "--remote-debugging-port=9222",
+                "/usr/local/bin/jibo-ssm/skill-main.js"
+            ],
+            "environment": {
+                "DISPLAY": ":0",
+                "XAUTHORITY": "/tmp/.Xauthority",
+                "XDG_CONFIG_HOME": "/opt/home/jibo-skill/.config"
+            },
+            "path": {
+                "jibo": [
+                    "/opt/jibo/Jibo/Skills/@be",
+                    "/opt/jibo/Jibo/Skills"
+                ],
+                "devs": [
+                    "/opt/jibo/Skills"
+                ]
+            },
+            "modes":{
+            	"normal" : {
+                    "user" : "jibo-skill"
+                },
+            	"oobe" : {
+                    "user" : "jibo-skill"
+                },
+                "int-developer" : {
+                    "user" : "jibo-skill"
+                },
+                "developer" : {
+                    "user" : "jibo-skill"
+                }
+            }
+        },
+        "storage" : {
+            "mount_entries_file": "/proc/mounts",
+            "semantic": {
+                "jibo": "/opt/jibo/Jibo",
+                "skills": "/opt/jibo/Skills",
+                "photos": "/opt/jibo/Photos",
+                "recordings": "/opt/jibo/Recordings",
+                "knowledge": "/opt/jibo/Knowledge"
+            }
+        },
+        "credentials" : {
+            "path" : "/var/jibo/credentials.json"
+        },
+        "wifi" : {
+            "wpa" : {
+                "interface": "wlan0",
+                "runtime" : "/var/run/wpa_supplicant",
+                "reconnect_interval": 15000,
+                "monitor_interval": 1000
+            },
+            "udhcpc" : {
+                "executable" : "udhcpc",
+                "options" : "-R -b -t 3 -T 5 -A 5"
+            }
+        },
+        "powerButton" : {
+            "path" : "/dev/input/event0",
+            "duration" : 2000,
+            "warning" : 10000
+        },
+        "powerManager" : {
+            "warning" : 10000
+        },
+        "time": {
+            "timezone_path": "/var/etc/timezone",
+            "localtime_path": "/var/etc/localtime",
+            "zoneinfo_path": "/usr/share/zoneinfo",
+            "ntpd_init": "/etc/init.d/S66ntp",
+            "ntpdate": {
+                "command": "/usr/bin/ntpdate",
+                "arguments": [
+                    "-b",
+                    "-t",
+                    "3",
+                    "0.north-america.pool.ntp.org"
+                ]
+            },
+            "hwclock": {
+                "command": "/sbin/hwclock",
+                "arguments": [
+                    "--systohc"
+                ]
+            }
+        },
+        "update": {
+            "subsystems": {
+                "os": {
+                    "version_check": "os",
+                    "apply_method": "system",
+                    "default_order": 1
+                },
+                "services": {
+                    "version_check": "services",
+                    "apply_method": "system",
+                    "default_order": 2
+                },
+                "jibo-diagnostics": {
+                    "version_check": "skill",
+                    "apply_method": "skill",
+                    "default_order": 3
+                },
+                "fin-goods-test": {
+                    "version_check": "skill",
+                    "apply_method": "skill",
+                    "default_order": 4
+                },
+                "oobe-config": {
+                    "version_check": "skill",
+                    "apply_method": "skill",
+                    "default_order": 5
+                },
+                "@be/be": {
+                    "version_check": "skill",
+                    "apply_method": "skill",
+                    "default_order": 6
+                },
+                "jibo-rhino": {
+                    "version_check": "skill",
+                    "apply_method": "skill",
+                    "default_order": 7
+                },
+                "jibo-trivia": {
+                    "version_check": "skill",
+                    "apply_method": "skill",
+                    "default_order": 8
+                },
+                "jibo-tbd": {
+                    "version_check": "skill",
+                    "apply_method": "skill",
+                    "default_order": 9
+                }
+            }
+        },
+        "firewall": {
+            "mode_commands": {
+                "remote_operation": ["-p tcp --syn --dport 7160 -j ACCEPT"]
+            }
+        }
+    },
+    "ErrorTracker":{
+        "views": [
+            {
+                "name": "SystemManager",
+                "errors": [
+                    "SERVICE_CRASH_BODY",
+                    "SERVICE_CRASH_AUDIO",
+                    "SERVICE_CRASH_TTS",
+                    "SERVICE_CRASH_ASR",
+                    "SERVICE_CRASH_NLU",
+                    "SERVICE_CRASH_IDENTITY",
+                    "SERVICE_CRASH_LPS",
+                    "SERVICE_CRASH_MEDIA_MANAGER",
+                    "SERVICE_CRASH_SECURE_TRANSFER",
+                    "SERVICE_CRASH_MONITOR",
+                    "SERVICE_CRASH_SERVER",
+                    "SERVICE_CRASH_SSM",
+                    "SERVICE_CRASH_EXPRESSION",
+                    "WPA_CONTROL_INTERFACE_DOWN"
+                ]
+            }
+        ]
+    },
+    "logging" : {
+        "loggers" : {
+            "root": {
+                "level": "warning"
+            },
+            "l4" : {
+                "name" : "SystemManager",
+                "level" : "information"
+            }
+        }
+    }
+}

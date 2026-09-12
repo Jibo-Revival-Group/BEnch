@@ -1,0 +1,27 @@
+"use strict";
+
+var fs = require('fs');
+var path = require('path');
+const assert = require('assert');
+const Common = require('./../../../lib/jibo-platform-test/common');
+
+var hostname = "localhost";
+
+const JSONlist = require("./tts-WSTest.json");
+const paths = JSONlist.list;
+
+describe('TTS Service WS Tests', function() {
+
+    for(let i = 0; i < paths.length; i++) {
+	    it('Testing the ' + paths[i].substring(1) + ' API', function() {
+	        Common._testJSON(hostname, ":8089", paths[i], (err) => {
+		    assert(!err, 'Error parsing JSON for ' + paths[i] + ': ' + err.message);
+	        })
+	    });
+    }
+
+    after(function() {
+        console.log("- Finished testing TTS Service WS APIs");
+    });
+});
+

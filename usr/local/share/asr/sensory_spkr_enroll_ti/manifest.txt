@@ -1,0 +1,17 @@
+type = SENSORY_SPEAKER_ENROLL_TI
+backgroundModel = /../sensory_data_ti/text-independent.ubm
+clientModel = /../sensory_data_ti/client_model.bin
+enrollmentDataDir = /../sensory_data_ti/audio
+saveEnrollmentData = true
+threshold = 12.0
+isPCM = false
+liveInputMode = false
+sampleRate = 16000
+beginSample = 0
+endSample = -1
+showTiming = false
+restartEngine = false
+minEnrollUtts = 4
+minEnrollDurationSec = 5
+maxUtterances = 10000
+checkQuality = MEDIUM

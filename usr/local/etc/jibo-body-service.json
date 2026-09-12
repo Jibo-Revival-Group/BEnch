@@ -1,0 +1,177 @@
+{
+    "WebCore" : {
+        "serverPort" : 8282,
+        "fileRoot": "/usr/local/var/www/bodyservice",
+        "requestLogging": false
+    },
+    "bodyBoard" : {
+        "pelvisDevice" : "/dev/ttyTHS1",
+        "pelvisOffset" : 2.742,
+        "pelvisFlipped" : true,
+        "pelvisVelLimit" : 10.0,
+        "pelvisAccLimit" : 30.0,
+        "torsoDevice" : "/dev/ttyTHS1",
+        "torsoOffset" : 0.052,
+        "torsoFlipped" : true,
+        "torsoVelLimit" : 10.0,
+        "torsoAccLimit" : 30.0,
+        "neckDevice" : "/dev/ttyTHS0",
+        "neckOffset" : 0.061,
+        "neckFlipped" : true,
+        "neckVelLimit" : 10.0,
+        "neckAccLimit" : 30.0,
+        "headTouchMapping" : [3, 5, 4, 0, 2, 1],
+        "hatchLowThreshold": 1.0,
+        "hatchHighThreshold": 1.5,
+        "lowBattCapHiThresh": 0.42,
+        "lowBattCapLowThresh": 0.35,
+        "battMinTemp": 0.0,
+        "battMaxTemp": 47.0,
+        "motorCmdTimeout": 500,
+        "ledCmdTimeout": 5000
+    },
+    "BodyService" : {
+        "registryPort": 8181,
+        "serverPort": 8282,
+        "backlightDutyFile": "/sys/class/backlight/backlight.9/brightness",
+        "backlightPeriodFile": "/sys/class/backlight/backlight.9/max_brightness",
+        "fanControl": false,
+        "fanPWMFile": "/sys/class/hwmon/hwmon5/pwm1",
+        "fanPWMMax": 255,
+        "fanOnTemp" : 70,
+        "fanOffTemp" : 60,
+        "mainBoardTempFile": "/sys/class/thermal/thermal_zone0/temp",
+        "cpuThermalZone": "/sys/class/thermal/thermal_zone1",
+        "fanCurrentFile": "/sys/class/hwmon/hwmon6/in3_input",
+        "fanCurrentResistor": 0.5,
+        "pmicTempFile": "/sys/class/hwmon/hwmon6/temp1_input",
+        "cpuDCDC1TempFile": "/sys/class/hwmon/hwmon6/temp2_input",
+        "cpuDCDC2TempFile": "/sys/class/hwmon/hwmon6/temp3_input",
+        "coreDCDCTempFile": "/sys/class/hwmon/hwmon6/temp4_input",
+        "gpuDCDC1TempFile": "/sys/class/hwmon/hwmon6/temp5_input",
+        "gpuDCDC2TempFile": "/sys/class/hwmon/hwmon6/temp6_input",
+        "minCommandRate": 4.0,
+        "maxCommandRate": 40.0,
+        "commandOKCount": 25,
+        "cpuTempHiThresh": 90,
+        "cpuTempLowThres": 85,
+        "kinematic_model": "/usr/local/etc/jibo-kinematic-model.json"
+    },
+    "motionLimiter" : {
+        "maxTorque": 70,
+        "maxTime": 0.250,
+        "velAlphaDn": 0.80,
+        "velAlphaUp": 0.05,
+        "kVelLim": 0.25,
+        "logFile": "/tmp/motion-limiter.log",
+        "logEnable": false,
+        "disable": false,
+        "unindexedAcc": 10.0,
+        "unindexedVel": 1.0
+    },
+    "imu" : {
+        "driver": {
+            "deviceName": "/dev/spidev1.0",
+            "calibrationFile": "/var/jibo/imu/imu-cal.json"
+        },
+        "fallDetector": {
+            "low_g_start_thresh": 2.0,
+            "low_g_end_thresh": 4.0,
+            "high_g_start_thresh": 30.0,
+            "high_g_end_thresh": 25.0,
+            "max_low_high_sep": 0.1,
+            "min_low": 0.1,
+            "max_high": 0.1,
+            "min_falling": 1.0
+        },
+        "gyroOffset": {
+            "avg_samples": 250,
+            "still_seconds": 2.0,
+            "thresh_acc": 0.20,
+            "thresh_rot": 0.05
+        },
+        "movingDetector": {
+            "a_acc": 0.01,
+            "a_rot": 0.02,
+            "thresh_acc": 0.30,
+            "thresh_rot": 0.25
+        },
+        "upEstimator": {
+            "alpha": 0.5
+        },
+        "upMovingDetector": {
+            "a_acc": 0.50,
+            "a_rot": 0.05,
+            "thresh_acc": 0.15,
+            "thresh_rot": 0.05
+        },
+        "tip_start_thresh": 0.7,
+        "tip_end_thresh": 0.9
+    },
+    "ErrorTracker":{
+        "views": [
+            {
+                "name": "BodyService",
+                "errors": [
+                    "NECK_THERMISTOR_HIGH_FAULT",
+                    "NECK_THERMISTOR_LOW_FAULT",
+                    "NECK_ENCODER_FAULT",
+                    "NECK_STALL_FAULT",
+                    "NECK_BOARD_TIMEOUT",
+                    "NECK_POWER_FAULT_COUNT",
+                    "NECK_STALL_FAULT_COUNT",
+                    "NECK_ENCODER_FAULT_COUNT",
+                    "NECK_ENCODER_BACKWARDS_FAULT_COUNT",
+                    "NECK_THERMISTOR_FAULT_COUNT",
+                    "NECK_POWER_FAULT",
+                    "NECK_ENCODER_BACKWARDS_FAULT",
+                    
+                    "TORSO_THERMISTOR_HIGH_FAULT",
+                    "TORSO_THERMISTOR_LOW_FAULT",
+                    "TORSO_ENCODER_FAULT",
+                    "TORSO_STALL_FAULT",
+                    "TORSO_BOARD_TIMEOUT",
+                    "TORSO_POWER_FAULT_COUNT",
+                    "TORSO_STALL_FAULT_COUNT",
+                    "TORSO_ENCODER_FAULT_COUNT",
+                    "TORSO_ENCODER_BACKWARDS_FAULT_COUNT",
+                    "TORSO_THERMISTOR_FAULT_COUNT",
+                    "TORSO_POWER_FAULT",
+                    "TORSO_ENCODER_BACKWARDS_FAULT",
+                    
+                    "PELVIS_THERMISTOR_HIGH_FAULT",
+                    "PELVIS_THERMISTOR_LOW_FAULT",
+                    "PELVIS_ENCODER_FAULT",
+                    "PELVIS_STALL_FAULT",
+                    "PELVIS_BOARD_TIMEOUT",
+                    "PELVIS_POWER_FAULT_COUNT",
+                    "PELVIS_STALL_FAULT_COUNT",
+                    "PELVIS_ENCODER_FAULT_COUNT",
+                    "PELVIS_ENCODER_BACKWARDS_FAULT_COUNT",
+                    "PELVIS_THERMISTOR_FAULT_COUNT",
+                    "PELVIS_POWER_FAULT",
+                    "PELVIS_ENCODER_BACKWARDS_FAULT",
+                    
+                    "NOT_UPRIGHT_LOCKOUT",
+                    "NO_BATTERY_LOCKOUT",
+                    "FALLING_LOCKOUT",
+                    "CPU_TEMP_HIGH",
+                    "BATTERY_TEMP_LOW",
+                    "BATTERY_TEMP_HIGH",
+                    "BATTERY_LOW",
+                    "FALL_DETECTED",
+                    "BB_PACKET_INVALID",
+                    "BB_PACKET_WRONG_DEST",
+                    "BB_PACKET_WRONG_SRC"
+                ]
+            }
+        ]
+    },
+    "logging": {
+        "loggers": {
+            "root": {
+                "level": "notice"
+            }
+        }
+    }
+}

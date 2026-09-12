@@ -1,0 +1,338 @@
+#!/usr/bin/env node
+
+"use strict";
+
+const exec = require("child_process").exec;
+const execSync = require("child_process").execSync;
+const fs = require("fs");
+const process = require("process");
+
+// child executable path
+const child_path = "/bin:/usr/bin:/usr/local/bin";
+
+// initial progress character
+let ach = 0x2a;
+
+// execute a set of commands in parallel
+// cmds is an object where the keys are arbitrary and the values are strings to be exec'd
+function do_parallel_cmds(cmds, callback) {
+    let last_error = null;
+    let done_count = 0;
+    const num_ops = Object.keys(cmds).length;
+    for (const name in cmds) {
+        let rl = process.stdout;
+        let ch = String.fromCharCode(ach);
+        ach += 1;
+
+        rl.write("(" + name + "[" + ch + "])");
+
+        const cmd = cmds[name];
+        const opts = {
+            encoding: 'utf8',
+            timeout: 0,
+            maxBuffer: 200*1024,
+            killSignal: 'SIGTERM',
+            cwd: null,
+            env: {
+                PATH: child_path
+            }
+        };
+        let chld = exec(cmd, opts, function(error, stdout, stderr) {
+            var str = "(" + name;
+            if (error) {
+                str += " failed with " + error + ")";
+                rl.write(str);
+                last_error = error;
+            } else {
+                str += " done)"
+                rl.write(str);
+            }
+            done_count += 1;
+            if (done_count == num_ops && callback) {
+                callback(last_error);
+            }
+        });
+        chld.stdout.on("data", function(data) {
+            rl.write(ch);
+        });
+    }
+}
+
+// execute a set of commands in series
+// cmds is an object where the keys are arbitrary and the values are strings to be exec'd
+function do_serial_cmds(cmds, callback) {
+    let keys = Object.keys(cmds);
+
+    function recursive_do_cmds(error) {
+        const key = keys.shift();
+        if (key === undefined || error) {
+            if (callback) {
+                callback(error);
+            }
+        } else {
+            const pcmd = {};
+            pcmd[key] = cmds[key];
+            do_parallel_cmds(pcmd, recursive_do_cmds);
+        }
+    };
+
+    recursive_do_cmds();
+}
+
+// flash the boards in parallel
+function parallel_flash(head_fw, torso_fw, pelvis_fw) {
+    const board_cmds = {
+        head_flash: "stm32flash -p 1 -e 32 -R -g 0 -C -v -w " + head_fw + " /dev/ttyTHS0",
+        torso_flash: "stm32flash -p 2 -e 32 -R -g 0 -C -v -w " + torso_fw + " /dev/ttyTHS1",
+        pelvis_flash: "stm32flash -p 3 -e 32 -R -g 0 -C -v -w " + pelvis_fw + " /dev/ttyTHS2"
+    };
+
+    do_parallel_cmds(board_cmds, function(error) {
+        if (error) {
+            console.log("ERROR:", error);
+            process.exit(1);
+        } else {
+            console.log("All finished!");
+        }
+    });
+}
+
+// flash the boards using daisy chain style
+function daisy_chain_flash(head_fw, torso_fw, pelvis_fw) {
+    // Put head & torso & pelvis into bootloader mode.
+    const bootloader_cmds = {
+        enter_bootloader_mode: "boot1 && head-off && torso-off && sleep 0.5 && head-on && torso-on && boot0"
+    };
+
+    do_serial_cmds(bootloader_cmds, function(error) {
+        if (error) {
+            console.log("ERROR:", error);
+            process.exit(1);
+        }
+
+        const head_torso_cmds = {
+            head_flash: "stm32flash -e 32 -R -g 0 -C -v -w " + head_fw + " /dev/ttyTHS0",
+            torso_flash: "stm32flash -e 32 -R -g 0 -C -v -w " + torso_fw + " /dev/ttyTHS1"
+        };
+
+        do_parallel_cmds(head_torso_cmds, function(error) {
+            if (error) {
+                console.log("ERROR:", error);
+                process.exit(1);
+            }
+            // Head & Torso flashed: Putting torso into flashmode for pelvis:
+            // XXX flashmode returns non-zero for some reason. But if there's a real problem, 
+            // stm32flash should still fail.
+            const pelvis_cmds = {
+                torso_set_flashmode: "sleep 3; jibo-bbutil -c/usr/local/bin/flashmode /dev/ttyTHS1 2; sleep 2",
+                pelvis_flash: "stm32flash -e 32 -R -g 0 -C -v -w " + pelvis_fw + " /dev/ttyTHS1",
+                torso_reboot: "sleep 1 && torso-off && sleep 0.5 && torso-on"
+            };
+
+            do_serial_cmds(pelvis_cmds, function(error) {
+                if (error) {
+                    console.log("ERROR:", error);
+                    process.exit(1);
+                } else {
+                    console.log("All finished!");
+                }
+            });
+        });
+    });
+}
+
+// query board info from device tree
+function device_tree_board_info(board) {
+    const device_tree_path = "/proc/device-tree/jibo-bodyboards";
+    const board_tree_path = device_tree_path + "/" + board;
+    const board_part_file = board_tree_path + "/part";
+    const board_rev_file = board_tree_path + "/revision";
+    const part = fs.readFileSync(board_part_file);
+    const rev = fs.readFileSync(board_rev_file);
+    // drop weird null unicode thing off the end
+    const info = {
+        part: part.toString('utf8', 0, part.length-1),
+        revision: parseInt(rev.toString('utf8', 0, rev.length-1))
+    };
+    return info;
+}
+
+// where on the filesystem to find firmware binaries
+function board_info_to_fw(info, daisy_chain) {
+    const fw_path = "/usr/local/share/bodyboard_fw";
+    let suffix = ".bin";
+    if (daisy_chain) {
+        suffix = "_dc" + suffix;
+    }
+    return fw_path + "/" + info.part + "_Rev_" + info.revision + suffix;
+}
+
+// configuration table for manually supported configurations, 
+// e.g. those not detectable via device tree
+const board_infos = {
+    dvt: {
+        head: {
+            part: "JB1003",
+            revision: 5
+        },
+        torso: {
+            part: "JB1004",
+            revision: 3
+        },
+        pelvis: {
+            part: "JB1005",
+            revision: 3
+        },
+        daisy_chain: false
+    },
+    pvt: {
+        head: {
+            part: "JB1003",
+            revision: 6
+        },
+        torso: {
+            part: "JB1004",
+            revision: 3
+        },
+        pelvis: {
+            part: "JB1005",
+            revision: 4
+        },
+        daisy_chain: false
+    },
+    pvt2: {
+        head: {
+            part: "JB1003",
+            revision: 6
+        },
+        torso: {
+            part: "JB1004",
+            revision: 3
+        },
+        pelvis: {
+            part: "JB1005",
+            revision: 4
+        },
+        daisy_chain: false
+    },
+    pvt3: {
+        head: {
+            part: "JB1003",
+            revision: 7
+        },
+        torso: {
+            part: "JB1004",
+            revision: 5
+        },
+        pelvis: {
+            part: "JB1005",
+            revision: 5
+        },
+        daisy_chain: false
+    },
+    pvt_bt: {
+        head: {
+            part: "JB1003",
+            revision: 7
+        },
+        torso: {
+            part: "JB1004",
+            revision: 5
+        },
+        pelvis: {
+            part: "JB1005",
+            revision: 5
+        },
+        daisy_chain: true
+    }
+};
+
+function print_usage() {
+    let boardstr = "[";
+    for (const board in board_infos) {
+        boardstr += board + "|";
+    }
+    boardstr = boardstr.slice(0, -1) + "]";
+    
+    console.log("Usage:", process.argv[1], boardstr);
+}
+
+process.on("uncaughtException", function(error) {
+    console.log("ERROR: Uncaught exception:", error.message);
+    process.exit(1);
+});
+
+const args = process.argv.slice(2);
+
+if (args.length > 1) {
+    console.log("ERROR: Incorrect number of arguments");
+    print_usage();
+    process.exit(1);
+}
+
+// fill these out based on config/arguments
+let head_fw = null;
+let torso_fw = null;
+let pelvis_fw = null;
+let daisy_chain = null;
+
+if (args.length == 0) {
+    // detect versions from device tree, presume daisy-chain method
+    const head_info = device_tree_board_info("head");
+    const torso_info = device_tree_board_info("torso");
+    const pelvis_info = device_tree_board_info("pelvis");
+
+    daisy_chain = true;
+    head_fw = board_info_to_fw(head_info, false);
+    torso_fw = board_info_to_fw(torso_info, true);
+    pelvis_fw = board_info_to_fw(pelvis_info, false);
+} else {
+    // use command-line arguments to figure out what to do
+    
+    if (args[0] == "-h" || args[0] == "--help") {
+        print_usage();
+        process.exit(0);
+    }
+    
+    const model = args[0];
+
+    if (board_infos[model] === undefined) {
+        console.log("ERROR: Unknown model '" + model + "'");
+        print_usage();
+        process.exit(1);
+    }
+
+    daisy_chain = board_infos[model].daisy_chain;
+    head_fw = board_info_to_fw(board_infos[model].head, false);
+    torso_fw = board_info_to_fw(board_infos[model].torso, daisy_chain);
+    pelvis_fw = board_info_to_fw(board_infos[model].pelvis, false);
+}
+
+// make sure we got real files
+try {
+    fs.accessSync(head_fw, fs.R_OK);
+    fs.accessSync(torso_fw, fs.R_OK);
+    fs.accessSync(pelvis_fw, fs.R_OK);
+} catch (error) {
+    console.log("ERROR: Cannot read firmware file", error.path);
+    process.exit(1);
+}
+
+// check that body service is not running. if all good, do the update
+exec("ps | grep jibo-body-service | grep -v grep", function(error, stdout, stderr) {
+    if (!error) {
+        console.log("ERROR: jibo-body-service must be terminated");
+        process.exit(1);
+    }
+
+    if (error.code > 1) {
+        console.log("ERROR: " + error);
+        process.exit(1);
+    }
+
+    if (daisy_chain) {
+        daisy_chain_flash(head_fw, torso_fw, pelvis_fw);
+    } else {
+        parallel_flash(head_fw, torso_fw, pelvis_fw);
+    }
+});

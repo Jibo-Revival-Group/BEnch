@@ -1,0 +1,4 @@
+describe('System Monitoring Service API Tests', function() {
+   require('./sms-HTTPTest');
+   require('./sms-WSTest')
+});

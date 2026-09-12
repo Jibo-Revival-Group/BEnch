@@ -1,0 +1,148 @@
+{"list":
+    [
+        {"type": "POST", "url": "/tts_nbest_prons", "args":
+            {
+                "name":"ambrosia",
+                "nbest":10,
+                "beam":1
+            }
+        },
+		{"type": "POST", "url": "/tts_speak", "args":
+            {
+                "locale":"en-us",
+                "voice":"griffin",
+                "duration_stretch":1,
+                "pitch":1,
+                "pitchBandwidth":1,
+                "prompt":"Platform test one two three, cached true",
+                "mode":"text",
+                "outputMode":"stream",
+                "volume": 10,
+                "whisper":"FALSE",
+                "samplerate":48000,
+                "postFilter":0.65,
+                "framerate":240,
+                "unvoicedvoiced":0.65,
+                "allPass":0.53,
+                "cached": "TRUE"
+            }
+        },
+		{"type": "POST", "url": "/tts_speak", "args":
+            {
+                "locale":"en-us",
+                "voice":"griffin",
+                "duration_stretch":1,
+                "pitch":1,
+                "pitchBandwidth":1,
+                "prompt":"Platform test one two three, cached false",
+                "mode":"text",
+                "outputMode":"stream",
+                "volume": 10,
+                "whisper":"FALSE",
+                "samplerate":48000,
+                "postFilter":0.65,
+                "framerate":240,
+                "unvoicedvoiced":0.65,
+                "allPass":0.53,
+                "cached": "FALSE"
+            }
+        },
+		{"type": "POST", "url": "/tts_speak", "args":
+            {
+                "locale":"en-us",
+                "voice":"griffin",
+                "duration_stretch":1,
+                "pitch":1,
+                "pitchBandwidth":2,
+                "prompt":"Platform test one two three, no cache",
+                "mode":"text",
+                "outputMode":"stream",
+                "volume": 10,
+                "whisper":"FALSE",
+                "samplerate":48000,
+                "postFilter":0.65,
+                "framerate":240,
+                "unvoicedvoiced":0.65,
+                "allPass":0.53
+            }
+        },
+        {"type": "POST", "url": "/tts_token_times", "args":
+            {
+                "locale":"en-us",
+                "voice":"griffin",
+                "duration_stretch":1,
+                "pitch":1,
+                "pitchBandwidth":1,
+                "prompt":"Platform test one two three",
+                "mode":"text",
+                "outputMode":"stream",
+                "volume": 10,
+                "whisper":"FALSE",
+                "samplerate":48000,
+                "postFilter":0.65,
+                "framerate":240,
+                "unvoicedvoiced":0.65,
+                "allPass":0.53
+            }
+        },
+        {"type": "POST", "url": "/tts_token_times", "args":
+            {
+                "locale":"en-us",
+                "voice":"griffin",
+                "prompt": "<speak> This is a test. </speak>"
+            }
+        },
+        {"type": "POST", "url": "/tts_token_times", "args":
+            {
+                "locale":"en-us",
+                "voice":"griffin",
+                "prompt": "<speak> This is a <break size=\"1.5\"/> test. </speak>"
+            }
+        },
+        {"type": "POST", "url": "/tts_token_times", "args":
+            {
+                "locale":"en-us",
+                "voice":"griffin",
+                "prompt": "<speak> This is a <phoneme ph=\"l eh k s ih k ah n\"> lexicon </phoneme> test. </speak>"
+            }
+        },
+        {"type": "POST", "url": "/tts_token_times", "args":
+            {
+                "locale":"en-us",
+                "voice":"griffin",
+                "prompt": "<speak> This is <duration stretch=\"3\">so </duration> good. </speak>"
+            }
+        },
+        {"type": "POST", "url": "/tts_token_times", "args":
+            {
+                "locale":"en-us",
+                "voice":"griffin",
+                "prompt": "<speak> This is <pitch mult=\"1.2\"> <duration stretch=\"3\">so </duration> </pitch> <duration stretch=\"1.5\">good </duration>. </speak>"
+            }
+        },
+        {"type": "POST", "url": "/tts_token_times", "args":
+            {
+                "locale":"en-us",
+                "voice":"griffin",
+                "prompt": "<speak> This is <duration set=\"2.3\">so </duration> good. </speak>"
+            }
+        },
+        {"type": "POST", "url": "/tts_token_times", "args":
+            {
+                "locale":"en-us",
+                "voice":"griffin",
+                "prompt": "<speak> This is <pitch add=\"200\"> <duration stretch=\"3\">so </duration> </pitch> <duration stretch=\"1.5\">good </duration>. </speak>"
+            }
+        },
+        {"type": "POST", "url": "/tts_token_times", "args":
+            {
+                "locale":"en-us",
+                "voice":"griffin",
+                "prompt": "<speak> apple is spelled <say-as spell=\"apple\"/> </speak>"
+            }
+        },
+        {"type": "GET", "url": "/tts_stop"},
+        {"type": "GET", "url": "/tts_fadeout_start"},
+        {"type": "GET", "url": "/tts_fadeout_stop"}
+    ]
+}

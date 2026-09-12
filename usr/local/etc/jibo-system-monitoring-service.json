@@ -1,0 +1,57 @@
+{
+    "WebCore": {
+        "serverPort": 4111,
+        "fileRoot": "/usr/local/var/www/systemMonitor"
+    },
+    "SystemMonitoringService": {
+        "registryPort": 8181,
+        "serverPort": 4111,
+        "storage" : {
+            "mount_entries_file": "/proc/mounts",
+            "semantic": {
+                "jibo": "/opt/jibo/Jibo",
+                "skills": "/opt/jibo/Skills",
+                "photos": "/opt/jibo/Photos",
+                "recordings": "/opt/jibo/Recordings",
+                "knowledge": "/opt/jibo/Knowledge",
+                "tmp": "/tmp"
+            },
+            "low_storage_byte": 1073741824,
+            "polling_interval": 60000
+        },
+        "error" : {
+            "connection_timeout":5000,
+            "polling_interval":10000
+        },
+        "health" : {
+            "connection_timeout":30000,
+            "polling_interval": 1800000,
+            "upload" : {
+                "executable": "/usr/bin/jibo-log-client-async",
+                "arguments": [
+                    "--credentials","/var/jibo/credentials.json",
+                    "--kind","HEALTH"
+                ],
+                "environment": {},
+                "directory": ""
+            }
+        }
+    },
+    "ErrorTracker": {
+        "views": [
+            {
+                "name": "SystemMonitoringService",
+                "errors": [
+                    "LOW_ROBOT_STORAGE"
+                ]
+            }
+        ]
+    },
+    "logging" : {
+        "loggers" : {
+            "root": {
+                "level": "warning"
+            }
+        }
+    }
+}

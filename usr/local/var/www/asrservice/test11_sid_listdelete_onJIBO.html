@@ -1,0 +1,469 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<script src="jquery-2.1.3.js"></script>
+<link href="asr.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript">
+$(document).ready(function() {
+
+    connectAsr();
+
+    initTaskSettings();
+	
+	connectSpkrID();
+	
+	ListDeleteSpkrs();
+});
+ 
+var host = window.location.host;
+var socket = new WebSocket("ws://"+host+"/port");
+var wsMsgLog = ""
+
+
+function connectAsr() {
+ 
+    socket.onopen = function() {
+        console.log("ASR message socket open!");
+    };
+    socket.onmessage = function(msg) {
+        console.log("Got message!!");
+        var data = JSON.parse(msg.data);
+        var data_str = JSON.stringify(data, null, 4);
+        data_str = data_str.concat("\n");
+        data_str = data_str.concat(wsMsgLog);
+        wsMsgLog = data_str;
+        //state.appendTouchState(data);
+        console.log(data.content);
+        //$("#asr").html($("<p>").text(JSON.stringify(data, null, 2)));
+        $("#asrState").val(wsMsgLog);
+    };
+    socket.onclose = function() {
+        console.log("Asr message socket close!");
+        setTimeout(function() { connectAsr(); }, 3000);
+    };
+}
+	
+function connectSpkrID() {
+	socket.onopen = function() {
+		console.log("Touch state socket open!");
+	};
+	socket.onmessage = function(msg) {
+		console.log("Got message from Spkr-ID");
+		var data = JSON.parse(msg.data);
+        var data_str = JSON.stringify(data, null, 4);
+        data_str = data_str.concat("\n");
+        data_str = data_str.concat(wsMsgLog);
+        wsMsgLog = data_str;
+        //state.appendTouchState(data);
+        console.log(data.content);
+        //$("#asr").html($("<p>").text(JSON.stringify(data, null, 2)));
+        $("#asrState").val(wsMsgLog);
+	};
+	socket.onclose = function() {
+		console.log("Spkr-ID state socket close!");
+		setTimeout(function() {connectSpkrID(); }, 3000);
+	};
+}
+
+function sendSocketMsg() {
+    console.log("Sending socket msg");
+    socket.send('10');
+}
+
+function ListDeleteSpkrs() {
+	$("#list_button").click(function() {
+        $.ajax({
+            type: "POST",
+            url: "/spkr_id_interface",
+            dataType: "json",
+            data: packListSpkrSettings(), 
+            success: function() {
+            },
+            error: function(xhr, status, error) {
+                console.log("ERROR " + status + " " + error + JSON.stringify(data));
+            }
+        });
+    });
+	
+	$("#delete_button").click(function() {
+        $.ajax({
+            type: "POST",
+            url: "/spkr_id_interface",
+            dataType: "json",
+            data: packDeleteSpkrSettings(), 
+            success: function() {
+            },
+            error: function(xhr, status, error) {
+                console.log("ERROR " + status + " " + error + JSON.stringify(data));
+            }
+        });
+    });
+}
+
+
+
+function initTaskSettings() {
+
+    $("#init_and_start_task_button").click(function() {
+        $.ajax({
+            type: "POST",
+            url: "/asr_interface",
+            dataType: "json",
+            data: packTaskSettings(), 
+            success: function() {
+            },
+            error: function(xhr, status, error) {
+                console.log("ERROR " + status + " " + error + JSON.stringify(data));
+            }
+        });
+    });
+
+    $("#init_task_button").click(function() {
+    $.ajax({
+            type: "POST",
+            url: "/asr_interface",
+            dataType: "json",
+            data: packInitTaskSettings(), 
+            success: function() {
+            },
+            error: function(xhr, status, error) {
+                console.log("ERROR " + status + " " + error + JSON.stringify(data));
+            }
+        });
+    });
+
+    $("#start_task").click(function() {
+         $.ajax({
+            type: "POST",
+            url: "/asr_interface",
+            dataType: "json",
+            data: packStartTaskSettings(), 
+            success: function() {
+            },
+            error: function(xhr, status, error) {
+                 console.log("ERROR " + status + " " + error + JSON.stringify(data));
+            }
+        });
+    });
+
+    $("#stop_task").click(function() {
+         $.ajax({
+            type: "POST",
+            url: "/asr_interface",
+            dataType: "json",
+            data: packStopTaskSettings(), 
+            success: function() {
+            },
+            error: function(xhr, status, error) {
+                 console.log("ERROR " + status + " " + error + JSON.stringify(data));
+            }
+        });
+    });
+
+    $("#clear_task").click(function() {
+         $.ajax({
+            type: "POST",
+            url: "/asr_interface",
+            dataType: "json",
+            data: packClearTaskSettings(), 
+            success: function() {
+            },
+            error: function(xhr, status, error) {
+                 console.log("ERROR " + status + " " + error + JSON.stringify(data));
+            }
+        });
+    });
+
+    
+    $("#submit_audio_source_command").click(function() {
+        $.ajax({
+            type: "POST",
+            url: "/audio_source",
+            dataType: "json",
+            data: packAudioSourceCommand(), 
+            success: function() {
+            },
+            error: function(xhr, status, error) {
+                console.log("ERROR " + status + " " + error + JSON.stringify(audio_source_data));
+            }
+        });
+    });
+
+    $("#stop_audio_source").click(function() {
+        $.ajax({
+            type: "POST",
+            url: "/audio_source",
+            dataType: "json",
+            data: packStopAudioSourceCommand(), 
+            success: function() {
+            },
+            error: function(xhr, status, error) {
+                console.log("ERROR " + status + " " + error + JSON.stringify(audio_source_data));
+            }
+        });
+    });
+
+}
+ 
+
+
+var data = {task: "default", action: "default"};
+
+function packListSpkrSettings() {
+	data.action = "list";
+	data.task_id = "id";
+	data.spkr_id_type = $("#spkr_id_type").val();
+	data.speaker_name = $("#speaker_name").val();
+	console.log(JSON.stringify(data));
+	return JSON.stringify(data);
+}
+	
+function packDeleteSpkrSettings() {
+	data.action = "delete";
+	data.task_id = "id";
+	data.spkr_id_type = $("#spkr_id_type").val();
+	data.speaker_name = $("#speaker_name").val();
+	console.log(JSON.stringify(data));
+	return JSON.stringify(data);
+}
+	
+function packTaskSettings() {
+    data.task = $("#task_spec").val();
+    data.task_id = $("#task_id").val();
+    data.action = "init_and_start";
+    data.audio_source_id = $("#audio_source_id").val();
+    return JSON.stringify(data);
+}
+
+function packInitTaskSettings() {
+    data.task = $("#task_spec").val();
+    data.task_id = $("#task_id").val();
+    data.action = "init";
+    data.audio_source_id = $("#audio_source_id").val();
+    return JSON.stringify(data);
+}
+
+function packStartTaskSettings() {
+    data.task = "";
+    data.task_id = $("#stop_task_id").val();
+    data.action = "start";
+    data.audio_source_id = "";
+    return JSON.stringify(data);
+}
+
+function packStopTaskSettings() {
+    data.task = "";
+    data.action = "stop";
+    data.task_id = $("#stop_task_id").val();
+    data.audio_source_id = "";
+    return JSON.stringify(data);
+}
+
+function packClearTaskSettings() {
+    data.task = "";
+    data.action = "clear";
+    data.task_id = $("#stop_task_id").val();
+    data.audio_source_id = "";
+    return JSON.stringify(data);
+}
+
+var audio_source_data = {action: "default", audio_source_id:"default_id", 
+    audio_source:"default_source"}
+
+function packAudioSourceCommand() {
+    audio_source_data.action = "start";
+    audio_source_data.audio_source_id = $("#audio_source_id2").val();
+    audio_source_data.wav_files = JSON.parse($("#wav_files").val());
+    audio_source_data.audio_source = $("#audio_source").val();
+    return JSON.stringify(audio_source_data);
+}
+
+function packStopAudioSourceCommand() {
+    audio_source_data.action = "stop";
+    audio_source_data.audio_source_id = $("#audio_source_id3").val();
+    audio_source_data.wav_files = [];
+    audio_source_data.audio_source = "default_source";
+    return JSON.stringify(audio_source_data);
+}
+
+function showSpkrIDTypeTemplates(sel){ 
+	locations = ["", "Text-Dependent", "Text-Independent", "TD+TI",];
+	srcLocation = locations    [sel.selectedIndex];  
+    if (srcLocation != undefined) {       
+    document.getElementById('spkr_id_type').value= srcLocation;
+		console.log(srcLocation);
+ } 
+}
+		
+function showCSTemplates(sel){   
+
+locations =[ "", /*this remains blank for first selection in drop-down list*/ 
+
+/*option 1*/                 
+"{\"name\":\"hey jibo\",\"path\":\"/usr/share/jibo/asrservice/sharedresources/hey_jibo\",\"timeout\":12,\"bargein\":true,\"nbest\":1,\"speaker_name\":\"\",\"incremental\":false} * {\"name\":\"uber and jot\",\"path\":\"/usr/share/jibo/asrservice/sharedresources/uber_and_jot_grm\",\"timeout\":12,\"bargein\":false,\"nbest\":1,\"speaker_name\":\"\",\"incremental\":false}",
+
+/*option 2*/                
+"{\"name\":\"hey jibo\",\"path\":\"/usr/share/jibo/asrservice/sharedresources/hey_jibo\",\"timeout\":12,\"bargein\":true,\"nbest\":1,\"speaker_name\":\"\",\"incremental\":false} * {\"name\":\"nuance curl\",\"path\":\"/usr/share/jibo/asrservice/sharedresources/uber_and_jot_grm\",\"timeout\":12,\"bargein\":false,\"nbest\":1,\"speaker_name\":\"\",\"incremental\":false}",
+
+/*option 3*/                
+"{\"name\":\"hey jibo\",\"path\":\"/usr/share/jibo/asrservice/sharedresources/hey_jibo\",\"timeout\":0,\"bargein\":true,\"nbest\":1,\"speaker_name\":\"\",\"incremental\":false} * {\"name\":\"nuance curlmulti\",\"path\":\"/usr/share/jibo/asrservice/sharedresources/nuance_curlmulti\",\"timeout\":5000,\"bargein\":false,\"nbest\":1,\"speaker_name\":\"\",\"incremental\":false}",
+
+/*option 4*/                
+"{\"name\":\"hey jibo\",\"path\":\"/usr/share/jibo/asrservice/sharedresources/hey_jibo\",\"timeout\":0,\"bargein\":true,\"nbest\":1,\"speaker_name\":\"\",\"incremental\":false} * {\"name\":\"sensory_sdet\",\"path\":\"/usr/share/jibo/asrservice/sharedresources/sensory_speech_detector\",\"timeout\":5000,\"bargein\":false,\"nbest\":1,\"speaker_name\":\"\",\"incremental\":false}",
+
+/*option 5*/                
+"{\"name\":\"sensory_sdet\",\"path\":\"/usr/share/jibo/asrservice/sharedresources/sensory_speech_detector\",\"timeout\":5000,\"bargein\":false,\"nbest\":1,\"speaker_name\":\"\",\"incremental\":false} | {\"name\":\"nuance curlmulti\",\"path\":\"/usr/share/jibo/asrservice/sharedresources/nuance_curlmulti\",\"timeout\":5000,\"bargein\":false,\"nbest\":1,\"speaker_name\":\"\",\"incremental\":false}",
+
+/*option 6*/                
+"{\"name\":\"hey jibo\",\"path\":\"/usr/share/jibo/asrservice/sharedresources/hey_jibo\",\"timeout\":0,\"bargein\":true,\"nbest\":1,\"speaker_name\":\"\",\"incremental\":false} * ({\"name\":\"sensory_sdet\",\"path\":\"/usr/share/jibo/asrservice/sharedresources/sensory_speech_detector\",\"timeout\":5000,\"bargein\":false,\"nbest\":1,\"speaker_name\":\"\",\"incremental\":false} | {\"name\":\"nuance curlmulti\",\"path\":\"/usr/share/jibo/asrservice/sharedresources/nuance_curlmulti\",\"timeout\":5000,\"bargein\":false,\"nbest\":1,\"speaker_name\":\"\",\"incremental\":false})",
+
+/*option 7*/			
+"{\"name\":\"hey jibo\",\"path\":\"/usr/share/jibo/asrservice/sharedresources/hey_jibo\",\"timeout\":0,\"bargein\":true,\"nbest\":1,\"speaker_name\":\"\",\"incremental\":false} * {\"name\":\"Speaker Enroll TD\",\"path\":\"/usr/share/jibo/asrservice/sharedresources/sensory_spkr_enroll_td\",\"timeout\":5000,\"bargein\":false,\"nbest\":1,\"speaker_name\":\"Vijendra\",\"incremental\":false}",
+			
+/*option 8*/
+"{\"name\":\"hey jibo\",\"path\":\"/usr/share/jibo/asrservice/sharedresources/hey_jibo\",\"timeout\":0,\"bargein\":true,\"nbest\":1,\"speaker_name\":\"\",\"incremental\":false} * {\"name\":\"Speaker ID TD\",\"path\":\"/usr/share/jibo/asrservice/sharedresources/sensory_spkr_id_td\",\"timeout\":5000,\"bargein\":false,\"nbest\":1,\"speaker_name\":\"Vijendra\",\"incremental\":false}",
+		   
+/*option 9*/			
+"{\"name\":\"hey jibo\",\"path\":\"/usr/share/jibo/asrservice/sharedresources/hey_jibo\",\"timeout\":0,\"bargein\":true,\"nbest\":1,\"speaker_name\":\"\",\"incremental\":false} * {\"name\":\"Speaker Enroll TI\",\"path\":\"/usr/share/jibo/asrservice/sharedresources/sensory_spkr_enroll_ti\",\"timeout\":5000,\"bargein\":false,\"nbest\":1,\"speaker_name\":\"Vijendra\",\"incremental\":false}",
+
+/*option 10*/
+"{\"name\":\"hey jibo\",\"path\":\"/usr/share/jibo/asrservice/sharedresources/hey_jibo\",\"timeout\":0,\"bargein\":true,\"nbest\":1,\"speaker_name\":\"\",\"incremental\":false} * {\"name\":\"Speaker ID TI\",\"path\":\"/usr/share/jibo/asrservice/sharedresources/sensory_spkr_id_ti\",\"timeout\":5000,\"bargein\":false,\"nbest\":1,\"speaker_name\":\"Vijendra\",\"incremental\":false}",
+
+/*option 11*/
+"{\"name\":\"Speaker ID TD\",\"path\":\"/usr/share/jibo/asrservice/sharedresources/sensory_spkr_id_td\",\"timeout\":0,\"bargein\":true,\"nbest\":1,\"speaker_name\":\"\",\"incremental\":false} * {\"name\":\"Speaker ID TI\",\"path\":\"/usr/share/jibo/asrservice/sharedresources/sensory_spkr_id_ti\",\"timeout\":5000,\"bargein\":false,\"nbest\":1,\"speaker_name\":\"\",\"incremental\":false}",
+
+];
+
+    srcLocation = locations    [sel.selectedIndex];    
+    if (srcLocation != undefined) {      
+    //document.getElementById('task_spec').innerHTML= srcLocation; 
+    document.getElementById('task_spec').value= srcLocation;
+ } 
+}
+
+
+function showWavFileTemplates(sel){   
+
+locations =[ "[]", /*this remains blank for first selection in drop-down list*/ 
+
+/*option 1*/                 
+"[\"/usr/share/jibo/asrservice/sharedresources/audio/HEYJIBO_1_maxim.wav\", \"/usr/share/jibo/asrservice/sharedresources/audio/CAN_YOU_SEND_THIS_MESSAGE_TO_RICH_SADOWSKY_1_maxim.wav\"]",];
+    srcLocation = locations    [sel.selectedIndex];    
+    if (srcLocation != undefined) {      
+    //document.getElementById('task_spec').innerHTML= srcLocation; 
+    document.getElementById('wav_files').value= srcLocation;
+ } 
+}
+
+$(function () {
+    $("select#wav_files_dropdown").change();
+});
+
+</script>
+<title>Asr Service</title>
+</head>
+<body>
+
+<div class="section">
+
+<h1>Socket messages from ASR</h1>
+<textarea id="asrState" disabled="true" rows="15" cols="120"></textarea>
+
+<table style="width:100%" border=4 cellpadding=8 bordercolor="#FFFFFF">
+  <tr>
+    <td align="left" valign="top" bgcolor="#dddddd">
+<h1>Post to ASR</h1>
+<label for="task_spec">Task:</label>
+<select class="c10" onchange="showCSTemplates(this);" id="task_spec_dropdown">
+    <option value="0" id="Templates">None</option>
+    <option value="1">hey_jibo uber_and_jot_grm</option>
+    <option value="2">hey_jibo nuance_curl</option>
+    <option value="3">hey_jibo nuance_curlmulti</option>
+    <option value="4">hey_jibo sensory_speech_detector</option>
+    <option value="5">sensory_speech_detector | nuance_curl_multi</option>
+    <option value="6">hey_jibo (sensory_speech_detector | nuance_curl_multi)</option>
+	<option value="7">hey_jibo speaker_enroll_td</option>
+	<option value="8">hey_jibo speaker_id_td</option>
+	<option value="9">hey_jibo speaker_enroll_ti</option>
+	<option value="10">hey_jibo speaker_id_ti</option>
+	<option value="11">speaker_id_td speaker_id_ti</option>
+</select>
+<br>
+<textarea id="task_spec" rows ="6" cols="60"></textarea><br>
+
+<label for="task_id">Task id:</label> 
+<input type="text" id="task_id" value="unique id" /><br>
+<label for="audio_source_id">Audio source id:</label>
+<input type="text" id="audio_source_id" value="audio source id" /><br>
+<br>
+<button id="init_and_start_task_button">Init and Start task</button>
+<button id="init_task_button">Init task</button>
+    </td>
+    <td align="left" valign="top" bgcolor="#aaaaaa">
+<h1>Start audio source</h1>
+<label for="audio_source_id2">Audio source id:</label> 
+<input type="text" id="audio_source_id2" value="audio source id" /><br>
+
+<label for="wav_files">Wav file:</label>
+ <select class="c11" onchange="showWavFileTemplates(this);" id="wav_files_dropdown">
+    <option value="0" id="Templates">None</option>
+    <option value="1">hey_jibo can_you_send_this_message_to_Rich_Sadowsky</option>
+</select>
+<br>
+<textarea id="wav_files" rows ="3" cols="60"></textarea><br>
+
+<label for="audio_source">Audio source type:</label>
+<select id="audio_source">
+    <option value="alsa">alsa</option>
+    <option value="wav">wav</option>
+</select>
+<br>
+<br>
+<button id="submit_audio_source_command">Submit audio source</button>
+    </td>
+    </tr>
+  <tr>
+<td align="left" valign="top" bgcolor="#dddddd">
+<h1>Start/stop/clear task</h1>
+<label for="stop_task_id">Task id to stop:</label> 
+<input type="text" id="stop_task_id" value="task id" /><br>
+<br>
+<button id="start_task">Start task</button>
+<button id="stop_task">Stop task</button>
+<button id="clear_task">Clear task</button>
+</td>
+<td align="left" valign="top" bgcolor="#aaaaaa">
+<h1>Stop audio source</h1>
+<label for="audio_source_id3">Audio source to stop:</label> 
+<input type="text" id="audio_source_id3" value="audio source id to stop" /><br>
+<br>
+<button id="stop_audio_source">Stop audio source</button>
+</td>
+</tr>
+</table>
+</div> <!-- section -->
+
+<div class="section1">
+<h1>Post to Speaker-ID List-Delete</h1>
+<label for="spkr_id_type">Speaker-ID Type:</label>
+<select class="c10" onchange="showSpkrIDTypeTemplates(this);" id="spkr_id_type">
+	<option value="0" id="Templates">None</option>
+    <option value="Text-Dependent">Text-Dependent</option>
+    <option value="Text-Independent">Text-Independent</option>
+    <option value="TD+TI">TD+TI</option>
+</select>
+<br>
+
+<label for="speaker_name">Speaker Name:</label> 
+<input type="text" id="speaker_name" value="" /><br>
+<br>
+<button id="list_button">List Speaker(s)</button>
+<button id="delete_button">Delete Speaker(s)</button>
+     </td>
+  </tr>
+</table>
+</div> <!-- section1 -->
+
+
+</body>
+</html>

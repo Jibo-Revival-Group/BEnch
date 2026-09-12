@@ -1,0 +1,162 @@
+#!/usr/bin/env node
+
+"use strict";
+
+/**********************************************************
+*
+* Jibo Platform Test
+* Jibo, Inc. 2016
+* Author: Russell Kirmayer
+* Purpose:
+    This is the main test harness for the platform test suite
+    This script will do a few things.
+    1. Call small scripts that live in /usr/local/share/jibo-test that:
+        - Unit test a build
+        - Test for regression
+        - Check boolean testable platform options
+
+2. Call larger scripts that live in each service, that
+    exercise the different services (i.e. LPS, body)
+
+3. Display the results to the screen for immediate
+    feedback, as well as to a log file for logging purposes
+
+/**********************************************************/
+/*
+* Requirements for testing functionality
+*/
+let fs = require('fs');
+let path = require('path');
+let isInstalled = true;
+
+
+/*
+* Declarations
+*/
+let childProcess = require('child_process');
+let identity_file = "/var/jibo/identity.json";
+let pathToLog = '/usr/local/lib/jibo-platform-test/platformTest.log';
+let Common = require('./../lib/jibo-platform-test/common');
+
+if(process.argv[2] == 'test'){
+    isInstalled = false;
+}
+/*****************************************************************/
+//JSON log file of test results
+//remove log file if it exists
+let running_on_robot = Common._fileExist(identity_file);
+if(running_on_robot){
+    if(fs.existsSync(pathToLog)){
+        childProcess.execSync('rm ' + pathToLog);
+    }
+}
+
+let jibo_version = childProcess.execSync('jibo-version');
+
+let systemTestsPath = "";
+
+/******************** Screen Logging *********************/
+console.log('***************************************************************');
+console.log('********************* Platform Test Suite *********************');
+console.log('***************************************************************');
+console.log(''+jibo_version);
+console.log('Testing Jibo platform now... \n');
+/*********************************************************/
+
+// Check if program is running on robot or not by existence of
+// Identity file
+if(isInstalled){
+    systemTestsPath = '/usr/local/share/jibo-platform-test/';
+    // systemTestsPath = '/jibo-platform-test/src/tests';
+} else{
+    systemTestsPath = '/jibo-platform-test/src/tests';
+}
+
+/*********************************************************/
+
+//get a list of all files and directories, separately
+//to allow the system tests to be run and then
+//the tests for each serice
+let fileDirList = Common._getFiles(systemTestsPath);
+let systemFiles = fileDirList[0];
+let serviceDirs = fileDirList[1];
+
+
+//run each system tests in tests directory
+for(let i = 0; i < systemFiles.length; i++){
+    let testPath = systemFiles[i];
+    if(String(testPath).includes('/system-')){
+        //console.log('systemTest: '+ testPath);
+        try{
+            console.log(String(childProcess.execSync(testPath)));
+        }catch(e){
+            console.log("Test failed with error: " + e);
+        }
+    }
+}
+
+/*********************************************************/
+// Other, misc. tests
+/*********************************************************/
+// fs size check
+try {
+    console.log(String(childProcess.execSync('node \
+        /usr/local/share/jibo-platform-test/platform-fs-test')));
+}catch(e){
+    console.log("fs test failed with error: " + e);
+}
+
+
+// math test
+try {
+    console.log(String(childProcess.execSync('node \
+        /usr/local/share/jibo-platform-test/platform-math-test')));
+}catch(e){
+    console.log("math test failed with error: " + e);
+}
+
+// media upload and download test
+// try {
+//     console.log(String(childProcess.execSync('node \
+//         /usr/local/share/jibo-platform-test/platform-mediaCloudTest')));
+// }catch(e){
+//     console.log("media cloud test failed with error: " + e);
+// }
+
+//GSTREAMER TEST
+
+try{
+    console.log(String(childProcess.execSync('DISPLAY=:0 \
+    XAUTHORITY=/tmp/.Xauthority GST_GL_XINITTHREADS=1 node \
+    /usr/local/share/jibo-platform-test/platform-gstreamerTest')));
+}catch(e){
+    console.log("Gstreamer test failed with error: " + e);
+}
+
+/*********************************************************/
+
+//for each directory found in serviceDirs,
+/*********************************************************/
+
+//iterate over each directory path taken from above
+for(let i = 0; i < serviceDirs.length; i++){
+    //get all tests within given directory
+    let serviceDirList = Common._getFiles(serviceDirs[i]);
+    let serviceFiles = serviceDirList[0];
+
+    //iterate over all tests in each directory
+    for(let j = 0; j < serviceFiles.length; j++){
+        let testDir = serviceDirs[i];
+        let testPath = serviceFiles[j];
+        if(testPath.includes('index')){
+            let testName = testDir.split('//')[1];
+            console.log("Testing the " + testName + "...");
+            try{
+                childProcess.execSync("XUNIT_FILE=\'/tmp/jibo-platform-test/"+
+                    testName+".xml\' mocha index --reporter xunit-file --timeout 15000", {cwd: testDir});
+            }catch(e){
+                console.log("Test failed with error: " + e);
+            }
+        }
+    }
+}

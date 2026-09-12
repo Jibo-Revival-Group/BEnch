@@ -1,0 +1,97 @@
+{
+    "WebCore": {
+        "serverPort": 7979,
+        "fileRoot": "/usr/local/var/www/capture-tools"
+    },
+    "TestCaptureService": {
+        "registryPort": 8181,
+        "serverPort": 7979,
+        "camera": {
+            "type": "CUDA",
+            "cuda": {
+                "devices": [
+                    {
+                        "enabled": true,
+                        "name": "Right Wide Eye",
+                        "path": "/dev/video1",
+                        "bufferPoolSize": 4,
+                        "width": 672,
+                        "height": 380,
+                        "outputBufferFormats" : 2,
+                        "hFlip":true,
+                        "vFlip":true,
+                        "gamma" : {
+                            "R":0.75,
+                            "G":0.7,
+                            "B":0.7
+                        },
+                        "ae" : {
+                            "exposureP":0.05,
+                            "gainP":0.02,
+                            "targetY":0.6,
+                            "skinSegmentedTargetY" : 0.5,
+                            "skinSegmentedAvgYThreshold" : 0.8,
+                            "skinRatioThreshold" : 0.010,
+                            "errorY":0.0001
+                        },
+                        "awb" : {
+                            "grayThreshold":0.3,
+                            "numSamples":1000,
+                            "P":0.15,
+                            "targetU":0.505,
+                            "targetV":0.50
+                        }
+                    },
+                    {
+                        "enabled": true,
+                        "name": "Left Narrow Eye",
+                        "path": "/dev/video0",
+                        "bufferPoolSize": 4,
+                        "width": 672,
+                        "height": 380,
+                        "outputBufferFormats" : 2,
+                        "hFlip":true,
+                        "vFlip":true,
+                        "gamma" : {
+                            "R":0.75,
+                            "G":0.7,
+                            "B":0.7
+                        },
+                        "ae" : {
+                            "exposureP":0.05,
+                            "gainP":0.02,
+                            "targetY":0.6,
+                            "skinSegmentedTargetY" : 0.5,
+                            "skinSegmentedAvgYThreshold" : 0.8,
+                            "skinRatioThreshold" : 0.010,
+                            "errorY":0.0001
+                        },
+                        "awb" : {
+                            "grayThreshold":0.3,
+                            "numSamples":1000,
+                            "P":0.15,
+                            "targetU":0.505,
+                            "targetV":0.50
+                        }
+                    }
+                ],
+                "cuda" : {
+                    
+                }
+            },
+            "file": {
+                "videos": [
+                    "videos/video-000/video.json",
+                    "videos/video-001/video.json"
+                ],
+                "format": "YUV420p"
+            },
+            "v4l2": {
+                "devices": {
+                    "left": "/dev/video0",
+                    "right": "/dev/video1"
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,57 @@
+{
+    "platformVersion": ">=3.1.0",
+    "services": {
+        "KBService": {
+            "port": 8778
+        },
+        "GlobalManagerService": {
+            "port": 8338
+        },
+        "SkillsService": {
+            "singleSkill": true,
+            "startSkill": "oobe-config",
+            "port": 8779
+        },
+        "NotificationsService": {
+            "port": 8001
+        },
+        "ErrorService": {
+            "port": 10004
+        },
+        "SchedulerService": {
+          "port": 10005,
+          "otaFilter": "fcs"
+        },
+
+        "PerformanceServiceSim": {},
+        "WifiService": {
+          "port": 8668,
+          "region": "api"
+        }
+    },
+    "RegistryClient": {
+        "port": 8181,
+        "host": "127.0.0.1"
+    },
+    "logging": {
+        "logUncaughtExceptions": true,
+        "logUnhandledRejections": true,
+        "stackTraceLimit": 30,
+        "outputs": {
+            "console": {
+                "outputFileAndLine": false
+            },
+            "syslog": {
+                "port": 514,
+                "target": "127.0.0.1",
+                "outputFileAndLine": false
+            }
+        },
+        "namespaces": {
+            "": {
+                "console": "none",
+                "syslog": "info"
+            }
+        }
+    }
+}

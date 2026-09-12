@@ -1,0 +1,92 @@
+#!/usr/bin/env node
+
+"use strict";
+var startTime = new Date().getTime();
+/**********************************************************
+*
+* Jibo Platform Test
+* Jibo, Inc. 2016
+* Author: Russell Kirmayer
+* Notes:
+* Test to check the correct permissions on all the
+* startup scripts in /etc/init.d
+/**********************************************************/
+
+/*
+* Requirements for testing functionality
+*/
+let fs = require('fs');
+let path = require('path');
+let Common = require('./../../lib/jibo-platform-test/common');
+let childProcess = require('child_process');
+
+/*
+* Logging information
+*/
+this.logKey = 'startupScriptPermissionCheck';
+this.logData = {};
+this.logData['duration'] = {'duration': undefined};
+this.logData['result'] = {"correctPermission": {"pass": 0, "fail": 0},
+                          "isFile": {"pass": 0, "fail": 0} }
+
+/*****************************************************************************/
+
+// Checks for files in /etc/init.d, correct permission and file type //
+let systemTests = Common._getFiles('/etc/init.d');
+systemTests = systemTests[0];
+
+console.log('Checking correct permissions on \/etc\/init.d startup scripts...');
+
+for(let i = 0; i < systemTests.length; i++){
+    let test = String(systemTests[i]);
+    //make sure file is a S-type file
+    if(test.substring(1).split('/')[2][0] == "S"){
+        console.log(". Testing " + test);
+        //make sure has correct permissions
+        if((fs.statSync(test).mode & 0o777) === 0o755){
+            this.logData['result'].correctPermission.pass++;
+        }else{
+            this.logData['result'].correctPermission.fail++;
+        }
+    }
+}
+
+console.log('Checking correct permissions of other programs/executables...');
+
+// Checks for files in other locations, purely correct permission //
+let permissionList = [['/usr/bin/random_logrotate', '0o755'],
+                        ['/usr/local/bin/jibo-system-monitoring-service', '0o755']
+                        ]
+
+for(let i = 0; i < permissionList.length; i++){
+    console.log(". Testing " + String(permissionList[i][0]));
+    if((fs.statSync(String(permissionList[i][0])).mode & 0o777) ===
+        ((permissionList[i][1]) & 0o777)){
+        this.logData['result'].correctPermission.pass++;
+    }else{
+        this.logData['result'].correctPermission.fail++;
+    }
+}
+
+console.log('Checking correct type of startup scripts...');
+for(let i = 0; i < systemTests.length; i++){
+    let test = String(systemTests[i]);
+    //make sure file is a S-type file
+    if(test.substring(1).split('/')[2][0] == "S"){
+        console.log(". Testing " + test);
+        if(fs.statSync(test).isFile()){
+            this.logData['result'].isFile.pass++;
+        }else{
+            this.logData['result'].isFile.fail++;
+        }
+    }
+}
+
+console.log("Correct permissions = " +
+    String(this.logData['result'].correctPermission.pass +
+        this.logData['result'].isFile.pass));
+console.log("Incorrect permissions = " +
+    String(this.logData['result'].correctPermission.fail +
+        this.logData['result'].isFile.fail));
+
+

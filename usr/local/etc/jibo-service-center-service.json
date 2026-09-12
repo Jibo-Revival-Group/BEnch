@@ -1,0 +1,35 @@
+{
+    "WebCore": {
+        "serverPort": 9797,
+        "fileRoot": "/usr/local/var/www/servicecenterservice",
+        "requestLogging": false
+    },
+    "ServiceCenterService": {
+        "registryPort": 8181,
+        "serverPort": 9797
+    },
+    "ErrorTracker": {
+        "views": [
+            {
+                "name": "ServiceCenterService",
+                "errors": []
+            }
+        ]
+    },
+    "logging": {
+        "channels": {
+            "splitter": {
+                "channels": "syslog"
+            }
+        },
+        "loggers": {
+            "root": {
+                "level": "notice"
+            },
+            "ServiceCenterService": {
+                "name": "ServiceCenterService",
+                "level": "notice"
+            }
+        }
+    }
+}

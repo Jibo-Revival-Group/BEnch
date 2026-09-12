@@ -1,0 +1,47 @@
+	demo = [please] (show|give) (us|me) a demo;
+
+	takepic = [please] take a (picture|photo);
+
+	cameraman = ((be a)|play) cameraman;
+
+	random = take random (pictures|photos);
+
+	showpics = [please] show (us|me) the (pictures|photos);
+
+	greet = howareyou;
+
+	home = [go to [the]] home screen;
+
+	stop = ((thats enough)|stop);
+
+	sleep = go to sleep;
+
+	negative = I dont like it;
+
+        positive = I like (it|this);
+	
+	another = [take] (another | (one more));
+
+	continue = ( (go ahead) | (say more) | continue);
+	
+	pause = ( (hang on) |pause|(wait a sec));
+
+	whattime = (what [is the] time [is it]);
+
+	whatweather = ([please] (what|how) is the (weather|temperature) in %%:ε);
+	playmessage = ((play| give me) my messages);
+
+	whatisyourname = ((what is your name)|(who are you));
+	
+	fullname = ((Amir [Harati])| (Andrew [Rapo])| (Andy [Atkins])| (Bill [Teasley])| (Blade [Kotelly])| (Blair [Barnett])| (Bryan [Pellom])| (Cynthia [Breazeal])| (Ed [Kaiser])| (Elio [Querze])| (Francois [Laberge])| (Hugh [McLaughlin])| (Jon [Ferguson])| (Jonathan [Ross])| (Martin [Pitwood])| (Matt [Revis])| (Maxim [Makatchev]) | (Patty [Baird])| (Peter [Krogh])| (Pieter [Vermeulen]) | (Rachel [Coulston])| (Ramon [Prieto])| (Rich [Sadowsky])| (Rich [Westelman])| (Robby [Kilgore])| (Roberto [Pieraccini])| (Roseline [Donald])| (Simone [Putnam])| (Sridhar [Raghavan])| (Steve [Chambers])| (Todd [Mozer])| (Todd [Pack]));
+
+	
+	contact = $fullname;
+	
+	relation = [my] (mom|mother|mommy|dad|dady|father|sister|bro|brother|family);
+	
+	message	=  [(i want to)| (can you)] (send [a|this] [picture|image|photo|audio|video|text|chat|email] [message|jibogram] to);
+	
+	messagewithto	= $message (($contact|$relation) [and $contact]);
+
+	g = <s> ( $takepic  | $demo | $showpics | $cameraman | $greet | $home |  $sleep | $stop | $positive | $negative | $another| $continue | $pause | $messagewithto | $whattime| $whatweather| $playmessage|$whatisyourname) <\/s>;

@@ -1,0 +1,114 @@
+# The phones and their descriptive features for the phones in the en_us voice.
+# This is basically the arpabet phons used in CMUdict currently.
+# Each phone is presented like this:
+# PHONE VOWELORCONSONANT VOWELLENGTH VOWELHEIGHT VOWELFRONTNESS VOWELROUNDEDNESS VOWELRHOTICITY CONSONANTTYPE CONSONANTPLACEOFARTICULATION VOICING
+# PHONE = A string name of the phone
+# VOWELORCONSONANT = V:Vowel, C:Consonant, XX:Pause/Out-of-scope
+# VOWELLENGTH = S:Short, L:Long, D:Dipthong, C:Consonant, XX:Pause/Out-of-scope
+# VOWELHEIGHT = H:High, MH:Mid-High, M:Mid, ML:Mid-Low, L:Low, C:Consonant, MO:Moving, XX:Pause/Out-of-scope
+# VOWELFRONTNESS = F:Front, M:Mid, B:Back, C:Consonant, MO:Moving, XX:Pause/Out-of-scope
+# VOWELROUNDEDNESS = R:Rounded, U:Unrounded, C:Consonant, XX:Pause/Out-of-scope
+# VOWELRHOTICITY = R:Rhotic, N:Non-rhotic, C:Consonant, XX:Pause/Out-of-scope         <- Rasmus: Could also be called r-coloured
+# CONSONANTTYPE = S:Stop, T:Tap, F:Fricative, AF:Affricative, N:Nasal, L:Liquid, AP:Approximant, V:Vowel, XX:Pause/Out-of-scope
+# CONSONANTPLACEOFARTICULATION = LA:Labial, A:Alveolar, P:Palatal, LD:Labio-dental, D:Dental, LAT:lateral, VE:Velar, G:Glottal, VO:Vowel, XX:Pause/Out-of-scope
+# VOICING = V:Voiced, U:Unvoiced
+#
+# Before each vowel there is an example word to exemplify what this phones is.
+#
+# p     pat       p a t
+P C C C C C C S LA U
+# t     tea       t ii
+T C C C C C C S A U
+# dt 		tentative t e n t ah dt iy v
+DT C C C C C C T A U
+# k     key       k ii
+K C C C C C C S VE U
+# b     be        b ii
+B C C C C C C S LA V
+# d     dee       d ii
+D C C C C C C S A V
+# g     green     g r ii n
+G C C C C C C S VE V
+# m     me        m ii
+M C C C C C C N LA V
+# n     knee      n ii
+N C C C C C C N A V
+# ng    ping      p iy ng
+NG C C C C C C N VE V
+# th    theta     th ii t ah
+TH C C C C C C F D U
+# dh    thee      dh ii
+DH C C C C C C F D V
+# f     fee       f ii
+F C C C C C C F LD U
+# v     vee       v ii
+V C C C C C C F LD V
+# s     sea       s ii
+S C C C C C C F A U
+# z     zee       z ii
+Z C C C C C C F A V
+# sh    she       sh ii
+SH C C C C C C F P U
+# zh    seizure   s ii zh ahr r
+ZH C C C C C C F P V
+# tj    cheese    tj ii z
+TJ C C C C C C AF P U
+# dj    jab       dj a b
+DJ C C C C C C AF P V
+# l     lee       l ii
+L C C C C C C L A V
+# h    	he        h ii
+H C C C C C C F G U
+# lf 		healed 		h ii lf d 		<-- Arguably not voiced
+LF C C C C C C F LAT V
+# r     read      r ii d
+R C C C C C C AP A V
+# j     yield     j ii lf d
+J C C C C C C L P V
+# w     we        w ii
+W C C C C C C L LA V
+# ls     cattle   k a dt ls 		<-- Syllabic l distinct from l through phone id.
+LS C C C C C C L A V
+# ms     spasm    s p a z ms 		<-- Syllabic m distinct from m through phone id.
+MS C C C C C C N LA V
+# ns     garden   g aa r d ns 	<-- Syllabic n distinct from n through phone id.
+NS C C C C C C N A V
+# e    Ed        e d
+E V S M F U N V VO V
+# a    trap      t r a p
+A V S ML F U N V VO V
+# aa 	 palm 		p aa lf m
+AA V L L F U N V VO V
+# ur   nurse		n ur r s
+UR V S ML M U R V VO V
+# ou   goat 		g ou t
+OU V S M B R N V VO V
+# o  		thought 	th o t
+O V S ML B R N V VO V
+# or 		north 	n or r th
+OR V S ML B R R V VO V
+# ii    fleece  f l ii s
+II V L H F U N V VO V
+# iy    kit     k iy t
+IY V S H F U N V VO V
+# ah    comma		k aa m ah
+AH V S M M U N V VO V
+# uh 		strut 		 s t r uh t
+UH V S ML B U N V VO V
+# uo    hood      h uo d
+UO V S MH B R N V VO V
+# u 		goose 		g u s
+U V S H B R N V VO V
+# ei 		waist 		w ei s t
+EI V D MO F U N V VO V
+# ai 		price 		p r ai s 			<-- Dipthong, arguably moving/two vowels.
+AI V D MO F U N V VO V
+# oi 			choice 	tj oi s 			<-- Dipthong, arguably moving/two vowels.
+OI V D MO MO R N V VO V
+# au 			mouth 		m au th		<-- Dipthong, arguably moving/two vowels.
+AU V D MO MO U N V VO V
+# Pauses
+# Short Pause - NOT CURRENTLY USED!
+#SPAU XX XX XX XX XX XX XX XX XX
+# Long Pause
+LPAU XX XX XX XX XX XX XX XX XX

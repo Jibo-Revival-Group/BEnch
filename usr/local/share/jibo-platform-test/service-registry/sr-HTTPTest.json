@@ -1,0 +1,5 @@
+{"list":
+    [
+        {"type": "GET", "url": "/registry" }
+    ]
+}

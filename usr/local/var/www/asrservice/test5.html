@@ -1,0 +1,135 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<script src="jquery-2.1.3.js"></script>
+<link href="asr.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript">
+$(document).ready(function() {
+
+    connectAsr();
+
+    initTaskSettings();
+});
+ 
+var host = window.location.host;
+var socket = new WebSocket("ws://"+host+"/port");
+
+function connectAsr() {
+ 
+    socket.onopen = function() {
+        console.log("Touch state socket open!");
+    };
+    socket.onmessage = function(msg) {
+        console.log("Got message!!");
+        var data = JSON.parse(msg.data);
+        //state.appendTouchState(data);
+        console.log(data.content);
+        //$("#asr").html($("<p>").text(JSON.stringify(data, null, 2)));
+        $("#asrState").val(JSON.stringify(data, null, 4));
+    };
+    socket.onclose = function() {
+        console.log("Asr state socket close!");
+        setTimeout(function() { connectAsr(); }, 3000);
+    };
+}
+
+function sendSocketMsg() {
+    console.log("Sending socket msg");
+    socket.send('10');
+}
+
+
+function initTaskSettings() {
+
+    $("#submit_task").click(function() {
+        $.ajax({
+            type: "POST",
+            url: "/asr_interface",
+            dataType: "json",
+            data: packTaskSettings(), 
+            success: function() {
+            },
+            error: function(xhr, status, error) {
+                console.log("ERROR " + status + " " + error + JSON.stringify(data));
+            }
+        });
+    });
+}
+ 
+var data = {task: "default", incremental: "true", timeout: parseFloat("0.0")};
+
+function packTaskSettings() {
+    data.timeout = parseFloat($("#timeout").val());
+    data.incremental = $("#incremental").val();
+    data.task = $("#task_spec").val();
+    data.task_id = $("#task_id").val();
+    data.audio_source = $("#audio_source").val();
+    data.resource_root_path = $("#resource_root_path").val();
+    return JSON.stringify(data);
+}
+
+function showCSTemplates(sel){   
+
+locations =[ "", /*this remains blank for first selection in drop-down list*/ 
+
+/*option 1*/                 
+"{\"name\":\"hey_jibo\",\"timeout\":12,\"bargein\":true,\"nbest\":1,\"speaker_name\":\"\"} * {\"name\":\"uber_and_jot_grm\",\"timeout\":12,\"bargein\":false,\"nbest\":1,\"speaker_name\":\"\"}",
+
+/*option 2*/                
+"{\"name\":\"hey_jibo\",\"timeout\":12,\"bargein\":true,\"nbest\":1,\"speaker_name\":\"\"} * {\"name\":\"nuance_curl\",\"timeout\":12,\"bargein\":false,\"nbest\":1,\"speaker_name\":\"\"}",];
+    srcLocation = locations    [sel.selectedIndex];    
+    if (srcLocation != undefined) {      
+    //document.getElementById('task_spec').innerHTML= srcLocation; 
+    document.getElementById('task_spec').value= srcLocation;
+ } 
+}
+
+
+</script>
+<title>Asr Service</title>
+</head>
+<body>
+
+<div class="section">
+
+<h1>Socket messages from ASR</h1>
+<textarea id="asrState" disabled="true" rows="10" cols="80"></textarea>
+
+<h1>Post to ASR</h1>
+<label for="task_spec">Task:</label>
+<select class="c10" onchange="showCSTemplates(this);" id="task_spec_dropdown">
+    <option value="0" id="Templates">None</option>
+    <option value="1">hey_jibo uber_and_jot_grm</option>
+    <option value="2">hey_jibo nuance_curl</option>
+</select>
+<br>
+<textarea id="task_spec" rows ="10" cols="80"></textarea><br>
+
+<label for="task_id">Task id:</label> 
+<input type="text" id="task_id" value="unique id" /><br>
+<label for="audio_source">Audio source:</label>
+<select id="audio_source">
+    <option value="alsa">alsa</option>
+</select>
+<br>
+<label for="resource_root_path">Resource root absolute (!) path:</label> 
+<input type="text" id="resource_root_path" value="/home/maxim/j/resourceseardrum/" /><br>
+<label for="incremental">Incremental:</label>
+<select id="incremental">
+    <option value="true">true</option>
+    <option value="false">false</option>
+</select>
+<br>
+<label for="timeout">Timeout:</label> 
+<select id="timeout">
+    <option value="0">0</option>
+    <option value="5">5</option>
+    <option value="10">10</option>
+    <option value="20">20</option>
+</select> seconds.
+<br>
+<button id="submit_task">Submit this listening task</button>
+</div> <!-- section -->
+
+</body>
+</html>

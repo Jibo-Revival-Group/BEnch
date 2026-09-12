@@ -1,0 +1,160 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<script src="jquery-3.2.1.min.js"></script>
+<script src="cs.js"></script>
+<title>Certification Service</title>
+</head>
+<body>
+
+<h1>Wifi Calibrator</h1>
+
+<div id="calibrator">
+
+<br>Channel:
+<select id="channel">
+    <option value="1">1</option>
+    <option value="2">2</option>
+    <option value="3">3</option>
+    <option value="4">4/J4(4.9)</option>
+    <option value="5">5</option>
+    <option value="6" selected="selected">6</option>
+    <option value="7">7</option>
+    <option value="8">8/J8(5.0)/J3(4.9)</option>
+    <option value="9">9</option>
+    <option value="10">10</option>
+    <option value="11">11</option>
+    <option value="12">12/J12(5.0)/J2(4.9)</option>
+    <option value="13">13</option>
+    <option value="14">14</option>
+    <option value="16">16/J16(5.0)/J1(4.9)</option>
+    <option value="34">34/J34(5.0)</option>
+    <option value="36">36</option>
+    <option value="38">38/J38(5.0)</option>
+    <option value="40">40</option>
+    <option value="42">42/J42(5.0)</option>
+    <option value="44">44</option>
+    <option value="46">46/J46(5.0)</option>
+    <option value="48">48</option>
+    <option value="52">52</option>
+    <option value="56">56</option>
+    <option value="60">60</option>
+    <option value="64">64</option>
+    <option value="100">100</option>
+    <option value="104">104</option>
+    <option value="108">108</option>
+    <option value="112">112</option>
+    <option value="116">116</option>
+    <option value="120">120</option>
+    <option value="124">124</option>
+    <option value="128">128</option>
+    <option value="132">132</option>
+    <option value="136">136</option>
+    <option value="140">140</option>
+    <option value="149">149</option>
+    <option value="153">153</option>
+    <option value="157">157</option>
+    <option value="161">161</option>
+    <option value="165">165</option>
+</select>
+<br>Band:
+<select id="band">
+    <option value="0" selected="selected">2.4GHz</option>
+    <option value="1">5.0GHz</option>
+    <option value="2">4.9GHz</option>
+</select>
+<br>Bandwidth:
+<select id="bandwidth">
+    <option value="0">20MHz (5GHz=without High-Throughput)</option>
+    <option value="1" selected="selected">20MHz (5GHz=with High-Throughput)</option>
+    <option value="2">40MHz Upper Primary</option>
+    <option value="3">40MHz Lower Primary</option>
+</select>
+<br>Power (dBm, steps of 0.125):
+<input type="number" id="power" value="20.000">
+<br>Antenna:
+<select id="antenna">
+    <option value="0">Auto</option>
+    <option value="1">TX1</option>
+    <option value="2">TX2</option>
+    <option value="3" selected="selected">Both</option>
+</select>
+(2.4GHz only. Set to "Auto" for 5GHz and use Diversity control.)
+<br>5GHz Antenna Diversity:
+<select id="diversity_5g">
+    <option value="0">Main</option>
+    <option value="1">Secondary</option>
+</select>
+<br>Non-Serving Channel:
+<select id="serving">
+    <option value="0" selected="selected">Serving</option>
+    <option value="1">Non-Serving</option>
+</select>
+<br>Channel Limitation:
+<select id="channel_limit">
+    <option value="false">Disabled</option>
+    <option value="true" selected="selected">Enabled</option>
+</select>
+<br>Gain Calculation Mode:
+<select id="gain_calculate">
+    <option value="0" selected="selected">Normal</option>
+    <option value="1">Debug</option>
+    <option value="2">Override</option>
+</select>
+<br>Packet Delay (usec):
+<input type="number" id="packet_delay" value="300">
+<br>TX Rate:
+<select id="tx_rate">
+    <option value="0">1.0 Mbps 11b</option>
+    <option value="1">2.0 Mbps 11b</option>
+    <option value="2">5.0 Mbps 11b</option>
+    <option value="3">11.0 Mbps 11b</option>
+    <option value="4">6.0 Mbps 11g</option>
+    <option value="5">9.0 Mbps 11g</option>
+    <option value="6">12.0 Mbps 11g</option>
+    <option value="7">18.0 Mbps 11g</option>
+    <option value="8">24.0 Mbps 11g</option>
+    <option value="9">36.0 Mbps 11g</option>
+    <option value="10">48.0 Mbps 11g</option>
+    <option value="11">54.0 Mbps 11g</option>
+    <option value="12">6.5 Mbps MCS0</option>
+    <option value="13">13.0 Mbps MCS1</option>
+    <option value="14">19.5 Mbps MCS2</option>
+    <option value="15">26.0 Mbps MCS3</option>
+    <option value="16">39.0 Mbps MCS4</option>
+    <option value="17">52.0 Mbps MCS5</option>
+    <option value="18">58.5 Mbps MCS6</option>
+    <option value="19">65.0 Mbps MCS7</option>
+    <option value="20">MCS8/MCS4</option>
+    <option value="21">MCS9/MCS5</option>
+    <option value="22">MCS10/MCS6</option>
+    <option value="23">MCS11/MCS7</option>
+    <option value="24" selected="selected">MCS12/MCS7, 40MHz SGI</option>
+    <option value="25">MCS13</option>
+    <option value="26">MCS14</option>
+    <option value="27">MCS16</option>
+</select>
+<br>Data Field Size:
+<input type="number" id="data_field_size" value="4000">
+<br>Num Packets (0 = endless):
+<input type="number" id="num_packets" value="0">
+<br>Guard Interval Length:
+<select id="guard_interval">
+    <option value="0">Long</option>
+    <option value="1" selected="selected">Short</option>
+</select>
+<br><br>
+<button id="on">Start</button>
+<button id="configure">Apply Values</button>
+<button id="off">Stop</button>
+
+</div>
+
+<h1>Debug</h1>
+
+<div id="debug">
+    <textarea id="debugWS" disabled="true" rows="30" cols="100"></textarea>
+</div>
+
+</body>
+</html>

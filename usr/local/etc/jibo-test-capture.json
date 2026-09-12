@@ -1,0 +1,117 @@
+{
+    "test" : {
+        "handler" : {
+            "num_frames" : 0,
+            "awb_lock_count" : 190,
+            "ae_lock_count" : 190,
+            "min_exposure" : 0.012,
+            "max_exposure" : 0.033,
+            "record" : {
+                "enabled" : false,
+                "directory" : "/tmp/jibo-cap/",
+                "padding" : 5,
+                "skip_count" : 180
+            },
+            "recordAxes" : {
+                "enabled" : false,
+                "uri" : "http://localhost:8282/axis_state",
+                "padding" : 5
+            },
+            "display" : {
+                "enabled" : true
+            },
+            "displayCycle" : {
+                "enabled" : false
+            },
+            "profiler" : {
+                "enabled" : true
+            },
+            "fps" : {
+                "enabled" : false
+            }
+        },
+        "camera" : {
+            "type" : "CUDA",
+            "cuda" : {
+                "devices" : [
+                    {
+                        "enabled":true,
+                        "name" : "Right Wide Eye",
+                        "path" : "/dev/video1",
+                        "bufferPoolSize" : 4,
+                        "width" : 1280,
+                        "height" : 720,
+                        "outputBufferFormats" : 0,
+                        "hFlip" : true,
+                        "vFlip" : true,
+                        "gamma" : {
+                            "R" : 0.6,
+                            "G" : 0.6,
+                            "B" : 0.6
+                        },
+                        "ae" : {
+                            "exposureP" : 0.05,
+                            "gainP" : 0.02,
+                            "targetY" : 0.25,
+                            "errorY" : 0.0001
+                        },
+                        "awb" : {
+                            "grayThreshold" : 0.3,
+                            "numSamples" : 1000,
+                            "P" : 0.15,
+                            "targetU" : 0.505,
+                            "targetV" : 0.50,
+                            "seed" : 0
+                        }
+                    },
+                    {
+                        "enabled":true,
+                        "name" : "Left Narrow Eye",
+                        "path" : "/dev/video0",
+                        "bufferPoolSize" : 4,
+                        "width" : 672,
+                        "height" : 380,
+                        "outputBufferFormats" : 0,
+                        "hFlip" : true,
+                        "vFlip" : true,
+                        "gamma" : {
+                            "R" : 0.6,
+                            "G" : 0.6,
+                            "B" : 0.6
+                        },
+                        "ae" : {
+                            "exposureP" : 0.05,
+                            "gainP" : 0.02,
+                            "targetY" : 0.25,
+                            "errorY" : 0.0001
+                        },
+                        "awb" : {
+                            "grayThreshold" : 0.3,
+                            "numSamples" : 1000,
+                            "P" : 0.15,
+                            "targetU" : 0.505,
+                            "targetV" : 0.50,
+                            "seed" : 0
+                        }
+                    }
+                ],
+                "cuda" : {
+
+                }
+            },
+            "file" : {
+                "videos" : [
+                    "videos/video-000/video.json",
+                    "videos/video-001/video.json"
+                ],
+                "format" : "YUV420p"
+            },
+            "v4l2" : {
+                "devices" : {
+                    "left" : "/dev/video0",
+                    "right" : "/dev/video1"
+                }
+            }
+        }
+    }
+}

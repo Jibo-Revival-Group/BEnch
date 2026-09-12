@@ -1,0 +1,235 @@
+{
+    "WebCoreLPS" : {
+        "serverPort" : 8484,
+        "fileRoot" : "/usr/local/var/www/lps"
+    },
+    "LPSService" : {
+        "registryPort" : 8181,
+        "serverPort" : 8484,
+        "channels": [
+            "PFSearchRegion",
+            "CapDevCUDAExpMeta",
+            "CapDevCUDAExp_0",
+            "CapDevCUDAExp_1",
+            "CapDevCUDAExpStat"
+        ]
+    },
+    "WebCoreMedia" : {
+        "serverPort" : 8486,
+        "fileRoot" : "/usr/local/var/www/media"
+    },
+    "MediaService" : {
+        "registryPort" : 8181,
+        "serverPort" : 8486,
+        "photographer" : {
+            "compressor" : {
+                "quality" : 92,
+                "interval" : 1000
+            },
+            "oneMP" : { "width" : 1280, "height" : 720 },
+            "fourMP" : { "width" : 2688, "height" : 1520 },
+            "request_queue_max_size" : 5
+        },
+        "photo_path" : "/opt/jibo/Photos/",
+        "recording_path" : "/opt/jibo/Recordings/",
+        "audio_source" : "MediaIn.monitor",
+        "future_wait_ms" : 8000
+    },
+    "AudioSubsystem" : {
+        "registryPort" : 8181,
+        "player" : false
+    },
+    "BodySubsystem" : {
+        "registryPort" : 8181,
+        "player" : false
+    },
+    "CaptureSubsystem" : {
+        "player" : false,
+        "watchdog" : {
+            "enabled": false,
+            "timeout": 5000,
+            "period" : 3000,
+            "start" : 10000
+        },
+        "camera_config_file" : "/usr/local/etc/lps/cameras.json"
+    },
+    "EngineSubsystem" : {
+        "global" : {
+            "face_landmark_68" : {
+                "file" :
+                "/usr/local/share/lps/shape_predictor_68_face_landmarks.dat"
+            }
+        },
+        "schemas" : {
+            "normal" : "/usr/local/etc/lps/schemas/normal.json",
+            "focused" : "/usr/local/etc/lps/schemas/focused.json",
+            "minimal" : "/usr/local/etc/lps/schemas/minimal.json"
+        },
+        "engine" : {
+            "update_period" : 60,
+            "log" : {
+                "schema" : {
+                    "time" : {
+                        "stats" : false,
+                        "skip" : 600
+                    },
+                    "audio" : {
+                        "stats" : false,
+                        "skip" : 600
+                    },
+                    "axis" : {
+                        "stats" : false,
+                        "skip" : 900
+                    },
+                    "image" : {
+                        "stats" : false,
+                        "skip" : 600
+                    }
+                }
+            },
+            "state" : {
+                "entity_config_file" : "/usr/local/etc/lps/entityConfig.json",
+                "awareness" : {
+                    "num_sectors" : 8,
+                    "lighting" : {
+                        "criteria" : {
+                            "cameraIds" :[0],
+                            "dimensions" : [
+                                { "width" : 1280, "height" : 720 }
+                            ],
+                            "outputTypes" :[0],
+                            "outputLevels" :[0]
+                        },
+                        "max_luminance" : 1.0,
+                        "max_gain" : 16.0,
+                        "max_exposure" : 0.066667,
+                        "sensor" : [
+                            { "exposure" : 0.01067, "quality" : 0 },
+                            { "exposure" : 0.05333, "quality" : 1 },
+                            { "exposure" : 0.90667, "quality" : 1 },
+                            { "exposure" : 1.01333, "quality" : 0 }
+                        ],
+                        "quality" : [
+                            { "lighting" : 0.1, "quality" : 0 },
+                            { "lighting" : 0.2, "quality" : 1 },
+                            { "lighting" : 1.0, "quality" : 1 },
+                            { "lighting" : 1.5, "quality" : 0 }
+                        ]
+                    }
+                },
+                "identification" : {
+                    "face" : {
+                        "type" : "network_face_identification",
+                        "kind": "face",
+                        "registry_host": "127.0.0.1",
+                        "registry_port": 8181,
+                        "connection_timeout":60000,
+                        "criteria" : {
+                            "cameraIds" : [0],
+                            "dimensions" : [{ "width" : 1280, "height" : 720 }],
+                            "outputTypes" : [0]
+                        }
+                    }
+                },
+                "geometry" : {
+                    "kinematic_model" :
+                    "/usr/local/etc/jibo-kinematic-model.json",
+                    "left_camera_file" : "/var/jibo/lps/CameraModelParamsL.json",
+                    "right_camera_file" :
+                    "/var/jibo/lps/CameraModelParamsR.json",
+                    "inter_cam_transform_file" :
+                    "/var/jibo/lps/InterCameraTransform.json"
+                }
+            }
+        }
+    },
+    "RecorderSubsystem" : {
+        "root" : "/opt/jibo/data/recorder",
+        "audio" : {
+            "detections" : {
+                "directory" : "/opt/jibo/data/recorder/audio/detections",
+                "padding" : 7
+            }
+        },
+        "body" : {
+            "axis" : {
+                "directory" : "/opt/jibo/data/recorder/body/axis",
+                "padding" : 7
+            }
+        },
+        "capture" : {
+            "frames" : {
+                "directory" : "/opt/jibo/data/recorder/capture/frames",
+                "padding" : 7,
+                "criteria" : {
+                    "cameraIds" :[],
+                    "dimensions" :[
+                        {"width" : 640,"height" : 360}
+                    ],
+                    "outputTypes" :[0]
+                }
+            }
+        },
+        "lps" : {
+            "visual-awareness" : {
+                "directory" : "/opt/jibo/data/recorder/lps/visual-awareness/",
+                "padding" : 7
+            },
+            "audio-awareness" : {
+                "directory" : "/opt/jibo/data/recorder/lps/audio-awareness/",
+                "padding" : 7
+            }
+        }
+    },
+    "PlayerSubsystem" : {
+        "root" : "/opt/jibo/data/player",
+        "audio" : {
+            "detections" : {
+                "directory" : "/opt/jibo/data/player/audio/detections"
+            }
+        },
+        "body" : {
+            "axis" : {
+                "directory" : "/opt/jibo/data/player/body/axis"
+            }
+        },
+        "capture" : {
+            "frames" : {
+                "directory" : "/opt/jibo/data/player/capture/frames"
+            }
+        }
+    },
+    "ErrorTracker":{
+        "views": [
+            {
+                "name": "LPSService",
+                "errors": [
+                    "CAMERA_FAILURE"
+                ]
+            },
+            {
+                "name": "MediaService",
+                "errors": [ ]
+            }
+        ]
+    },
+    "logging" : {
+        "loggers" : {
+            "root": {
+                "level": "warning"
+            },
+            "l1" : {
+                "name" : "ImageIdentifier",
+                "level" : "information"
+            },
+            "l2" : {
+                "name" : "IdentityFusion",
+                "level" : "information"
+            },
+            "l3" : {
+                "name" : "Util.Channel",
+                "level" : "warning"
+            }
+        }
+    }
+}

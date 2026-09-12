@@ -1,0 +1,51 @@
+"use strict";
+
+const assert = require('assert');
+const Common = require('./../../../lib/jibo-platform-test/common');
+var deepEqual = require('deep-equal');
+const JSONlist = require("./nlu-HTTPTest.json");
+
+var testList = JSONlist.list;
+
+describe('NLU Service HTTP Tests', function() {
+
+    before(function() {
+        this.request = {
+            'POST': Common._post,
+            'GET': Common._get
+        };
+    });
+
+    for(let i = 0; i < testList.length; i++) {
+        const test = testList[i];
+        it('Testing the ' + test.url.substring(1) + ' API', function(done) {
+            this.request[test.type]("localhost", test.url, 8787, test.args, function(error, response, body) {
+
+                // When an error is expected, allow and error and > 300 status
+                // code, otherwise, don't check
+                if(!test.expectError){
+                    assert(!error, 'Error ' + error);
+                    assert(response.statusCode < 300, 'Bad status code ' + response.statusCode);
+		        }
+                assert(body, 'Response body is undefined');
+                var JSONBody = JSON.parse(body);
+                //check that response MESSAGE-ID is either NULL or blank and remove it
+                if(JSONBody.MESSAGE_ID == 'NULL'||JSONBody.MESSAGE_ID == ''){
+                    delete JSONBody.MESSAGE_ID;
+                }
+                // delete stats field for comparison of expected response message
+                if(JSONBody.Stats){
+                    delete JSONBody.Stats;
+                }
+                if(test.result.Stats){
+                    delete test.result.Stats;
+                }
+                assert(deepEqual(JSONBody, test.result));
+                done();
+            });
+        });
+    }
+    after(function() {
+        console.log("- Finished testing the NLU service HTTP APIs");
+    });
+});

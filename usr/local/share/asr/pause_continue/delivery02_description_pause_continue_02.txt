@@ -1,0 +1,263 @@
+# -*- mode:tcl; coding:utf-8; -*-
+# ---------------------------------------------------------------------------
+# This delivery was made using tunethf-5.1.9.exe
+# Version: 5.1.9
+
+
+
+runLocal yes
+
+gpu yes
+
+
+speakerSpec {
+  {^.*/(.+?)_.+\.wav$} {\1}
+   {^.*/(.+?)/[0-9+]/.+/.+\.wav$} {\1}
+}
+
+language en_us
+netFile ../../Data/en_us_16kHz_v11/nn_en_us_fbank_16k_3_500_v12.0.0.raw
+ltsFile ../../Data/en_us_16kHz_v11/lts_en_us_12.1.4.raw
+
+title "pause_continue 02"
+output pause_continue_02
+
+version TrainingRun01
+
+delivery {
+ directory ./Delivery
+ deliveryNumber 02
+ customer Jibo
+ productName pause_continue_02
+ formatTypes {sfs}
+ recogSpec {
+  adapted01 {
+   setName "pause_continue_01"
+   points {5 "5" 10 "10"}
+  }
+ }
+}
+
+noiseCache //jiboPC/Users/Public/SensoryCache/
+
+noiseFolders {
+  ../data/noise/Sensory/CarNoise2009/extracted 20
+   ../dataJibo/noiseJiboWest 20
+}
+
+task trigger
+
+paramARange  {-6500 2300}
+paramBRange  {200 2030}
+longpen 0.0003
+
+paramAStep   50
+paramBStep   20
+maxFA 3
+maxFR 16
+
+useParamC 1
+
+target pc
+showInFiles 1
+showOutFiles 1
+relocate 1
+seed 1
+delay 150
+
+dataFiles {
+
+	{"go ahead" "../dataMT/*/*/*CONTINUE___4*.wav"}
+	{"continue" "../dataMT/*/*/*CONTINUE___5*.wav"}
+	{"say more" "../dataMT/*/*/*CONTINUE___6*.wav"}
+	{"go ahead" "../dataMT/*/*/*CONTINUE__POST_3*.wav"}
+	{"keep going" "../dataMT/*/*/*CONTINUE__POST_4*.wav"}
+	{"keep going" "../dataMT/*/*/*CONTINUE__PRE_5*.wav"}
+	{"go on" "../dataMT/*/*/*CONTINUE__PRE_9*.wav"}
+	{"move along" "../dataMT/*/*/*CONTINUE__PRE_10*.wav"}
+	
+	
+	{"hang on" "../dataMT/*/*/*PAUSE___1*.wav"}	
+	{"pause" "../dataMT/*/*/*PAUSE___2*.wav"}
+	{"wait a sec" "../dataMT/*/*/*PAUSE___3*.wav"}
+	{"hang on" "../dataMT/*/*/*PAUSE__POST_1*.wav"}
+	{"wait a sec" "../dataMT/*/*/*PAUSE__POST_2*.wav"}
+	{"hold on" "../dataMT/*/*/*PAUSE__PRE_6*.wav"}
+}
+
+ignorevocab {
+}
+
+pronunciations {
+	 continue {. k & n . t I1 n . j u .}
+	 ahead {. & . h E1 d .}
+	 say {. s eI1 .}
+	 pause {. p >1 z .}
+	 hang {. h @1 ng .}
+	 on { (. A1 n .) | (. @1 n .)}
+	 wait {. w eI1 t .}
+	 a {. & .}
+	 sec {. s E1 k .}
+	 go {. g oU1 .}
+	 hold { (. h oU l d .)|(. h oU l t .)}
+	 keep {. k i p .}
+	 going {(. g oU . I n .)|(. g oU . I ng .)}
+	 move {. m u v .}
+	 more {. m >1 9 .}
+	 along {. & . l > ng .}
+			 
+}
+ 
+recognizers {
+
+ adapted01 {
+ 
+  testAt {
+    Test_INF {
+    dataFiles {
+	{"go ahead" "../dataMT/*/*/*CONTINUE___4*.wav"}
+	{"continue" "../dataMT/*/*/*CONTINUE___5*.wav"}
+	{"say more" "../dataMT/*/*/*CONTINUE___6*.wav"}
+	{"go ahead" "../dataMT/*/*/*CONTINUE__POST_3*.wav"}
+	{"keep going" "../dataMT/*/*/*CONTINUE__POST_4*.wav"}
+	{"keep going" "../dataMT/*/*/*CONTINUE__PRE_5*.wav"}
+	{"go on" "../dataMT/*/*/*CONTINUE__PRE_9*.wav"}
+	{"move along" "../dataMT/*/*/*CONTINUE__PRE_10*.wav"}
+	
+	
+	{"hang on" "../dataMT/*/*/*PAUSE___1*.wav"}	
+	{"pause" "../dataMT/*/*/*PAUSE___2*.wav"}
+	{"wait a sec" "../dataMT/*/*/*PAUSE___3*.wav"}
+	{"hang on" "../dataMT/*/*/*PAUSE__POST_1*.wav"}
+	{"wait a sec" "../dataMT/*/*/*PAUSE__POST_2*.wav"}
+	{"hold on" "../dataMT/*/*/*PAUSE__PRE_6*.wav"}
+    }
+	snr INF
+   }
+   Test_15db {
+    dataFiles {
+	{"go ahead" "../dataMT/*/*/*CONTINUE___4*.wav"}
+	{"continue" "../dataMT/*/*/*CONTINUE___5*.wav"}
+	{"say more" "../dataMT/*/*/*CONTINUE___6*.wav"}
+	{"go ahead" "../dataMT/*/*/*CONTINUE__POST_3*.wav"}
+	{"keep going" "../dataMT/*/*/*CONTINUE__POST_4*.wav"}
+	{"keep going" "../dataMT/*/*/*CONTINUE__PRE_5*.wav"}
+	{"go on" "../dataMT/*/*/*CONTINUE__PRE_9*.wav"}
+	{"move along" "../dataMT/*/*/*CONTINUE__PRE_10*.wav"}
+	
+	
+	{"hang on" "../dataMT/*/*/*PAUSE___1*.wav"}	
+	{"pause" "../dataMT/*/*/*PAUSE___2*.wav"}
+	{"wait a sec" "../dataMT/*/*/*PAUSE___3*.wav"}
+	{"hang on" "../dataMT/*/*/*PAUSE__POST_1*.wav"}
+	{"wait a sec" "../dataMT/*/*/*PAUSE__POST_2*.wav"}
+	{"hold on" "../dataMT/*/*/*PAUSE__PRE_6*.wav"}
+    }
+	snr 15dba
+   }
+    Test_10db {
+    dataFiles {
+	{"go ahead" "../dataMT/*/*/*CONTINUE___4*.wav"}
+	{"continue" "../dataMT/*/*/*CONTINUE___5*.wav"}
+	{"say more" "../dataMT/*/*/*CONTINUE___6*.wav"}
+	{"go ahead" "../dataMT/*/*/*CONTINUE__POST_3*.wav"}
+	{"keep going" "../dataMT/*/*/*CONTINUE__POST_4*.wav"}
+	{"keep going" "../dataMT/*/*/*CONTINUE__PRE_5*.wav"}
+	{"go on" "../dataMT/*/*/*CONTINUE__PRE_9*.wav"}
+	{"move along" "../dataMT/*/*/*CONTINUE__PRE_10*.wav"}
+	
+	
+	{"hang on" "../dataMT/*/*/*PAUSE___1*.wav"}	
+	{"pause" "../dataMT/*/*/*PAUSE___2*.wav"}
+	{"wait a sec" "../dataMT/*/*/*PAUSE___3*.wav"}
+	{"hang on" "../dataMT/*/*/*PAUSE__POST_1*.wav"}
+	{"wait a sec" "../dataMT/*/*/*PAUSE__POST_2*.wav"}
+	{"hold on" "../dataMT/*/*/*PAUSE__PRE_6*.wav"}
+    }
+	snr 10dba
+   }
+  
+   Test_INF_15_10db {
+    dataFiles {
+	{"go ahead" "../dataMT/*/*/*CONTINUE___4*.wav"}
+	{"continue" "../dataMT/*/*/*CONTINUE___5*.wav"}
+	{"say more" "../dataMT/*/*/*CONTINUE___6*.wav"}
+	{"go ahead" "../dataMT/*/*/*CONTINUE__POST_3*.wav"}
+	{"keep going" "../dataMT/*/*/*CONTINUE__POST_4*.wav"}
+	{"keep going" "../dataMT/*/*/*CONTINUE__PRE_5*.wav"}
+	{"go on" "../dataMT/*/*/*CONTINUE__PRE_9*.wav"}
+	{"move along" "../dataMT/*/*/*CONTINUE__PRE_10*.wav"}
+	
+	
+	{"hang on" "../dataMT/*/*/*PAUSE___1*.wav"}	
+	{"pause" "../dataMT/*/*/*PAUSE___2*.wav"}
+	{"wait a sec" "../dataMT/*/*/*PAUSE___3*.wav"}
+	{"hang on" "../dataMT/*/*/*PAUSE__POST_1*.wav"}
+	{"wait a sec" "../dataMT/*/*/*PAUSE__POST_2*.wav"}
+	{"hold on" "../dataMT/*/*/*PAUSE__PRE_6*.wav"}
+    }
+	snr {INF 15dba 10dba}
+   }
+   }
+ 
+  prune no
+  skipBeamCheck yes
+  
+  skipCenterStates yes
+  spotFinalMinDur yes
+  
+  snr {INF 15dba 10dba}
+
+  adaptIgnorePhones .pau
+  adaptSkipCenter no
+  adaptWithAntiData 50
+  dumpAdaptationAlignments yes
+  adaptCustomNet 5
+  trainIters 10
+  learnRate 0.0005
+  alignAny 2300
+  alignNota 2400
+  sampPerCat 2000
+  
+  adaptSnr {INF 15dba 10dba}
+
+  invocab { 
+
+   {
+	 "go ahead" "go ahead%CONTINUE"
+	 "move along" "move along%CONTINUE"
+	 "continue" "continue%CONTINUE"
+	 "say more" "say more%CONTINUE"
+	 "keep going" "keep going%CONTINUE"
+	 "go on" "go on%CONTINUE"
+	 }
+	 
+	{
+	 "hang on" "hang on%PAUSE"
+	 "hold on" "hold on%PAUSE"
+	 "wait a sec" "wait a sec%PAUSE"
+	 "pause" "pause%PAUSE"
+	 }
+	
+  }
+  
+	
+  grammar {  
+  
+	continue = ( (go%% ahead%CONTINUE) | (say%% more%CONTINUE) | (continue%CONTINUE) | (keep%% going%CONTINUE) | (go%% on%CONTINUE) | (move%% along%CONTINUE) );
+	
+	pause = ( (hang%% on%PAUSE) | (wait%% a%% sec%PAUSE)| (pause%PAUSE) | (hold%% on%PAUSE));
+	g = ($continue | $pause);
+
+  }
+  
+
+  groups {$continue $pause}
+
+
+	
+  analyzeNear 0,3
+  analyzePronun 1
+ }
+
+}

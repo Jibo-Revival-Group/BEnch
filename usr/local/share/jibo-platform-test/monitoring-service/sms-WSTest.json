@@ -1,0 +1,13 @@
+{"list" : 
+    [
+        "/perflog",
+        "/info/loadavg",
+        "/info/memory",
+        "/info/cpu",
+        "/info/network",
+        "/info/process",
+        "/errors/list",
+        "/errors/codes",
+        "/health/status"
+    ]
+}

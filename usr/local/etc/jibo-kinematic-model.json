@@ -1,0 +1,220 @@
+{
+    "transforms": [
+        {
+            "name": "root",
+            "frame_type": "STATIC",
+            "transform_type": "DH",
+            "parent": "",
+            "parameters": {
+                "d": 0,
+                "r": 0,
+                "a": 0,
+                "initial": 0,
+                "offset": 0
+            }
+        }, 
+        {
+            "name": "base",
+            "frame_type": "STATIC",
+            "transform_type": "DH",
+            "parent": "root",
+            "parameters": {
+                "d": 0,
+                "r": 0,
+                "a": 0,
+                "initial": 0,
+                "offset": 0,
+                "multiplier": 1
+            },
+            "mass": 1.541647,
+            "center_of_mass": {
+                "x":  0.004438,
+                "y":  0.000080,
+                "z":  0.021875
+            },
+            "inertia_tensor": {
+                "xx":  2.336131,
+                "yy":  1.869121,
+                "zz":  3.886624,
+                "xy": -0.006218,
+                "xz":  0.030549,
+                "yz":  0.003324
+            }
+        }, 
+        {
+            "name": "pelvis",
+            "frame_type": "DYNAMIC",
+            "transform_type": "DH",
+            "parent": "base",
+            "parameters": {
+                "d": 0.043125,
+                "r": 0.0,
+                "a": 0.2269,
+                "initial": 0,
+                "offset": 0
+            },
+            "mass": 0.486722,
+            "center_of_mass": {
+                "x": -0.005595,
+                "y":  0.001393,
+                "z":  0.020862
+            },
+            "inertia_tensor": {
+                "xx": 0.934733,
+                "yy": 1.049176,
+                "zz": 1.600895,
+                "xy": 0.005263,
+                "xz": 0.014859,
+                "yz": 0.006845
+            }
+        }, 
+        {
+            "name": "torso",
+            "frame_type": "DYNAMIC",
+            "transform_type": "DH",
+            "parent": "pelvis",
+            "parameters": {
+                "d": 0.056129,
+                "r": 0.0,
+                "a": -0.37874,
+                "initial": 0,
+                "offset": 0
+            },
+            "mass": 0.405103,
+            "center_of_mass": {
+                "x":  0.001299,
+                "y":  0.001032,
+                "z":  0.020476
+            },
+            "inertia_tensor": {
+                "xx":  0.765517,
+                "yy":  0.847899,
+                "zz":  1.027389,
+                "xy": -0.021990,
+                "xz":  0.005756,
+                "yz": -0.013292
+            }
+        }, 
+        {
+            "name": "head",
+            "frame_type": "DYNAMIC",
+            "transform_type": "DH",
+            "parent": "torso",
+            "parameters": {
+                "d": 0.073181,
+                "r": 0,
+                "a": 0,
+                "initial": 0,
+                "offset": 0
+            },
+            "mass": 1.105841,
+            "center_of_mass": {
+                "x": -0.006929,
+                "y": -0.000665,
+                "z":  0.047582
+            },
+            "inertia_tensor": {
+                "xx":  4.256305,
+                "yy":  3.001682,
+                "zz":  3.980863,
+                "xy":  0.028528,
+                "xz": -0.070913,
+                "yz":  0.025871
+            }
+        }, 
+        {
+            "name": "upper_head",
+            "frame_type": "STATIC",
+            "transform_type": "DH",
+            "parent": "head",
+            "parameters": {
+                "d": 0.108090,
+                "r": -0.005976,
+                "a": -0.32882,
+                "initial": 0,
+                "offset": 0
+            }
+        }, 
+        {
+            "name": "center_face",
+            "frame_type": "STATIC",
+            "transform_type": "DH",
+            "parent": "head",
+            "parameters": {
+                "d": 0.060362,
+                "r": 0.035301,
+                "a": -0.32882,
+                "initial": 0,
+                "offset": 0
+            }
+        }, 
+        {
+            "name": "imu_dh",
+            "frame_type": "STATIC",
+            "transform_type": "DH",
+            "parent": "center_face",
+            "parameters": {
+                "d": 0.0,
+                "r": 0.0,
+                "a": -1.5708,
+                "initial": 0,
+                "offset": 0
+            }
+        },
+        {
+            "name": "imu",
+            "frame_type": "STATIC",
+            "transform_type": "DOF6",
+            "parent": "imu_dh",
+            "parameters": {
+                "dx": -0.0410,
+                "dy": -0.0315,
+                "dz": 0.0150,
+                "rx": 0,
+                "ry": 0,
+                "rz": 0
+            } 
+        },
+        {
+            "name": "top_head",
+            "frame_type": "STATIC",
+            "transform_type": "DH",
+            "parent": "head",
+            "parameters": {
+                "d": 0.142443,
+                "r": 0.007506,
+                "a": 0,
+                "initial": 0,
+                "offset": 0
+            }
+        }, 
+        {
+            "name": "left_eye",
+            "frame_type": "STATIC",
+            "transform_type": "DOF6",
+            "parent": "upper_head",
+            "parameters": {
+                "dx": 0,
+                "dy": 0.041,
+                "dz": 0,
+                "rx": 0,
+                "ry": 0,
+                "rz": 0
+            }
+        }, 
+        {
+            "name": "right_eye",
+            "frame_type": "STATIC",
+            "transform_type": "DOF6",
+            "parent": "upper_head",
+            "parameters": {
+                "dx": 0,
+                "dy": -0.041,
+                "dz": 0,
+                "rx": 0,
+                "ry": 0,
+                "rz": 0
+            }
+        }
+    ]
+}

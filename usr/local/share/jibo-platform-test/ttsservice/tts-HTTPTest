@@ -1,0 +1,38 @@
+"use strict";
+
+const assert = require('assert');
+const Common = require('./../../../lib/jibo-platform-test/common');
+
+const JSONlist = require("./tts-HTTPTest.json");
+const testList = JSONlist.list;
+
+describe('TTS Service HTTP Tests', function() {
+
+    before(function() {
+        this.request = {
+            'POST': Common._post,
+            'GET': Common._get
+        };
+    });
+
+    for(let i = 0; i < testList.length; i++) {
+        const test = testList[i];
+        var testName;
+        if(test.args && test.args.prompt){
+            testName = test.args.prompt;
+        } else{
+            testName = test.url.substring(1);
+        }
+        it('Testing the ' + testName + ' API', function(done) {
+            this.request[test.type]("localhost", test.url, 8089, test.args, function(error, response, body) {
+                assert(!error, 'Error ' + error);
+                assert(response.statusCode < 300, 'Bad status code ' + response.statusCode);
+                done();
+            });
+        });
+    }
+
+    after(function() {
+        console.log("- Finished testing TTS Service HTTP APIs");
+    });
+});

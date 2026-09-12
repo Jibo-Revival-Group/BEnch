@@ -1,0 +1,88 @@
+{
+    "WebCore": {
+        "serverPort": 7979,
+        "fileRoot": "/usr/local/var/www/media"
+    },
+    "logging" : {
+        "channels" : {
+            "console" : {
+                "class" : "ConsoleChannel",
+                "pattern" : "%Y-%m-%d %H:%M:%S %s: [%p] %t"
+            },
+            "syslog" : {
+                "class" : "SyslogChannel",
+                "name" : "jibo-media-service",
+                "facility" : "SYSLOG_DAEMON",
+                "pattern" : "%s: [%p] %t"
+            },
+            "splitter" : {
+                "class" : "SplitterChannel",
+                "channels" : "syslog"
+            }
+        },
+        "loggers" : {
+            "l1" : {
+                "name" : "Application",
+                "level" : "debug",
+                "channel" : "splitter"
+            }
+        }
+    },
+    "MediaService": {
+        "registryPort":8181,
+        "serverPort":7979,
+        "camera": {
+            "type": "CUDA",
+            "cuda": {
+                "devices": [
+                    {
+                        "enabled": true,
+                        "name": "Camera-0",
+                        "path": "/dev/video0",
+                        "bufferPoolSize": 4,
+                        "width": 1280,
+                        "height": 720,
+                        "format": 3,
+                        "hFlip":true,
+                        "vFlip":true,
+                        "gamma" : {
+                            "Y":0.5,
+                            "U":1.0,
+                            "V":1.0
+                        },
+                        "ae" : {
+                            "exposureP":0.1,
+                            "gainP":0.05,
+                            "targetY":0.35,
+                            "errorY":0.0001
+                        },
+                        "awb" : {
+                            "grayThreshold":0.3,
+                            "numSamples":1000,
+                            "P":0.15,
+                            "targetU":0.5,
+                            "targetV":0.53,
+                            "seed":0
+                        }
+                    }
+                ],
+                "cuda" : {
+                    
+                }
+            },
+            "file": {
+                "videos": [
+                    "videos/video-000/video.json",
+                    "videos/video-001/video.json"
+                ],
+                "format": "YUV420p"
+            },
+            "v4l2": {
+                "devices": {
+                    "left": "/dev/video0",
+                    "right": "/dev/video1"
+                }
+            }
+        }
+    }
+}

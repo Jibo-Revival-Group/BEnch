@@ -1,0 +1,12 @@
+{"list" : 
+    [
+        "/axis_state",
+        "/axis_command",
+        "/imu",
+        "/touch",
+        "/power",
+        "/misc",
+        "/led_state",
+        "/led_command"
+    ]
+}

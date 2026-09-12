@@ -1,0 +1,340 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<script src="jquery-2.1.3.js"></script>
+<link href="asr.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript">
+$(document).ready(function() {
+
+    connectAsr();
+    connectSimpleAsr();
+
+    initTaskSettings();
+});
+ 
+var host = window.location.host;
+var socket = new WebSocket("ws://"+host+"/port");
+var socket_simple = new WebSocket("ws://"+host+"/simple_port");
+var wsMsgLog = ""
+var wsSimpleMsgLog = ""
+
+
+function connectAsr() {
+ 
+    socket.onopen = function() {
+        console.log("ASR message socket open!");
+    };
+    socket.onmessage = function(msg) {
+        console.log("Got message!!");
+        var data = JSON.parse(msg.data);
+        var data_str = JSON.stringify(data, null, 4);
+        data_str = data_str.concat("\n");
+        data_str = data_str.concat(wsMsgLog);
+        wsMsgLog = data_str;
+        //state.appendTouchState(data);
+        console.log(data.content);
+        //$("#asr").html($("<p>").text(JSON.stringify(data, null, 2)));
+        $("#asrState").val(wsMsgLog);
+    };
+    socket.onclose = function() {
+        console.log("Asr message socket close!");
+        setTimeout(function() { connectAsr(); }, 3000);
+    };
+}
+
+
+function connectSimpleAsr() {
+ 
+    socket_simple.onopen = function() {
+        console.log("ASR simple message socket open!");
+    };
+    socket_simple.onmessage = function(msg) {
+        console.log("Got simple message!!");
+        var data_simple = JSON.parse(msg.data);
+        var data_simple_str = JSON.stringify(data_simple, null, 4);
+        data_simple_str = data_simple_str.concat("\n");
+        data_simple_str = data_simple_str.concat(wsSimpleMsgLog);
+        wsSimpleMsgLog = data_simple_str;
+        //state.appendTouchState(data);
+        console.log(data_simple.content);
+        //$("#asr").html($("<p>").text(JSON.stringify(data, null, 2)));
+        $("#asrStateSimple").val(wsSimpleMsgLog);
+    };
+    socket_simple.onclose = function() {
+        console.log("Asr message simple socket close!");
+        setTimeout(function() { connectSimpleAsr(); }, 3000);
+    };
+}
+
+
+function sendSocketMsg() {
+    console.log("Sending socket msg");
+    socket.send('10');
+}
+
+
+function initTaskSettings() {
+
+
+    $("#send_task_button").click(function() {
+         $.ajax({
+            type: "POST",
+            url: "/asr_simple_interface",
+            dataType: "json",
+            data: packSendTaskSettings(), 
+            success: function() {
+            },
+            error: function(xhr, status, error) {
+                 console.log("ERROR " + status + " " + error + ":" + packSendTaskSettings());
+            }
+        });
+    });
+
+
+    $("#submit_audio_source_command").click(function() {
+        $.ajax({
+            type: "POST",
+            url: "/audio_source",
+            dataType: "json",
+            data: packAudioSourceCommand(), 
+            success: function() {
+            },
+            error: function(xhr, status, error) {
+               console.log("ERROR status: " + status + ", error: " + error + ", json: " + packAudioSourceCommand());
+            }
+        });
+    });
+
+    $("#stop_audio_source").click(function() {
+        $.ajax({
+            type: "POST",
+            url: "/audio_source",
+            dataType: "json",
+            data: packStopAudioSourceCommand(), 
+            success: function() {
+            },
+            error: function(xhr, status, error) {
+                console.log("ERROR status: " + status + ", error: " + error + ", json: " + JSON.stringify(audio_source_data));
+            }
+        });
+    });
+
+    $("#upload_logs").click(function() {
+        $.ajax({
+            type: "POST",
+            url: "/asr_control",
+            dataType: "json",
+            data: packUploadLogsControlCommand(), 
+            success: function() {
+            },
+            error: function(xhr, status, error) {
+                console.log("ERROR " + status + " " + error + JSON.stringify(control_command_data));
+            }
+        });
+    });
+    
+    $("#get_status").click(function() {
+        $.ajax({
+           type: "POST",
+           url: "/status",
+           dataType: "json",
+           data: packStatusCommand(), 
+           success: function(data, text_status, jqXHR) {
+           console.log(data)
+           },
+           error: function(xhr, status, error) {
+           console.log("ERROR " + status + " " + error);
+           }
+       });
+    });
+}
+ 
+var data = {task: "default", action: "default"};
+
+function packSendTaskSettings() {
+    message = JSON.parse($("#message_spec").val()) 
+    console.log( "@" + JSON.stringify(message) + "@");
+    return JSON.stringify(message);
+}
+
+var audio_source_data = {action: "default", audio_source_id:"default_id", 
+    audio_source:"default_source"}
+
+function packAudioSourceCommand() {
+    audio_source_data.action = "start";
+    audio_source_data.audio_source_id = $("#audio_source_id2").val();
+    audio_source_data.wav_files = JSON.parse($("#wav_files").val());
+    audio_source_data.audio_source = $("#audio_source").val();
+    console.log("AudioSourceCommand:" + JSON.stringify(audio_source_data))
+    return JSON.stringify(audio_source_data);
+}
+
+function packStopAudioSourceCommand() {
+    audio_source_data.action = "stop";
+    audio_source_data.audio_source_id = $("#audio_source_id3").val();
+    audio_source_data.wav_files = [];
+    audio_source_data.audio_source = "default_source";
+    return JSON.stringify(audio_source_data);
+}
+
+var control_command_data = {action: "default", request_id:"default_request_id"}
+
+function packUploadLogsControlCommand() {
+    control_command_data.action = "upload_logs";
+    control_command_data.request_id = $("#control_id").val();
+    return JSON.stringify(control_command_data);
+}
+
+function packStatusCommand() {
+    return "{}";
+}
+
+
+
+function showCSTemplates(sel){   
+
+locations =[ "", /*this remains blank for first selection in drop-down list*/ 
+
+/*option 1*/                 
+"{\"command\":\"start\",\"task_id\":\"DEBUG:task0\",\"audio_source_id\":\"alsa1\",\"hotphrase\":\"hey_jibo\",\"request_id\":\"resident_hey_jibo_start1\",\"residency\":true}",
+
+/*option 2*/  
+"{\"command\":\"stop\",\"task_id\":\"DEBUG:task0\", \"request_id\":\"resident_hey_jibo_stop1\"}",
+
+
+/*option 3*/                 
+"{\"command\":\"start\",\"task_id\":\"DEBUG:task1\",\"audio_source_id\":\"alsa1\",\"hotphrase\":\"hey_jibo\",\"request_id\":\"hey_jibo_start1\"}",
+
+/*option 4*/  
+"{\"command\":\"stop\",\"task_id\":\"DEBUG:task1\", \"request_id\":\"hey_jibo_stop1\"}",
+
+/*option 5*/                 
+"{\"command\":\"start\",\"task_id\":\"DEBUG:task2\",\"audio_source_id\":\"alsa1\",\"hotphrase\":\"hey_jibo\",\"speech_to_text\":true,\"request_id\":\"hey_jibo_start2\"}",
+
+/*option 6*/  
+"{\"command\":\"stop\",\"task_id\":\"DEBUG:task2\", \"request_id\":\"hey_jibo_stop2\"}",
+
+/*option 7*/                 
+"{\"command\":\"start\",\"task_id\":\"DEBUG:task3\",\"audio_source_id\":\"alsa1\",\"hotphrase\":\"none\",\"speech_to_text\":true,\"request_id\":\"stt_start3\"}",
+
+/*option 8*/  
+"{\"command\":\"stop\",\"task_id\":\"DEBUG:task3\", \"request_id\":\"stt_stop3\"}"  
+          
+];
+
+    srcLocation = locations    [sel.selectedIndex];    
+    if (srcLocation != undefined) {      
+    //document.getElementById('task_spec').innerHTML= srcLocation; 
+    document.getElementById('message_spec').value= srcLocation;
+ } 
+}
+
+
+function showWavFileTemplates(sel){   
+
+locations =[ "[]", /*this remains blank for first selection in drop-down list*/ 
+
+/*option 1*/                 
+"[\"/var/jibo/asr/audio/test/HEYJIBO_1_maxim.wav\", \"/var/jibo/asr/audio/test/CAN_YOU_SEND_THIS_MESSAGE_TO_RICH_SADOWSKY_1_maxim.wav\"]",];
+    srcLocation = locations    [sel.selectedIndex];    
+    if (srcLocation != undefined) {      
+    //document.getElementById('task_spec').innerHTML= srcLocation; 
+    document.getElementById('wav_files').value= srcLocation;
+ } 
+}
+
+$(function () {
+    $("select#wav_files_dropdown").change();
+});
+
+</script>
+<title>Simple Asr Service</title>
+</head>
+<body>
+
+<div class="section">
+
+<table style="width:100%" border=4 cellpadding=8 bordercolor="#FFFFFF">
+<tr>
+    <td align="left" valign="top">
+      <h1>ASR Websocket: /port</h1>
+      <textarea id="asrState" disabled="true" rows="15" cols="60"></textarea>
+    </td>
+    <td align="left" valign="top">
+      <h1>ASR Websocket: /simple_port</h1>
+      <textarea id="asrStateSimple" disabled="true" rows="15" cols="60"></textarea>
+    </td>
+</tr>
+  <tr>
+    <td align="left" valign="top" bgcolor="#dddddd">
+<h1>Post to ASR</h1>
+<label for="message_spec">Content:</label>
+<select class="c10" onchange="showCSTemplates(this);" id="task_spec_dropdown">
+    <option value="0" id="Templates">None</option>
+    <option value="1">start resident_hey_jibo</option>
+    <option value="2">stop resident_hey_jibo</option>
+    <option value="3">start hey_jibo</option>
+    <option value="4">stop hey_jibo</option>
+    <option value="5">start hey_jibo + cloud</option>
+    <option value="6">stop hey_jibo + cloud</option>
+    <option value="7">start cloud</option>
+    <option value="8">stop cloud</option>
+</select>
+<br>
+<textarea id="message_spec" rows ="6" cols="60"></textarea><br>
+
+<button id="send_task_button">Send</button>
+    </td>
+    <td align="left" valign="top" bgcolor="#aaaaaa">
+<h1>Start audio source</h1>
+<label for="audio_source_id2">Audio source id:</label> 
+<input type="text" id="audio_source_id2" value="alsa1" /><br>
+
+<label for="wav_files">Wav file:</label>
+ <select class="c11" onchange="showWavFileTemplates(this);" id="wav_files_dropdown">
+    <option value="0" id="Templates">None</option>
+    <option value="1">hey_jibo can_you_send_this_message_to_Rich_Sadowsky</option>
+</select>
+<br>
+<textarea id="wav_files" rows ="3" cols="60"></textarea><br>
+
+<label for="audio_source">Audio source type:</label>
+<select id="audio_source">
+    <option value="alsa">alsa</option>
+    <option value="wav">wav</option>
+</select>
+<br>
+<br>
+<button id="submit_audio_source_command">Submit audio source</button>
+    </td>
+    </tr>
+
+<tr>
+<td align="left" valign="top" bgcolor="#dddddd">
+<h1>Control commands</h1>
+<label for="control_id">Message id:</label> 
+<input type="text" id="control_id" value="control_msg_1" /><br>
+<br>
+<button id="upload_logs">Upload logs</button>
+<button id="get_status">Get status</button>
+</td>
+
+<td align="left" valign="top" bgcolor="#aaaaaa">
+<h1>Stop audio source</h1>
+<label for="audio_source_id3">Audio source to stop:</label> 
+<input type="text" id="audio_source_id3" value="alsa1" /><br>
+<br>
+<button id="stop_audio_source">Stop audio source</button>
+</td>
+</tr>
+
+</table>
+</div> <!-- section -->
+
+
+
+</div> <!-- section -->
+
+
+</body>
+</html>

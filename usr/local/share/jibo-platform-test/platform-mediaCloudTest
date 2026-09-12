@@ -1,0 +1,190 @@
+#!/usr/bin/env node
+
+"use strict";
+
+const https = require("https");
+const crypto = require("crypto");
+const fs = require("fs");
+const parseArgs = require("minimist");
+const jibo = require("@jibo/jibo-server-client");
+const syslog = require("modern-syslog");
+const request = require("request");
+
+var id;
+var filename;
+var hash1;
+var hash2;
+var hash3;
+
+var credentials = require("/var/jibo/credentials.json");
+let media = new jibo.Media(credentials);
+
+var takePhotoCB = function(error, response, body) {
+    if(error) throw new Error(error);
+
+    else
+    {
+        console.log("take photo success: ", body);
+        id = body.id;
+        filename = "/opt/jibo/Photos/"+id+".jpg";
+        var storePhotoData = {
+            id: id,
+            thumbnails: {
+                mobile: [
+                    80,
+                    80
+                ],
+                robot: [
+                    330,
+                    330
+                ]
+            }
+        }
+        request.post("http://127.0.0.1:8486/media/photo/store",
+                {json:storePhotoData, timeout:10000},
+                storePhotoCB);
+    }
+}
+
+var storePhotoCB = function(error, response, body) {
+    if(error) throw new Error(error);
+
+    else
+    {
+        console.log("store photo success: ", body);
+        var s1 = fs.ReadStream(filename);
+        var md5sum = crypto.createHash('md5');
+        s1.on('data', function(d) {
+          md5sum.update(d);
+        });
+
+        s1.on('end', function() {
+            hash1 = md5sum.digest('hex');
+            console.log("hash1: ", hash1);
+            
+            var uploadPhotoData = {
+                "contentID":id,
+                "immediate":true,
+                "keepLocal":false,
+                "type":"image"
+            }
+            request.post("http://127.0.0.1:8485/media-manager/upload",
+                {json:uploadPhotoData, timeout:10000},
+                uploadPhotoCB);
+        });
+    }
+}
+
+var uploadPhotoCB = function(error, response, body) {
+    if(error || response.statusCode != 204) throw new Error(error);
+
+    else
+    {
+        console.log("upload photo success");
+        
+        var downloadPhotoData = {
+            "contentID":id,
+            "immediate":true,
+            "type":"image"
+        }
+        
+        fs.stat(filename, (err, stats) => {
+            if (!err) {
+                console.log(err);
+                console.log("FAILURE! (file should be deleted)");
+                throw new Error();
+                return;
+            } else {
+                
+                request.post("http://127.0.0.1:8485/media-manager/download",
+                    {json:downloadPhotoData, timeout:10000},
+                    downloadPhotoCB);
+            }
+        });
+    }
+}
+
+var downloadPhotoCB = function(error, response, body) {
+    if(error || response.statusCode != 204) throw new Error(error);
+
+    else
+    {
+        console.log("download photo success");
+        
+        var s2 = fs.ReadStream(filename);
+        var md5sum = crypto.createHash('md5');
+        s2.on('data', function(d) {
+          md5sum.update(d);
+        });
+
+        s2.on('end', function() {
+            hash2 = md5sum.digest('hex');
+            console.log("hash2: ", hash2);
+            
+            if(hash1 === hash2) {
+                console.log("HASH TEST PASSED! (files identical)");
+                
+                media.get({
+                    paths: [id]
+                }, (error, data) => {
+                    if(error) throw new Error(error);
+
+                    let encryptedFilename = "/opt/jibo/Photos/encrypted_" +
+                        id + ".jpg";
+                    let file =
+                        fs.createWriteStream(encryptedFilename, {
+                                encoding: 'binary'
+                            }
+                        );
+
+                    //console.log(data[0].url);
+                    https.get(data[0].url, (response) => {
+                        
+                        if(!data[0].isEncrypted){
+                            console.log("FAILED: SERVER ENCRYPT FLAG NOT SET");
+                        }
+                        else {
+                            var stream = response.pipe(file);
+                            
+                            stream.on("finish", function() {
+                                console.log(encryptedFilename);
+                                var s3 = fs.ReadStream(encryptedFilename);
+                                var md5sum = crypto.createHash('md5');
+                                s3.on('data', function(d) {
+                                  md5sum.update(d);
+                                });
+
+                                s3.on('end', function() {
+                                    hash3 = md5sum.digest('hex');
+                                    console.log("hash3: ", hash3);
+                                    
+                                    if(hash3 === hash2) {
+                                        console.log("HASH TEST FAILED! (\"encrypted\" file should not be identitcal)");
+                                        throw new Error();
+                                    }
+                                    else {
+                                        console.log("HASH TEST PASSED! (file encrypted (different hash) on server)!");
+                                    }
+                                });
+                            });
+                        }
+                    });
+                });
+                
+            }
+            else {
+                console.log("FAILED: NOT SAME FILE/HASH");
+                throw new Error();
+            }
+        });
+    }
+}
+
+var takePhotoData = {
+        "camera": 0,
+        "type": 2,
+        "undistort": true
+};
+request.post("http://127.0.0.1:8486/media/photo",
+        {json:takePhotoData, timeout:10000},
+        takePhotoCB);

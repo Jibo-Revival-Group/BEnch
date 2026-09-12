@@ -1,0 +1,63 @@
+{"list" :
+    [
+        {"type": "GET", "url": "/axis_info" },
+        {"type": "GET", "url": "/axis_tuning"},
+        {"type": "GET", "url": "/settings"},
+        {"type": "POST", "url": "/settings", "args":
+            {
+                "lcd_backlight":0,
+                "fan_mode": 0,
+                "fan_speed": 0
+            }
+        },
+        {"type": "POST", "url": "/settings", "args":
+            {
+                "lcd_backlight":1,
+                "fan_mode": 1,
+                "fan_speed": 1
+            }
+        },
+        {"type": "POST", "url": "/settings", "args":
+            {
+                "lcd_backlight":0,
+                "fan_mode": 0,
+                "fan_speed": 1
+            }
+        },
+        {"type": "POST", "url": "/settings", "args":
+            {
+                "lcd_backlight":1,
+                "fan_mode": 1,
+                "fan_speed": 1
+            }
+        },
+        {"type": "POST", "url": "/settings", "args":
+            {
+                "lcd_backlight":0,
+                "fan_mode": 0,
+                "fan_speed": 0
+            }
+        },
+ 
+        {"type": "POST", "url": "/settings", "args":
+            {
+                "lcd_backlight":1,
+                "fan_mode": 0,
+                "fan_speed": 1
+            }
+        },
+        {"type": "GET", "url": "/settings"},
+        {"type": "GET", "url": "/faults"},
+        {"type": "GET", "url": "/screen"},
+        {"type": "POST", "url": "/screen", "args":
+            {
+                "screen": "off"
+            }
+        },
+        {"type": "POST", "url": "/screen", "args":
+            {
+                "screen": "on"
+            }
+        }
+    ]
+}

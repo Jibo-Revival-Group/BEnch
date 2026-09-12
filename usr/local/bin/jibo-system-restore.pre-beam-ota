@@ -1,0 +1,162 @@
+#!/usr/bin/env node
+
+var fs = require('fs')
+var jibo = require("@jibo/jibo-server-client");
+var request = require('request');
+var https = require('https');
+var path = require('path');
+var minimist = require('minimist');
+
+var backup, argv;
+Error.stackTraceLimit = 120;
+
+//==============================================================================
+// Usage
+var usage = function() {
+    console.log("Usage:", process.argv[1], "<arguments>");
+    console.log("");
+    console.log("OPTIONS:");
+    console.log("  -h,--help                print this message");
+    console.log("  --credentials FILE       path to credentials.json");
+    console.log("  --filename PATH          path to the restore file");
+    console.log("  --keydir PATH            path to the keys directory");
+    console.log("  --decrypt                decrypt the restore file");
+};
+
+//==============================================================================
+// Main Function
+var main = function() {
+    
+    //=================
+    // Parse Arugments
+    argv = minimist(process.argv.slice(2));
+    if (argv.h || argv.help){
+        usage()
+        process.exit(0);
+    }
+    if (!argv.credentials) 
+        throw new Error("Missing argument: credentials not specified");
+
+    if (!argv.filename)
+        throw new Error("Missing argument: filename not specified");
+
+    if (!argv.keydir) {
+        throw new Error("Missing argument: keydir not specified");
+    }
+    
+    //=======================
+    // Script initialization
+    jibo.Key.prototype.storage = {
+        load: function(name, callback) {
+            var filename = path.join(argv.keydir,name + '.json')
+            fs.readFile(filename, {encoding: 'utf8'}, callback);
+        },
+        save: function(name, value, callback) {
+            var filename = path.join(argv.keydir,name + '.json')
+            fs.writeFile(filename, value, callback);
+        }
+    };
+    
+    var credentials = require(argv.credentials);
+    jibo.config.update( {
+        region: credentials.region
+    });
+    var loop = new jibo.Loop(credentials);
+    var key = new jibo.Key(credentials);
+    
+    var loopId;
+    var downloadUrl;
+    var etag;
+    
+    //==============================================
+    // jibo.Key.loadOrCreateSymmetricalKey callback
+    var callbackKey = function(err, result){
+        if (err)
+            throw (err);
+        if (result === null)
+            throw new Error('No key');
+        
+        var options = {
+            url: downloadUrl,
+            method: 'GET',
+            headers: { }
+        };
+        
+        var callbackDownload = function(response) {
+            if (response.statusCode != 200)
+                throw new Error("Couldn't download restore file");
+            
+            var wstream = fs.createWriteStream(argv.filename,
+                {encoding: 'binary'}
+            );
+            if (argv.decrypt){
+                var params = {Key: result, Body: response };
+                key.decryptSymmetricStream(params).pipe(wstream);
+            } else {
+                response.pipe(wstream);
+            }
+            console.log(etag);
+        };
+        
+        // TODO: Would love to do this using request instead of https, but
+        // couldn't figure out a way to set up the streams in a way that made
+        // senes for error handling.
+        https.get(downloadUrl, callbackDownload)
+    };
+    
+    //===========================
+    // jibo.Backup.list callback
+    var callbackBackupList = function(err, response){
+        if (err)
+            throw(err);
+        
+        if (response.length == 0)
+            throw new Error("Couldn't find any uploaded files");
+        
+        var entry = response.reduce(function(aa,bb) {
+            return Math.max( new Date(aa.modified), new Date(bb.modified) );
+        });
+        
+        if (entry === null){
+            throw new Error("Couldn't find uploaded backup file");
+        }
+        
+        etag = entry.etag.replace(/['"]+/g,'');
+        
+        downloadUrl = entry.location.url;
+        key.loadOrCreateSymmetricKey({ loopId: loopId }, callbackKey);
+    };
+    
+    //=========================
+    // jibo.Loop.list callback
+    var callbackLoopList = function (err, list){
+        if (err) {
+            throw (err);
+        }
+        
+        if (list === null) {
+            throw new Error("Couldn't find any loop");
+        }
+        
+        if (list.length !== 1) {
+            throw new Error("Too many loop members");
+        }
+        
+        loopId = list[0].id;
+        backup = new jibo.Backup({
+            credentials: credentials
+        });
+        backup.list({ loopId: loopId }, callbackBackupList);
+    };
+    
+    loop.list({}, callbackLoopList);
+};
+
+if (require.main === module){
+    try {
+        main();
+    } catch (err){
+        console.log(err);
+        process.exit(1);
+    }
+}

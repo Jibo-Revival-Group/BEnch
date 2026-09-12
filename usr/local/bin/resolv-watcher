@@ -1,0 +1,75 @@
+#!/usr/bin/env sh
+
+###############################################################################
+#
+#   Watcher for the /run/resolv.conf file
+#
+#   Watches the file for write operations and restores it if has been erased.
+#
+#   Note: Created to patch JIBO-10227, should be remove in future once we have
+#       a better fix.
+#
+#   Usage: Run by cron every 15 minutes
+###############################################################################
+
+# The file we are watching
+RESOLV_FILE='/run/resolv.conf'
+
+# Cron runperiod in seconds
+CRON_INTERVAL=900 # 15 minutes
+
+# Process info for logging
+PROC_NAME=`basename $0`
+PROC_PID=$$
+
+# Debugging flag
+# set -x
+
+# Log a message to syslog with propper pid, name, and error level
+#   ARG: 
+#       $@  :   Message to write
+log_err(){
+    logger \
+        --priority err      \
+        --id=$PROC_PID      \
+        --tag $PROC_NAME    \
+        $@
+}
+
+# Contents to be written back the file when restored
+#   ARG: 
+#       $1  :   Timestamp to write
+resolv_backup(){
+cat <<EOF
+# Restored @ $1
+nameserver 8.8.8.8
+nameserver 8.8.4.4
+EOF
+}
+
+# Watch for write events on file
+#   ARG: 
+#       $1  :   Name of file
+#   RETURNS: 
+#       A sequence of lines of the format: "{filename} {event} {timestamp}",
+#       where:
+#           {filename}  :   The name of the file modified
+#           {event}     :   Comma-separated names of events
+#           {timestamp} :   Timestamp of the event 
+on_file_write(){
+    inotifywait -m -q -t$CRON_INTERVAL \
+        -e close_write      \
+        --format '%w %e %T' \
+        --timefmt '%FT%T'   \
+        $1
+}
+
+# Do the thing
+on_file_write $RESOLV_FILE | while read -r filename event timestamp; do
+    # if $RESOLV_FILE has less than 2 lines assume it's empty
+    if [[ $(wc -l </run/resolv.conf) -lt 2 ]] ; then
+        log_err "File '$filename' received event $event  at $timestamp"
+        log_err "Restoring file '$RESOLV_FILE' from backup" 
+        resolv_backup $timestamp > $RESOLV_FILE
+    fi
+done;

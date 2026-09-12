@@ -1,0 +1,138 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<link href="as.css" rel="stylesheet" type="text/css" />
+<script src="jquery-2.1.3.js"></script>
+<script src="jquery.flot.js"></script>
+<script src="jquery.flot.navigate.js"></script>
+<script src="as.js"></script>
+<script src="beams.js"></script>
+<script type="text/javascript">
+
+root = {};
+$(document).ready(function() {
+    root.mode = new as.Mode($("#seMode"));
+    root.diags = new as.SEDiags($("#seDiags"));
+    root.log = new as.Log($("#sampLog"));
+    root.errors = new as.Errors($("#errors"));
+
+    root.rinplot = new as.AudioPlot($("#rinplot"), "/rin", 1);
+    root.routplot = new as.AudioPlot($("#routplot"), "/rout", 1);
+    root.sinplot = new as.AudioPlot($("#sinplot"), "/sin", 6);
+    root.soutplot = new as.AudioPlot($("#soutplot"), "/sout", 2);
+    root.refplot = new as.AudioPlot($("#refplot"), "/ref", 2);
+
+    root.rincontrols = new as.PlotControls($("#rincontrols"), root.rinplot);
+    root.routcontrols = new as.PlotControls($("#routcontrols"), root.routplot);
+    root.sincontrols = new as.PlotControls($("#sincontrols"), root.sinplot);
+    root.soutcontrols = new as.PlotControls($("#soutcontrols"), root.soutplot);
+    root.refcontrols = new as.PlotControls($("#refcontrols"), root.refplot);
+
+    root.mixer = new as.MixerControls($("#mixControls"));
+
+    root.debug = new as.SEDebugControls($("#seDebug"));
+
+    root.location = new as.LocationState($("#locationState"));
+
+    root.levels = new as.LevelState($("#levelState"));
+
+    root.energy = new as.EnergyState($("#energyState"));
+
+    root.filter = new as.FilterState($("#filterState"));
+
+    root.pbstate = new as.StreamState($("#streamState"));
+});
+
+</script>
+<title>Audio Service</title>
+</head>
+<body>
+    <div class="header">
+        <h1>Audio Service</h1>
+    </div>
+    <div class="left">
+        <div id="location">
+            <h1>Location</h1>
+            <div id="locationState"></div>
+            <canvas id="myCanvas" width="480" height="320" style="border:1px solid #000000;"></canvas>
+        </div>
+        <div id="filter">
+            <h1>Spatial Filter</h1>
+            <div id="filterState"></div>
+            <canvas id="filterCanvas" width="480" height="320" style="border:1px solid #000000;"></canvas>
+        </div>
+        <div id="levels">
+            <h1>Levels</h1>
+            <div id="levelState"></div>
+            <h1>Energy</h1>
+            <div id="energyState"></div>
+            <h1>Stream State</h1>
+            <div id="streamState"></div>
+        </div>
+        <div id="signals">
+            <h1>Signals</h1>
+            <div>
+                <label for="rinplot"><h2>Rin</h2></label>
+                <div id="rinplot" class="plot"></div>
+            </div>
+            <div>
+                <div id="rincontrols"></div>
+            </div>
+            <div>
+                <label for="routplot"><h2>Rout</h2></label>
+                <div id="routplot" class="plot"></div>
+            </div>
+            <div>
+                <div id="routcontrols"></div>
+            </div>
+            <div>
+                <label for="refplot"><h2>Ref</h2></label>
+                <div id="refplot" class="plot"></div>
+            </div>
+            <div>
+                <div id="refcontrols"></div>
+            </div>
+            <div>
+                <label for="sinplot"><h2>Sin</h2></label>
+                <div id="sinplot" class="plot"></div>
+            </div>
+            <div>
+                <div id="sincontrols"></div>
+            </div>
+            <div>
+                <label for="soutplot"><h2>Sout</h2></label>
+                <div id="soutplot" class="plot"></div>
+            </div>
+            <div>
+                <div id="soutcontrols"></div>
+            </div>
+        </div>
+    </div>
+    <div class="right">
+        <div id="mixer">
+            <h1>Mixer</h1>
+            <div id="mixControls"></div>
+        </div>
+        <div id="mode">
+            <h1>Mode</h1>
+            <div id="seMode"></div>
+        </div>
+        <div id="log">
+            <h1>Logging</h1>
+            <div id="sampLog"></div>
+        </div>
+        <div>
+            <h1>Errors</h1>
+            <div id="errors"></div>
+        </div>
+        <div id="debug">
+            <h1>Debug</h1>
+            <div id="seDebug"></div>
+        </div>
+        <div id="diags">
+            <h1>SEDiag</h1>
+            <div id="seDiags"></div>
+        </div>
+    </div>
+</body>
+</html>

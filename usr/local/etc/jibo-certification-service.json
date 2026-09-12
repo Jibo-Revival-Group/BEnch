@@ -1,0 +1,32 @@
+{
+    "WebCore": {
+        "serverPort": 9292,
+        "fileRoot": "/usr/local/var/www/certificationservice",
+        "requestLogging": false
+    },
+    "CertificationService": {
+        "registryPort": 8181,
+        "serverPort": 9292,
+        "enableDebugSocket": true
+    },
+    "ErrorTracker": {
+        "views": [
+            {
+                "name": "CertificationService",
+                "errors": []
+            }
+        ]
+    },
+    "logging": {
+        "channels": {
+            "splitter": {
+                "channels": "syslog"
+            }
+        },
+        "loggers": {
+            "root": {
+                "level": "notice"
+            }
+        }
+    }
+}

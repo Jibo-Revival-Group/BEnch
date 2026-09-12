@@ -1,0 +1,318 @@
+{
+    "default_person" : {
+        "debug" : false,
+        "description" : "person",
+        "name" : "person",
+        "max_track_age" : 300.0,
+        "is_static" : false,
+        "min_part_confidence" : 0.001,
+        "max_part_measure_age" : 5.0,
+        "max_audio_measure_age" : 10.0,
+        "min_audio_confidence" : 0.4,
+        "out_fov_age_factor" : 1.5,
+        "in_fov_margin" : 0.10,
+        "min_detect_request_age" : 5.0,
+        "speaking_timeout" : 1.5,
+        "speaking_threshold" : 0.25,
+        "head" : {
+            "name" : "head",
+            "debug" : false,
+            "identity" : {
+                "alpha" : 0.75,
+                "cull" : 0.1
+            },
+            "enable_back_projection" : true,
+            "default_ramge" : 2.5,
+            "use_pseudo_range" : true,
+            "extent_x" : 0.25,
+            "extent_y" : 0.25,
+            "extent_z" : 0.25,
+            "vel_decay" : 0.5,
+            "vel_max" : 1.9,
+            "linear_psd" : 10.0,
+            "min_state_covariance" : 0.0001,
+            "pseudo_range_covariance" : 0.9,
+            "auto_add_tracker" : false,
+            "auto_add_tracker_skip" : 20,
+            "pose_filter":0.0,
+            "tracker_type" : "tracker_2",
+            "tracker_1" : {
+                "tracker_class" : "color_tracker",
+                "image_tracker" : {
+                    "debug" : false,
+                    "image_debug" : false,
+                    "name" : "A",
+                    "use_image_velocity" : true,
+                    "vel_scale" : 0.9,
+                    "vel_filter" : 0.75,
+                    "base_covar" : 220.0,
+                    "image_width" : 640,
+                    "image_height" : 360,
+                    "track_confidence_filter" : 0.6,
+                    "model_confidence_filter" : 0.9,
+                    "min_confidence" : 0.05,
+                    "measure_interval": 0.067
+                },
+                "color_tracker" : {
+                    "model_debug" : false,
+                    "track_debug" : false,
+                    "drop_area_too_big" : 120000.0,
+                    "drop_area_too_small" : 600.0,
+                    "search_size_horizontal_scale" : 20,
+                    "search_size_vertical_scale" : 20,
+                    "area_filter" : 0.6,
+                    "model" : {
+                        "y_min" : 25,
+                        "y_max" : 250,
+                        "color_threshold_min" : 10,
+                        "color_threshold_max" : 25
+                    },
+                    "camshift" : {
+                        "max_iterations" : 6,
+                        "area_scale" : 10.0,
+                        "area_aspect" : 1.2
+                    },
+                    "kmeans" : {
+                        "K" : 2,
+                        "max_iterations" : 10,
+                        "convergence" : 0.01
+                    }
+                }
+            },
+            "tracker_2" : {
+                "tracker_class" : "abcshift_tracker",
+                "image_tracker" : {
+                    "debug" : false,
+                    "image_debug" : false,
+                    "name" : "A",
+                    "use_image_velocity" : true,
+                    "vel_scale" : 0.9,
+                    "vel_filter" : 0.75,
+                    "base_covar" : 220.0,
+                    "image_width" : 640,
+                    "image_height" : 360,
+                    "track_confidence_filter" : 0.6,
+                    "model_confidence_filter" : 0.9,
+                    "min_confidence" : 0.05,
+                    "measure_interval": 0.067
+                },
+                "abcshift_tracker" : {
+                    "drop_area_too_big" : 120000.0,
+                    "drop_area_too_small" : 600.0,
+                    "search_size_horizontal_scale" : 20,
+                    "search_size_vertical_scale" : 20,
+                    "area_filter" : 0.6,
+                    "max_iterations" : 6,
+                    "area_scale" : 1.3,
+                    "area_aspect" : 1.2,
+                    "bhattacharyya_threshold" : 0.5,
+                    "model" : {
+                        "y_min" : 5,
+                        "y_max" : 250,
+                        "color_threshold_min" : 5,
+                        "color_threshold_max" : 10
+                    },
+                    "background" : {
+                        "minX" : 0,
+                        "maxX" : 255,
+                        "binsX" : 256,
+                        "minY" : 0,
+                        "maxY" : 255,
+                        "binsY" : 256
+                    },
+                    "foreground" : {
+                        "minX" : 0,
+                        "maxX" : 255,
+                        "binsX" : 256,
+                        "minY" : 0,
+                        "maxY" : 255,
+                        "binsY" : 256
+                    }
+                }
+            },
+            "tracker_3" : {
+                "tracker_class" : "correlation_tracker",
+                "image_tracker" : {
+                    "debug" : false,
+                    "image_debug" : false,
+                    "name" : "A",
+                    "use_image_velocity" : true,
+                    "vel_scale" : 0.9,
+                    "vel_filter" : 0.75,
+                    "base_covar" : 220.0,
+                    "image_width" : 640,
+                    "image_height" : 360,
+                    "track_confidence_filter" : 0.6,
+                    "model_confidence_filter" : 0.9,
+                    "min_confidence" : 0.05,
+                    "measure_interval": 0.067
+                },
+                "correlation_tracker" : { 
+                    "filter_size" : 6,
+                    "num_scale_levels" : 5,
+                    "scale_window_size" : 23,
+                    "regularizer_space" : 0.001,
+                    "nu_space" : 0.025,
+                    "regularizer_scale" : 0.001,
+                    "nu_scale" : 0.025,
+                    "scale_pyramid_alpha" : 1.020,
+                    "side_lobe_ratio_threshold": 12.0
+                }
+            },
+            "tracker_4" : {
+                "tracker_class" : "face_landmark_tracker",
+                "image_tracker" : {
+                    "debug" : false,
+                    "image_debug" : false,
+                    "name" : "A",
+                    "use_image_velocity" : true,
+                    "vel_scale" : 0.9,
+                    "vel_filter" : 0.75,
+                    "base_covar" : 220.0,
+                    "image_width" : 640,
+                    "image_height" : 360,
+                    "track_confidence_filter" : 0.6,
+                    "model_confidence_filter" : 0.9,
+                    "min_confidence" : 0.05,
+                    "measure_interval": 0.067
+                },
+                "face_landmark_tracker" : { }
+            },
+            "tracker_5" : {
+                "tracker_class" : "composite_tracker",
+                "image_tracker" : {
+                    "debug" : false,
+                    "image_debug" : false,
+                    "name" : "A",
+                    "use_image_velocity" : true,
+                    "vel_scale" : 0.9,
+                    "vel_filter" : 0.75,
+                    "base_covar" : 220.0,
+                    "image_width" : 1280,
+                    "image_height" : 720,
+                    "track_confidence_filter" : 0.6,
+                    "model_confidence_filter" : 0.9,
+                    "min_confidence" : 0.05,
+                    "measure_interval": 0.067
+                },
+                "composite_tracker" : {
+                    "trackers" : {
+                        "color" : {
+                            "tracker_class" : "abcshift_tracker",
+                            "image_tracker" : {
+                                "debug" : false,
+                                "image_debug" : false,
+                                "name" : "A",
+                                "use_image_velocity" : true,
+                                "vel_scale" : 0.9,
+                                "vel_filter" : 0.75,
+                                "base_covar" : 220.0,
+                                "image_width" : 640,
+                                "image_height" : 360,
+                                "track_confidence_filter" : 0.6,
+                                "model_confidence_filter" : 0.9,
+                                "min_confidence" : 0.05,
+                                "measure_interval": 0.067
+                            },
+                            "abcshift_tracker" : {
+                                "drop_area_too_big" : 120000.0,
+                                "drop_area_too_small" : 600.0,
+                                "search_size_horizontal_scale" : 20,
+                                "search_size_vertical_scale" : 20,
+                                "area_filter" : 0.6,
+                                "max_iterations" : 6,
+                                "area_scale" : 1.3,
+                                "area_aspect" : 1.2,
+                                "bhattacharyya_threshold" : 0.5,
+                                "model" : {
+                                    "y_min" : 5,
+                                    "y_max" : 250,
+                                    "color_threshold_min" : 5,
+                                    "color_threshold_max" : 25
+                                },
+                                "background" : {
+                                    "minX" : 0,
+                                    "maxX" : 255,
+                                    "binsX" : 64,
+                                    "minY" : 0,
+                                    "maxY" : 255,
+                                    "binsY" : 64
+                                },
+                                "foreground" : {
+                                    "minX" : 0,
+                                    "maxX" : 255,
+                                    "binsX" : 64,
+                                    "minY" : 0,
+                                    "maxY" : 255,
+                                    "binsY" : 64
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "default_motion" : {
+        "debug" : false,
+        "description" : "motion",
+        "name" : "motion",
+        "max_track_age" : 20.0,
+        "is_static" : false,
+        "max_part_measure_age" : 1.0,
+        "max_audio_measure_age" : 0.1,
+        "out_fov_age_factor" : 0.1,
+        "motion" : {
+            "name" : "motion",
+            "debug" : false,
+            "enable_back_projection" : true,
+            "default_ramge" : 2.5,
+            "use_pseudo_range" : true,
+            "extent_x" : 0.25,
+            "extent_y" : 0.25,
+            "extent_z" : 0.25,
+            "vel_decay" : 0.999,
+            "vel_limit" : 3.0,
+            "linear_psd" : 0.10,
+            "min_state_covariance" : 0.001,
+            "pseudo_range_covariance" : 0.5,
+            "fixed_pseudo_range" : 2.0,
+            "auto_add_tracker" : false,
+            "auto_add_tracker_skip" : 5,
+            "confidence_filter" : 0.9,
+            "pose_filter":0.0,
+            "tracker_type" : "tracker_1",
+            "tracker_1" : {
+                "tracker_class" : "motion_tracker",
+                "image_tracker" : {
+                    "debug" : false,
+                    "image_debug" : false,
+                    "name" : "A",
+                    "use_image_velocity" : false,
+                    "vel_scale" : 0.9,
+                    "vel_filter" : 0.75,
+                    "base_covar" : 200.0,
+                    "image_width" : 128,
+                    "image_height" : 128,
+                    "track_confidence_filter" : 0.6,
+                    "model_confidence_filter" : 0.5,
+                    "min_confidence" : 0.001,
+                    "measure_interval": 0.001
+                },
+                "motion_tracker" : {
+                    "background_threshold" : 5,
+                    "drop_area_too_big" : 1600.0,
+                    "drop_area_too_small" : 100.0,
+                    "search_size_horizontal_scale" : 5,
+                    "search_size_vertical_scale" : 5,
+                    "camshift" : {
+                        "max_iterations" : 6,
+                        "area_scale" : 3.0,
+                        "area_aspect" : 2.0
+                    }
+                }
+            }
+        }
+    }
+}
+

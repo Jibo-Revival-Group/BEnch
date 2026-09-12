@@ -1,0 +1,4 @@
+describe('LPS API Tests', function() {
+   require('./lps-HTTPTest');
+   require('./lps-WSTest');
+});

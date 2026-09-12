@@ -1,0 +1,797 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<script src="jquery-2.1.3.js"></script>
+<link href="tts.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript">
+var ip = window.location.host;
+//alert(ip);
+
+$(document).ready(function() {
+
+    connectTts();
+//    connectTtsPhones();
+    connectTtsEffects();
+    initTaskSettings();
+    initTaskWordTimings();
+    initTaskTTSLex();
+    initTaskPOSTags();
+});
+ 
+var host = window.location.host;
+var socket = new WebSocket("ws://"+ip+"/tts_tokens");
+//var socketPhones = new WebSocket("ws://"+ip+"/tts_phones");
+var socketEffects = new WebSocket("ws://"+ip+"/tts_effects");
+
+var dataStreamTokens = "";
+var dataStreamPhones = "";
+var dataStreamEffects = "";
+
+function connectTts() {
+ 
+    socket.onopen = function() {
+        console.log("Touch state socket open!");
+    };
+    socket.onmessage = function(msg) {
+        console.log("Got message!!");
+        //var data = JSON.parse(msg.data);
+        dataStreamTokens = dataStreamTokens.concat(" ");
+        dataStreamTokens = dataStreamTokens.concat(msg.data);
+        //state.appendTouchState(data);
+        console.log(dataStreamTokens.content);
+        //$("#tts").html($("<p>").text(JSON.stringify(data, null, 2)));
+        $("#ttsState").val(dataStreamTokens);
+    };
+    socket.onclose = function() {
+        console.log("Tts state socket close!");
+        setTimeout(function() { connectTts(); }, 3000);
+    };
+}
+
+function connectTtsEffects() {
+ 
+    socketEffects.onopen = function() {
+        console.log("Touch state socket open!");
+    };
+    socketEffects.onmessage = function(msg) {
+    dataStreamEffects = dataStreamEffects.concat(" ");
+    dataStreamEffects = dataStreamEffects.concat(msg.data);
+    console.log(dataStreamEffects.content);
+    $("#jibojiState").val(dataStreamEffects);
+    };
+    socketEffects.onclose = function() {
+        console.log("Tts state socket close!");
+        setTimeout(function() { connectTtsEffects(); }, 3000);
+    };
+}
+
+function connectTtsPhones() {
+ 
+    socketPhones.onopen = function() {
+        console.log("Touch state socket open!");
+    };
+    socketPhones.onmessage = function(msg) {
+        console.log("Got message!!");
+        dataStreamPhones = dataStreamPhones.concat(" ");
+        dataStreamPhones = dataStreamPhones.concat(msg.data);
+        console.log(dataStreamPhones.content);
+        $("#ttsStatePhones").val(dataStreamPhones);
+    };
+    socketPhones.onclose = function() {
+        console.log("Tts state socket close!");
+        setTimeout(function() { connectTtsPhones(); }, 3000);
+    };
+}
+
+function stopSpeak() {
+
+    $("#stop_task").click(function() {
+        $("#stop_task").attr('disabled', true);
+        $.ajax({
+            type: "GET",
+            url: "http://"+ip+"/tts_stop",
+            success: function() {
+         $("#submit_task").attr('disabled', false);
+         $("#stop_task").attr('disabled', false);
+            },
+            error: function(xhr, status, error) {
+                console.log("ERROR " + status + " " + error + JSON.stringify(data));
+            $("#submit_task").attr('disabled', false);
+         $("#stop_task").attr('disabled', false);        
+    }
+
+        });
+    $(this).stopPropagation(); 
+    });
+}
+
+var sendEffectsData = {"name": "pitchshiftSwitch", "action": "START", "param":"1.0"};
+
+function startEffects() {
+
+    sendEffectsData.name = $("#effectName").val();
+    sendEffectsData.action = "START";
+    sendEffectsData.param = $("#effectslider").val();
+       
+    JSON.stringify(sendEffectsData);
+    console.log("Sending socket msg");
+    socketEffects.send(JSON.stringify(sendEffectsData));
+}
+
+function stopEffects() {
+    sendEffectsData.name = $("#effectName").val();
+    sendEffectsData.action = "STOP";
+    sendEffectsData.param = $("#effectslider").val();
+    JSON.stringify(sendEffectsData);
+    console.log("Sending socket msg");
+    socketEffects.send(JSON.stringify(sendEffectsData));
+}
+
+function updateEffects() {
+    sendEffectsData.name = $("#effectName").val();
+    sendEffectsData.action = "UPDATE";
+    sendEffectsData.param = $("#effectslider").val();
+    JSON.stringify(sendEffectsData);
+    console.log("Sending socket msg");
+    socketEffects.send(JSON.stringify(sendEffectsData));
+}
+
+var sendEffectsDataJiboji = {"name": "jiboji", "action": "START", "param":"wow"};
+
+function startEffectsJiboji() {
+
+    sendEffectsDataJiboji.name = "jiboji";
+    sendEffectsDataJiboji.action = "START";
+    sendEffectsDataJiboji.param = $("#effectNameJiboji").val();
+       
+    JSON.stringify(sendEffectsDataJiboji);
+    console.log("Sending socket msg");
+    socketEffects.send(JSON.stringify(sendEffectsDataJiboji));
+}
+
+function initTaskSettings() {
+
+    $("#submit_task").click(function() {
+          $("#ttsState").val("");
+          $("#ttsStatePhones").val("");
+           dataStreamTokens = ""; 
+           dataStreamPhones = ""; 
+        $("#submit_task").attr('disabled', true);
+        $.ajax({
+            type: "POST",
+            url: "http://"+ip+"/tts_speak",
+            dataType: "json",
+            data: packTaskSettings(), 
+            success: function() {
+            $("#submit_task").attr('disabled', false);
+            },
+            error: function(xhr, status, error) {
+                console.log("ERROR " + status + " " + error + JSON.stringify(data));
+            $("#submit_task").attr('disabled', false);
+    }
+
+        });
+    });
+}
+
+function initTaskWordTimings() {
+
+    $("#get_tokens").click(function() {
+          $("#ttsState").val("");
+          $("#ttsStatePhones").val("");
+          $("#tts_tokens").val("");
+           dataStreamTokens = ""; 
+           dataStreamPhones = ""; 
+        $("#get_tokens").attr('disabled', true);
+        $.ajax({
+            type: "POST",
+            url: "http://"+ip+"/tts_token_times",
+            dataType: "json",
+            data: packTaskSettings(), 
+            success: function(res) {
+         $("#get_tokens").attr('disabled', false);
+            var response = res.responseText;
+          $("#tts_tokens").val(JSON.stringify(res));
+            },
+            error: function(xhr, status, error) {
+                console.log("ERROR " + status + " " + error + JSON.stringify(data));
+            $("#get_tokens").attr('disabled', false);
+    }
+
+        });
+    });
+}
+
+function initTaskTTSLex() {
+
+    $("#tts_lex").click(function() {
+          $("#ttsState").val("");
+          $("#ttsStatePhones").val("");
+          $("#tts_tokens").val("");
+           dataStreamTokens = ""; 
+           dataStreamPhones = ""; 
+        $("#tts_lex").attr('disabled', true);
+        $.ajax({
+            type: "POST",
+            url: "http://"+ip+"/tts_lex",
+            dataType: "json",
+            data: packTTSLexTaskSettings(), 
+            success: function(res) {
+         $("#tts_lex").attr('disabled', false);
+            var response = res.responseText;
+          $("#tts_tokens").val(JSON.stringify(res));
+            },
+            error: function(xhr, status, error) {
+                console.log("ERROR " + status + " " + error + JSON.stringify(data));
+            $("#tts_lex").attr('disabled', false);
+    }
+
+        });
+    });
+}
+  
+function initTaskPOSTags() {
+
+    $("#pos_tags").click(function() {
+          $("#ttsState").val("");
+          $("#ttsStatePhones").val("");
+          $("#tts_tokens").val("");
+           dataStreamTokens = ""; 
+           dataStreamPhones = ""; 
+        $("#pos_tags").attr('disabled', true);
+        $.ajax({
+            type: "POST",
+            url: "http://"+ip+"/tts_pos_tagging",
+            dataType: "json",
+            data: packPOSTAGTaskSettings(), 
+            success: function(res) {
+         $("#pos_tags").attr('disabled', false);
+            var response = res.responseText;
+          $("#tts_tokens").val(JSON.stringify(res));
+            },
+            error: function(xhr, status, error) {
+                console.log("ERROR " + status + " " + error + JSON.stringify(data));
+            $("#pos_tags").attr('disabled', false);
+    }
+
+        });
+    });
+}
+ 
+var data = {prompt: "Hi this is a simple TTS interface demo.", locale: "en-us", voice: "griffin", duration_stretch:parseFloat("1.0"), pitch:parseFloat("0.42"),pitchBandwidth:parseFloat("0.25"),mode:"text",outputMode:"stream"};
+
+function packTaskSettings() {
+    data.timeout = parseFloat($("#timeout").val());
+    data.duration_stretch = parseFloat($("#duration_stretch").val());
+    data.pitch = parseFloat($("#pitch").val());
+    data.pitchBandwidth = parseFloat($("#pitchBandwidth").val());
+    data.locale = $("#locale").val();
+    data.voice = $("#voice").val();
+    data.prompt = $("#prompt").val();
+    data.mode = $("#mode").val();
+    data.outputMode = $("#outputMode").val();
+    data.volume = parseFloat($("#volume").val());
+    data.whisper = $("#whisper").val();
+    data.samplerate = parseFloat($("#samplerate").val());
+    data.postfilter = parseFloat($("#postfilter").val());
+    data.framerate = parseFloat($("#framerate").val());
+    data.unvoicedvoiced = parseFloat($("#unvoicedvoiced").val());
+    data.allPass = parseFloat($("#allPass").val());
+    data.gvMCEP = parseFloat($("#gvMCEP").val());
+    data.cached = "TRUE";
+
+    return JSON.stringify(data);
+}
+  
+var data1 = {}; 
+function packTTSLexTaskSettings() {
+  //data1 = $("#prompt").val();
+  data1.text = $("#prompt").val();  
+  data1.locale = $("#locale").val();
+  data1.splitOnApostrophe = JSON.parse($("#splitOnApostrophe").val());
+  console.log(JSON.stringify(data1));
+  return JSON.stringify(data1);
+  //return(data1);
+}
+
+  var data2 = {};
+function packPOSTAGTaskSettings() {
+  //data2 = $("#prompt").val();
+  data2.tokens = JSON.parse($("#prompt").val());  
+  data2.locale = $("#locale").val();
+  data2.splitOnApostrophe = JSON.parse($("#splitOnApostrophe").val());
+        
+  console.log(JSON.stringify(data2));
+  return JSON.stringify(data2);
+  //return(data2);
+}
+
+</script>
+<title>TTS Service</title>
+</head>
+<body>
+
+<div class="section">
+
+
+<h1>Post to TTS</h1>
+
+<!--
+<label for="prompt">Text/SSML:</label> 
+<input type="text" maxlength="100" size="20" style="font-size:12pt;height:50px" id="prompt" value="Hi this is a simple TTS interface." />
+-->
+
+<textarea id="prompt" rows="10" cols="50"></textarea>
+<br>
+
+<label for="locale">Locale:</label>
+<select id="locale">
+    <option value="en-us">US-English</option>
+</select>
+<br>
+<label for="voice">Voice:</label>
+<select id="voice">
+    <option value="griffin">GRIFFIN</option>
+</select>
+<br>
+<label for="duration_stretch">duration_stretch:</label> 
+<select id="duration_stretch">
+    <option value="1.0">1.0</option>
+    <option value="2.0">2.0</option>
+    <option value="3.0">3.0</option>
+    <option value="2.95">2.95</option>
+    <option value="2.9">2.9</option>
+    <option value="2.85">2.85</option>
+    <option value="2.80">2.80</option>
+    <option value="2.75">2.75</option>
+    <option value="2.70">2.70</option>
+    <option value="2.65">2.65</option>
+    <option value="2.6">2.6</option>
+    <option value="2.55">2.55</option>
+    <option value="2.5">2.5</option>
+    <option value="2.45">2.45</option>
+    <option value="2.4">2.4</option>
+    <option value="2.35">2.35</option>
+    <option value="2.3">2.3</option>
+    <option value="2.25">2.25</option>
+    <option value="2.2">2.2</option>
+    <option value="1.95">1.95</option>
+    <option value="1.9">1.9</option>
+    <option value="1.85">1.85</option>
+    <option value="1.80">1.80</option>
+    <option value="1.75">1.75</option>
+    <option value="1.70">1.70</option>
+    <option value="1.65">1.65</option>
+    <option value="1.6">1.6</option>
+    <option value="1.55">1.55</option>
+    <option value="1.5">1.5</option>
+    <option value="1.45">1.45</option>
+    <option value="1.4">1.4</option>
+    <option value="1.35">1.35</option>
+    <option value="1.3">1.3</option>
+    <option value="1.25">1.25</option>
+    <option value="1.2">1.2</option>
+    <option value="1.15">1.15</option>
+    <option value="1.1">1.1</option>
+    <option value="1.05">1.05</option>
+    <option value="0.95">0.95</option>
+    <option value="0.9">0.9</option>
+    <option value="0.85">0.85</option>
+    <option value="0.80">0.80</option>
+    <option value="0.75">0.75</option>
+    <option value="0.70">0.70</option>
+    <option value="0.65">0.65</option>
+    <option value="0.6">0.6</option>
+    <option value="0.55">0.55</option>
+    <option value="0.5">0.5</option>
+    <option value="0.45">0.45</option>
+    <option value="0.4">0.4</option>
+    <option value="0.35">0.35</option>
+    <option value="0.3">0.3</option>
+    <option value="0.25">0.25</option>
+    <option value="0.2">0.2</option>
+  
+</select>
+<br>
+<br>
+<label for="pitch">pitch:</label> 
+<select id="pitch">
+    <option value="3">3</option>
+    <option value="1">1</option>
+    <option value="2">2</option>
+    <option value="3">3</option>
+    <option value="4">4</option>
+    <option value="5">5</option>
+    <option value="6">6</option>
+    <option value="7">7</option>
+    <option value="8">8</option>
+    <option value="9">9</option>
+    <option value="10">10</option>
+    <option value="11">11</option>
+    <option value="12">12</option>
+    <option value="13">13</option>
+    <option value="14">14</option>
+    <option value="15">15</option>
+    <option value="16">16</option>
+    <option value="17">17</option>
+    <option value="18">18</option>
+    <option value="19">19</option>
+    <option value="20">20</option>
+    <option value="0">0</option>
+    <option value="-1">-1</option>
+    <option value="-2">-2</option>
+    <option value="-3">-3</option>
+    <option value="-4">-4</option>
+    <option value="-5">-5</option>
+    <option value="-6">-6</option>
+    <option value="-7">-7</option>
+    <option value="-8">-8</option>
+    <option value="-9">-9</option>
+    <option value="-10">-10</option>
+    <option value="-11">-11</option>
+    <option value="-12">-12</option>
+    <option value="-13">-13</option>
+    <option value="-14">-14</option>
+    <option value="-15">-15</option>
+    <option value="-16">-16</option>
+    <option value="-17">-17</option>
+    <option value="-18">-18</option>
+    <option value="-19">-19</option>
+    <option value="-20">-20</option>
+
+</select>
+<br>
+
+<label for="pitchBandwidth">Pitch F0 stdev:</label> 
+<select id="pitchBandwidth">
+    <option value="0.40">0.40</option>
+    <option value="1.0">1.0</option>
+    <option value="2.0">2.0</option>
+    <option value="1.95">1.95</option>
+    <option value="1.9">1.9</option>
+    <option value="1.85">1.85</option>
+    <option value="1.80">1.80</option>
+    <option value="1.75">1.75</option>
+    <option value="1.70">1.70</option>
+    <option value="1.65">1.65</option>
+    <option value="1.6">1.6</option>
+    <option value="1.55">1.55</option>
+    <option value="1.5">1.5</option>
+    <option value="1.45">1.45</option>
+    <option value="1.35">1.35</option>
+    <option value="1.3">1.3</option>
+    <option value="1.25">1.25</option>
+    <option value="1.2">1.2</option>
+    <option value="1.15">1.15</option>
+    <option value="1.1">1.1</option>
+    <option value="1.05">1.05</option>
+    <option value="0.95">0.95</option>
+    <option value="0.9">0.9</option>
+    <option value="0.85">0.85</option>
+    <option value="0.80">0.80</option>
+    <option value="0.75">0.75</option>
+    <option value="0.70">0.70</option>
+    <option value="0.65">0.65</option>
+    <option value="0.6">0.6</option>
+    <option value="0.55">0.55</option>
+    <option value="0.5">0.5</option>
+    <option value="0.45">0.45</option>
+    <option value="0.4">0.4</option>
+    <option value="0.35">0.35</option>
+    <option value="0.3">0.3</option>
+    <option value="0.25">0.25</option>
+    <option value="0.2">0.2</option>
+    <option value="0.15">0.15</option>
+    <option value="0.1">0.1</option>
+    <option value="0.05">0.05</option>
+    <option value="0">0</option>
+</select>
+
+<br>
+<label for="mode">Mode:</label> 
+<select id="mode">
+    <option value="text">text</option>
+    <option value="ssml">ssml</option>
+    <option value="phone">phone</option>
+</select>
+<br>
+<label for="outputMode">OutputMode (optional):</label> 
+<select id="outputMode">
+    <option value="stream">stream</option>
+    <option value="file">file</option>
+</select>
+<br>
+<label for="volume">volume (optional):</label> 
+<select id="volume">
+    <option value="0">0</option>
+    <option value="1">1</option>
+    <option value="2">2</option>
+    <option value="3">3</option>
+    <option value="4">4</option>
+    <option value="5">5</option>
+    <option value="6">6</option>
+    <option value="7">7</option>
+    <option value="8">8</option>
+    <option value="9">9</option>
+    <option value="10">10</option>
+    <option value="11">11</option>
+    <option value="12">12</option>
+    <option value="13">13</option>
+    <option value="14">14</option>
+    <option value="15">15</option>
+    <option value="16">16</option>
+    <option value="17">17</option>
+    <option value="18">18</option>
+    <option value="19">19</option>
+    <option value="20">20</option>
+    <option value="0">0</option>
+    <option value="-1">-1</option>
+    <option value="-2">-2</option>
+    <option value="-3">-3</option>
+    <option value="-4">-4</option>
+    <option value="-5">-5</option>
+    <option value="-6">-6</option>
+    <option value="-7">-7</option>
+    <option value="-8">-8</option>
+    <option value="-9">-9</option>
+    <option value="-10">-10</option>
+    <option value="-11">-11</option>
+    <option value="-12">-12</option>
+    <option value="-13">-13</option>
+    <option value="-14">-14</option>
+    <option value="-15">-15</option>
+    <option value="-16">-16</option>
+    <option value="-17">-17</option>
+    <option value="-18">-18</option>
+    <option value="-19">-19</option>
+    <option value="-20">-20</option>
+</select>
+<br>
+<label for="samplerate">samplerate (optional):</label> 
+<select id="samplerate">
+    <option value="48000">48000</option>
+    <option value="22050">22050</option>
+    <option value="16000">16000</option>
+</select>
+<br>
+<label for="whisper">whisper (optional):</label> 
+<select id="whisper">
+    <option value="FALSE">FALSE</option>
+    <option value="TRUE">TRUE</option>
+</select>
+<br>
+<label for="postfilter">postfilter:</label>
+<select id="postfilter">
+    <option value="0.4">0.40</option>
+    <option value="1.0">1.0</option>
+    <option value="0.95">0.95</option>
+    <option value="0.9">0.9</option>
+    <option value="0.85">0.85</option>
+    <option value="0.80">0.80</option>
+    <option value="0.75">0.75</option>
+    <option value="0.70">0.70</option>
+    <option value="0.65">0.65</option>
+    <option value="0.6">0.6</option>
+    <option value="0.55">0.55</option>
+    <option value="0.5">0.5</option>
+    <option value="0.45">0.45</option>
+    <option value="0.4">0.4</option>
+    <option value="0.35">0.35</option>
+    <option value="0.3">0.3</option>
+    <option value="0.25">0.25</option>
+    <option value="0.15">0.15</option>
+    <option value="0.1">0.1</option>
+    <option value="0.05">0.05</option>
+    <option value="0">0</option>
+</select>
+
+<br>
+<label for="framerate">framerate:</label>
+<select id="framerate">
+    <option value="240">240</option>
+    <option value="250">250</option>
+    <option value="260">260</option>
+    <option value="270">270</option>
+    <option value="280">280</option>
+    <option value="220">220</option>
+</select>
+
+<br>
+<label for="unvoicedvoiced">unvoicedvoiced:</label>
+<select id="unvoicedvoiced">
+    <option value="0.35">0.35</option>
+    <option value="1.0">1.0</option>
+    <option value="0.95">0.95</option>
+    <option value="0.9">0.9</option>
+    <option value="0.85">0.85</option>
+    <option value="0.80">0.80</option>
+    <option value="0.75">0.75</option>
+    <option value="0.70">0.70</option>
+    <option value="0.65">0.65</option>
+    <option value="0.6">0.6</option>
+    <option value="0.55">0.55</option>
+    <option value="0.5">0.5</option>
+    <option value="0.45">0.45</option>
+    <option value="0.4">0.4</option>
+    <option value="0.35">0.35</option>
+    <option value="0.3">0.3</option>
+    <option value="0.25">0.25</option>
+    <option value="0.2">0.2</option>
+    <option value="0.15">0.15</option>
+    <option value="0.1">0.1</option>
+    <option value="0.05">0.05</option>
+    <option value="0">0</option>
+</select>
+
+<br>
+<label for="allPass">allPass:</label>
+<select id="allPass">
+    <option value="0.76">0.76</option>
+    <option value="0.761">0.761</option>
+    <option value="0.762">0.762</option>
+    <option value="0.763">0.763</option>
+    <option value="0.764">0.764</option>
+    <option value="0.765">0.765</option>
+    <option value="0.53">0.53</option>
+    <option value="0.77">0.77</option>
+    <option value="0.7675">0.7675</option>
+    <option value="0.765">0.765</option>
+    <option value="0.54">0.54</option>
+    <option value="0.53">0.53</option>
+    <option value="0.52">0.52</option>
+    <option value="0.51">0.51</option>
+    <option value="0.9">0.9</option>
+    <option value="0.85">0.85</option>
+    <option value="0.80">0.80</option>
+    <option value="0.75">0.75</option>
+    <option value="0.70">0.70</option>
+    <option value="0.65">0.65</option>
+    <option value="0.6">0.6</option>
+    <option value="0.55">0.55</option>
+    <option value="0.5">0.5</option>
+    <option value="0.45">0.45</option>
+    <option value="0.4">0.4</option>
+    <option value="0.35">0.35</option>
+    <option value="0.3">0.3</option>
+    <option value="0.25">0.25</option>
+    <option value="0.2">0.2</option>
+    <option value="0.15">0.15</option>
+    <option value="0.1">0.1</option>
+    <option value="0.05">0.05</option>
+    <option value="0">0</option>
+</select>
+
+<br>
+<label for="gvMCEP">gvMCEP:</label>
+<select id="gvMCEP">
+    <option value="0.9">0.9</option>
+    <option value="2.0">2.0</option>
+    <option value="1.95">1.95</option>
+    <option value="1.9">1.9</option>
+    <option value="1.85">1.85</option>
+    <option value="1.80">1.80</option>
+    <option value="1.75">1.75</option>
+    <option value="1.70">1.70</option>
+    <option value="1.65">1.65</option>
+    <option value="1.6">1.6</option>
+    <option value="1.55">1.55</option>
+    <option value="1.5">1.5</option>
+    <option value="1.45">1.45</option>
+    <option value="1.35">1.35</option>
+    <option value="1.3">1.3</option>
+    <option value="1.25">1.25</option>
+    <option value="1.2">1.2</option>
+    <option value="1.15">1.15</option>
+    <option value="1.1">1.1</option>
+    <option value="1.05">1.05</option>
+    <option value="0.95">0.95</option>
+    <option value="0.9">0.9</option>
+    <option value="0.85">0.85</option>
+    <option value="0.80">0.80</option>
+    <option value="0.75">0.75</option>
+    <option value="0.70">0.70</option>
+    <option value="0.65">0.65</option>
+    <option value="0.6">0.6</option>
+    <option value="0.55">0.55</option>
+    <option value="0.5">0.5</option>
+    <option value="0.45">0.45</option>
+    <option value="0.4">0.4</option>
+    <option value="0.35">0.35</option>
+    <option value="0.3">0.3</option>
+    <option value="0.25">0.25</option>
+    <option value="0.2">0.2</option>
+    <option value="0.15">0.15</option>
+    <option value="0.1">0.1</option>
+    <option value="0.05">0.05</option>
+    <option value="0">0</option>
+</select>
+<br>
+<label for="splitOnApostrophe">splitOnApostrophe:</label> 
+<select id="splitOnApostrophe">
+    <option value="false">false</option>
+    <option value="true">true</option>
+</select>
+
+
+<br><br>
+<button id="submit_task" type="button">Start Speaking</button>
+<button id="stop_task" type="button" onClick="stopSpeak()">Stop Speaking</button>
+
+<button id="get_tokens" type="button">Get Word Timings</button>
+  
+<button id="tts_lex" type="button">Get TTS Lex</button>
+  
+<button id="pos_tags" type="button">Get POS Tags</button>
+
+<h1>Socket messages from TTS_TOKENS</h1>
+<textarea id="ttsState" disabled="true" rows="4" cols="80"></textarea>
+
+<h1>HTTP Response to tts_token_times</h1>
+<textarea id="tts_tokens" disabled="true" rows="10" cols="100"></textarea>
+
+
+</div> <!-- section -->
+
+<h2>TTS XML Markup Support with examples</h2>
+
+
+<h3>&lt;speak&gt;</h3>
+The speak tag defines the begin and end of markup. All supported  tags should be inside speak tag.<br><br>
+&lt;speak&gt;
+This is a test.
+&lt;/speak&gt;
+
+<h3>&lt;break&gt;</h3>
+The break tag allows insertion of arbitrary pauses. The value is in seconds and takes a float.<br><br>
+&lt;speak&gt;
+This is a &lt;break size=&quot;1.5&quot;/&gt; test.
+&lt;/speak&gt;
+
+<h3>&lt;audio&gt;</h3>
+The audio tag provides a means to insert an external audio clip. The supported format is - RIFF (little-endian) data, WAVE audio, Microsoft PCM, 16 bit, mono 16000 Hz<br><br>
+&lt;speak&gt;
+This is a &lt;audio src=&quot;/opt/data/audio/beep.wav&quot;/&gt; test.
+&lt;/speak&gt;
+
+<h3>&lt;phoneme&gt;</h3>
+The phoneme tag allows the user to provide customized pronounciations for words.<br><br>
+&lt;speak&gt;
+This is a &lt;phoneme ph=&quot;l eh k s ih k ah n&quot;&gt; lexicon &lt;/phoneme&gt; test.
+&lt;/speak&gt;
+
+<h3>&lt;duration&gt;</h3> 
+This allows stretching and shrinking of a piece of text wrapped within duration tag. 
+<br><br>
+The duration tag as 2 types of attributes: "stretch" and "set". <br>
+
+stretch: as the name implies will stretch the speech by the set value. If the value is less than 1 it will actually shrink the speech (speak faster)<br>
+set: this will ensure the speech is bounded for a set duration period. The unit of "set" is in seconds. In the following examples the word "so" will be spoken exactly for 2.3 seconds:<br><br>
+
+&lt;speak&gt; This is &lt;duration stretch="3"&gt;so &lt;/duration&gt; good. &lt;/speak&gt;<br>
+&lt;speak&gt; This is &lt;duration set="2.3"&gt;so &lt;/duration&gt; good. &lt;/speak&gt;
+<br>
+<h3>&lt;pitch&gt;</h3>
+This enables increase/decrease in pitch. There are 2 attributes: "add" and "mult" <br><br>
+add: this attribute takes frequency in hertz as a parameter and adds it on top of the default.<br>
+mult: this value is multiplied on-top of the default predicted pitch frequency. values above 1 will increase the pitch, and values below 1 will decrease it.<br><br> 
+Examples:
+&lt;speak&gt; This is &lt;pitch mult="1.2"&gt; &lt;duration stretch="3"&gt;so &lt;/duration&gt; &lt;/pitch&gt; &lt;duration stretch="1.5"&gt;good &lt;/duration&gt;. &lt;/speak&gt;<br>
+&lt;speak&gt; This is &lt;pitch add="200"&gt; &lt;duration stretch="3"&gt;so &lt;/duration&gt; &lt;/pitch&gt; &lt;duration stretch="1.5"&gt;good &lt;/duration&gt;. &lt;/speak&gt;<br><br>
+
+Note: you can nest pitch and duration with each other, but you cannot nest two pitch or duration tags with itself.
+ <br><br>
+<h3>&lt;say-as&gt;</h3> This tag is used to override text normalization rules. It can support any number of attributes. For now we have one - "spell".<br><br>
+spell: this will force the synthesizer to spell a piece of text instead of pronouncing it.<br><br>
+&lt;speak&gt; apple is spelled &lt;say-as spell="apple"/&gt; &lt;/speak&gt;
+
+  <br><br>
+<h3>Using "Get TTS Lex"</h3> TTS Lex is an endpoint in TTSService that returns lex rules based individual words for a given text<br><br>
+enter text in the "POST to TTS" filed and it has an optional parameter bool "splitOnApostrophe", that can take on values true or false. Default to false
+  
+  <br><br>
+<h3>Using "Get TTS POS Tags"</h3> TTS POS Tags is an endpoint in TTSService that returns POS tags for the list of words entered in "POST to TTS" field<br><br>
+It has an optional parameter bool "splitOnApostrophe", that can take on values true or false. Default to false
+  Example of list of words can be ["micheal","'s","tests","is","n't","running"] or ["michael's","tests","are","isn't","running"]
+
+</body>
+</html>

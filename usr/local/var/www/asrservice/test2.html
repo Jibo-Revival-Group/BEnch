@@ -1,0 +1,94 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<script src="jquery-2.1.3.js"></script>
+<link href="asr.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript">
+$(document).ready(function() {
+
+    connectAsr();
+
+});
+ 
+var host = window.location.host;
+var socket = new WebSocket("ws://"+host+"/port");
+
+function connectAsr() {
+ 
+    socket.onopen = function() {
+        console.log("Touch state socket open!");
+    };
+    socket.onmessage = function(msg) {
+        console.log("Got message!!");
+        var data = JSON.parse(msg.data);
+        //state.appendTouchState(data);
+        console.log(data.content);
+        $("#asr").html($("<p>").text(JSON.stringify(data, null, 2)));
+    };
+    socket.onclose = function() {
+        console.log("Asr state socket close!");
+        setTimeout(function() { connectAsr(); }, 3000);
+    };
+}
+
+function sendSocketMsg() {
+    console.log("Sending socket msg");
+    socket.send('10');
+}
+
+
+window.addEventListener("load", function () {
+  function sendData() {
+    var XHR = new XMLHttpRequest();
+
+    // We bind the FormData object and the form element
+    var FD  = new FormData(form);
+
+    // We define what will happen if the data are successfully sent
+    XHR.addEventListener("load", function(event) {
+      //alert(event.target.responseText);
+    });
+
+    // We define what will happen in case of error
+    XHR.addEventListener("error", function(event) {
+      alert('Oups! Something goes wrong.');
+    });
+
+    // We setup our request
+    XHR.open("POST", "http://localhost:8080/asr_interface");
+
+    // The data sent are the one the user provide in the form
+    XHR.send(FD);
+  }
+ 
+  // We need to access the form element
+  var form = document.getElementById("task_form");
+
+  // to takeover its submit event.
+  form.addEventListener("submit", function (event) {
+    event.preventDefault();
+
+    sendData();
+  });
+});
+
+
+</script>
+<title>Asr Service</title>
+</head>
+<body>
+
+<div class="section">
+
+<h1>Asr State</h1>
+<div id="asr"></div>
+<button onclick="sendSocketMsg()">Send msg</button>
+
+<form id="task_form">
+Task: <input type="text" name="task" value="hi_hey_jibo uber_and_jot_grm"><br>
+<input type="submit" value="Submit">
+</form>
+</div> <!-- section -->
+
+</body>
+</html>

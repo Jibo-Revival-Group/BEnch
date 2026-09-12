@@ -1,0 +1,58 @@
+body {
+    background-color: #00d8ff;
+}
+
+p {
+    font-family: "Avenir Next W00", "Helvetica Neue", "Helvetica", Helvetica, Arial, sans-serif;
+    font-size: 16px;
+}
+}
+h1 {
+    font-family: "Avenir Next W00", "Helvetica Neue", "Helvetica", Helvetica, Arial, sans-serif;
+    text-align: center;
+    font-size: 30px;
+}
+
+h2 {
+    font-family: "Avenir Next W00", "Helvetica Neue", "Helvetica", Helvetica, Arial, sans-serif;
+    text-align: left;
+    font-size: 24px;
+}
+
+canvas {
+    width: 100% !important;
+    max-width: 750px;
+    height: auto !important;
+}
+
+#ProcessListTable {
+    font-family: "Trebuchet MS", Arial, Helvetica, sans-serif; 
+    border-collapse: collapse;
+    width: 90%;
+}
+
+#ProcessListTable td, #ProcessListTable th {
+    border: 1px solid #AD2B80;
+    padding: 6px;
+}
+
+#ProcessListTable tr:nth-child(even){background-color: #f2f2f2;}
+#ProcessListTable tr:nth-child(odd){background-color: #d9d9d9;}
+
+#ProcessListTable tr:hover {background-color: #fbc230;}
+
+#systemInfoTable {
+    font-family: "Trebuchet MS", Arial, Helvetica, sans-serif; 
+    border-collapse: collapse;
+    width: 90%;
+}
+
+#systemInfoTable td, #systemInfoTable th {
+    border: 1px solid #AD2B80;
+    padding: 6px;
+}
+
+#systemInfoTable tr:nth-child(even){background-color: #f2f2f2;}
+#systemInfoTable tr:nth-child(odd){background-color: #d9d9d9;}
+
+#systemInfoTable tr:hover {background-color: #fbc230;}

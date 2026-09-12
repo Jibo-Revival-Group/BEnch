@@ -1,0 +1,67 @@
+{
+  "name": "secure-transfer",
+  "contributors": [
+    "Lyle Moffitt <lyle.moffitt@jibo.com>",
+    "Steven Lu <steven.lu@jibo.com>",
+    "Alexander Rysenko <alexander.rysenko@jibo.com>"
+  ],
+  "version": "2.0.2",
+  "description": "a service running on the robot which is responsible for managing the user generated content encryption key and (eventually) provides APIs through which files and messages may be securely transferred to and from Jibo's servers",
+  "main": "index.js",
+  "dependencies": {
+    "jibo-log": "^3.6.13",
+    "jibo-service-framework": "^2.5.1",
+    "node-rsa": "^0.4.2",
+    "request": "^2.81.0",
+    "rimraf": "^2.6.1",
+    "router": "^1.1.4",
+    "typed-promisify": "^0.4.0"
+  },
+  "comment": "The JSC (and others) are devDepedencies because global node packages will be used",
+  "devDependencies": {
+    "@jibo/jibo-server-client": "^3.0.79",
+    "@types/chai": "^4.0.4",
+    "@types/mocha": "^2.2.42",
+    "@types/node": "^7.0.13",
+    "@types/sinon": "^2.3.3",
+    "assert": "^1.4.1",
+    "better-assert": "^1.0.2",
+    "chai": "^4.1.2",
+    "electron": "^1.7.6",
+    "floss": "^2.1.2",
+    "mocha": "^3.3.0",
+    "sinon": "^2.2.0",
+    "typescript": "^2.2.2"
+  },
+  "scripts": {
+    "build": "tsc -p .",
+    "start": "node .",
+    "pretest": "tsc -p test",
+    "test": "mocha",
+    "floss": "floss -d -p test/index.js",
+    "rebuild": "./rebuild-lite.sh",
+    "sync": "./sync.sh",
+    "monitor": "watch -c -n 1 ./monitor.sh",
+    "clean": "find src test -name '*.js' | xargs rm && rm *.log",
+    "package-upload:patch": "./rebuild.sh && ./package.sh patch",
+    "package-upload:minor": "./rebuild.sh && ./package.sh minor",
+    "package-upload:major": "./rebuild.sh && ./package.sh major"
+  },
+  "directories": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.jibo.com:PlatformTeam/secure-transfer-service.git"
+  },
+  "keywords": [
+    "STS",
+    "JSC",
+    "UGC"
+  ],
+  "author": {
+    "name": "Jibo Inc.",
+    "email": "info@jibo.com"
+  },
+  "license": "ISC"
+}

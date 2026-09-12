@@ -1,0 +1,4 @@
+describe('Audio Service API Tests', function() {
+   require('./as-HTTPTest');
+   require('./as-WSTest')
+});

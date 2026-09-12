@@ -1,0 +1,15 @@
+{
+  "name": "system_manager_http_test",
+  "version": "1.0.0",
+  "description": "System Manager HTTP Test",
+  "main": "sm-HTTPTest",
+  "scripts": {
+    "test": "XUNIT_FILE='/usr/local/lib/jibo-platform-test/sm-report.xml' mocha index --reporter xunit-file --timeout 10000"
+  },
+  "repository": {
+    "type": "git",
+    "url": "ssh://git@git.jibo.com:7999/plts/system-manager.git"
+  },
+  "author": "Russell Kirmayer",
+  "license": "ISC"
+}

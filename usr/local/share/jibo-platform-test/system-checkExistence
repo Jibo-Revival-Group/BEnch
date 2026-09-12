@@ -1,0 +1,100 @@
+#!/usr/bin/env node
+
+"use strict";
+var startTime = new Date().getTime();
+/**********************************************************
+*
+* Jibo Platform Test
+* Jibo, Inc. 2016
+* Author: Russell Kirmayer
+* Notes: Checks the existance of all files
+* To ensure nothing was accidentally removed from the system
+/**********************************************************/
+
+/*
+* Requirements for testing functionality
+*/
+let fs = require('fs');
+let path = require('path');
+let Common = require('./../../lib/jibo-platform-test/common');
+
+/*
+* Logging information
+*/
+this.logKey = 'checkExistence';
+this.logData = {};
+this.logData['duration'] = {'duration': undefined};
+this.logData['result'] = {"doesExist": {"pass": 0, "fail": 0}}
+/**********************************************************/
+
+let numExists = 0;
+/*****************************************************************************/
+let fileList = ['/usr/bin/aplay',
+                '/usr/bin/arecord',
+                '/usr/bin/jibo-getidentity',
+                '/usr/bin/jibo-setidentity',
+                '/usr/bin/jibo-postidentity',
+                '/usr/bin/jibo-skill-control',
+                '/usr/bin/jibo-skill-running',
+                '/usr/bin/jibo-getmode',
+                '/usr/bin/jibo-setmode',
+                '/usr/bin/jibo-apply-update',
+                '/usr/bin/jibo-download-update',
+                '/usr/bin/jibo-get-update',
+                '/usr/bin/jibo-list-updates',
+                '/usr/bin/jibo-log-client',
+                '/usr/bin/jibo-version',
+                '/usr/bin/random_logrotate',
+                '/var/log/messages',
+                '/usr/local/bin/jibo-platform-test',
+                '/usr/local/bin/jibo-service-registry',
+                '/usr/local/bin/jibo-service-monitor',
+                '/usr/local/bin/jibo-audio-service',
+                '/usr/local/bin/jibo-audio-convert',
+                '/usr/local/bin/jibo-bbutil',
+                '/usr/local/bin/jibo-body-service',
+                '/usr/local/bin/jibo-bbfw-update',
+                '/usr/local/bin/jibo-test-capture-service',
+                '/usr/local/bin/jibo-test-capture',
+                '/usr/local/bin/jibo-camera-calibrator',
+                '/usr/local/bin/jibo-asr-service',
+                '/usr/local/bin/jibo-media-service',
+                '/usr/local/bin/jibo-lps-service',
+                '/usr/local/bin/jibo-nlu-service',
+                '/usr/local/bin/jibo-index-body',
+                '/usr/local/bin/jibo-system-manager',
+                '/usr/local/bin/jibo-system-monitoring-service',
+                '/usr/local/bin/jibo-tts-service',
+                '/usr/local/etc/jibo-asr-service.json',
+                '/usr/local/etc/jibo-audio-service.json',
+                '/usr/local/etc/jibo-body-service.json',
+                '/usr/local/etc/jibo-camera-calibrator.json',
+                '/usr/local/etc/jibo-dev-shell.json',
+                '/usr/local/etc/jibo-lps-service.json',
+                '/usr/local/etc/jibo-media-service.json',
+                '/usr/local/etc/jibo-nlu-service.json',
+                '/usr/local/etc/jibo-service-registry.json',
+                '/usr/local/etc/jibo-system-manager.json',
+                '/usr/local/etc/jibo-system-monitoring-service.json',
+                '/usr/local/etc/jibo-test-capture-service.json',
+                '/usr/local/etc/jibo-test-capture.json',
+                '/usr/local/etc/jibo-tts-service.json'
+                ];
+
+console.log('Checking that the following files exist...');
+for(let i = 0; i < fileList.length; i++){
+    let filePath = fileList[i]
+    let file = filePath.split('/');
+    if(Common._fileExist(filePath)){
+        numExists++;
+        this.logData['result'].doesExist.pass++;
+        console.log('file: ' + file[file.length - 1] + ' exists');
+    }else{
+        console.log('\t file: ' + file[file.length - 1] + ' *DOES NOT* exist');
+        this.logData['result'].doesExist.fail++;
+    }
+}
+console.log('\n'+this.logData['result'].doesExist.pass +'/'+ fileList.length +
+    " files exist");
+/*****************************************************************************/
+var endTime = new Date().getTime();

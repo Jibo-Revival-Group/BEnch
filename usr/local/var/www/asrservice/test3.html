@@ -1,0 +1,112 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<script src="jquery-2.1.3.js"></script>
+<link href="asr.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript">
+$(document).ready(function() {
+
+    connectAsr();
+
+    initTaskSettings();
+});
+ 
+var host = window.location.host;
+var socket = new WebSocket("ws://"+host+"/port");
+
+function connectAsr() {
+ 
+    socket.onopen = function() {
+        console.log("Touch state socket open!");
+    };
+    socket.onmessage = function(msg) {
+        console.log("Got message!!");
+        var data = JSON.parse(msg.data);
+        //state.appendTouchState(data);
+        console.log(data.content);
+        //$("#asr").html($("<p>").text(JSON.stringify(data, null, 2)));
+        $("#asrState").val(JSON.stringify(data, null, 4));
+    };
+    socket.onclose = function() {
+        console.log("Asr state socket close!");
+        setTimeout(function() { connectAsr(); }, 3000);
+    };
+}
+
+function sendSocketMsg() {
+    console.log("Sending socket msg");
+    socket.send('10');
+}
+
+
+function initTaskSettings() {
+
+    $("#submit_task").click(function() {
+        $.ajax({
+            type: "POST",
+            url: "/asr_interface",
+            dataType: "json",
+            data: packTaskSettings(), 
+            success: function() {
+            },
+            error: function(xhr, status, error) {
+                console.log("ERROR " + status + " " + error + JSON.stringify(data));
+            }
+        });
+    });
+}
+ 
+var data = {task: "default", incremental: "true", timeout: parseFloat("0.0")};
+
+function packTaskSettings() {
+    data.timeout = parseFloat($("#timeout").val());
+    data.incremental = $("#incremental").val();
+    data.task = $("#task_spec").val();
+    data.task_id = $("#task_id").val();
+    data.audio_source = $("#audio_source").val();
+    data.resource_root_path = $("#resource_root_path").val();
+    return JSON.stringify(data);
+}
+
+
+</script>
+<title>Asr Service</title>
+</head>
+<body>
+
+<div class="section">
+
+<h1>Socket messages from ASR</h1>
+<textarea id="asrState" disabled="true" rows="10" cols="80"></textarea>
+
+<h1>Post to ASR</h1>
+<label for="task_spec">Task:</label> 
+<input type="text" id="task_spec" size ="80" value="{&quot;name&quot;:&quot;hey_hi_jibo&quot;,&quot;timeout&quot;:12} {&quot;name&quot;:&quot;uber_and_jot_grm&quot;,&quot;timeout&quot;:12}" /><br>
+<label for="task_id">Task id:</label> 
+<input type="text" id="task_id" value="unique id" /><br>
+<label for="audio_source">Audio source:</label>
+<select id="audio_source">
+    <option value="alsa">alsa</option>
+</select>
+<br>
+<label for="resource_root_path">Resource root path:</label> 
+<input type="text" id="resource_root_path" value="/home/maxim/j/resourceseardrum/" /><br>
+<label for="incremental">Incremental:</label>
+<select id="incremental">
+    <option value="true">true</option>
+    <option value="false">false</option>
+</select>
+<br>
+<label for="timeout">Timeout:</label> 
+<select id="timeout">
+    <option value="0">0</option>
+    <option value="5">5</option>
+    <option value="10">10</option>
+    <option value="20">20</option>
+</select> seconds.
+<br>
+<button id="submit_task">Submit this listening task</button>
+</div> <!-- section -->
+
+</body>
+</html>

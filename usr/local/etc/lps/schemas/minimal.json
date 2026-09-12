@@ -1,0 +1,212 @@
+{
+    "schemas" :[
+        {
+            "name" : "EntityDetailSchema",
+            "type" : "image_update_schema",
+            "enable" : true,
+            "actions" :[
+                {
+                    "name" : "EntityDetailAction",
+                    "type" : "entity_detail_action",
+                    "enable" : true,
+                    "detector" : {
+                        "criteria" : {
+                            "dimensions" : [{ "width" : 640, "height" : 360 }],
+                            "formats" : [3],
+                            "outputTypes" : [0]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name" : "VisualAwarenessSchema",
+            "type" : "image_update_schema",
+            "enable" : true,
+            "actions" : [
+                {
+                    "name" : "VisualAwarenessUpdateAction",
+                    "type" : "visual_awareness_update_action",
+                    "enable" : true
+                }
+            ]
+        },
+        {
+            "name" : "BarcodeSchema",
+            "type" : "image_update_schema",
+            "enable" : true,
+            "actions" :[
+                {
+                    "name" : "BarcodeRequestAction",
+                    "type" : "barcode_request_action",
+                    "enable" : true,
+                    "reader":{
+                        "types": {
+                            "EAN8" : false,
+                            "UPCE" : false,
+                            "ISBN10" : false,
+                            "UPCA" : false,
+                            "EAN13" : false,
+                            "ISBN13" : false,
+                            "I25" : false,
+                            "CODE39" : false,
+                            "PDF417" : false,
+                            "QRCODE" : true,
+                            "CODE128" : false
+                        }
+                    },
+                    "criteria" : {
+                        "cameraIds" : [0],
+                        "dimensions" : [{ "width" : 1280, "height" : 720 }],
+                        "outputTypes" : [0]
+                    }
+                }
+            ]
+        },
+        {
+            "name" : "ControlChangeSchema",
+            "type" : "image_update_schema",
+            "enable": true,
+            "actions": [
+                {
+                    "name" : "ControlChangeRequestAction",
+                    "type" : "control_change_request_action",
+                    "enable" : true,
+                    "defaultResetTimeout": 7000
+                }
+            ]
+        },
+        {
+            "name" : "FaceTimeSchema",
+            "type" : "time_update_schema",
+            "enable" : true,
+            "actions" :[
+                {
+                    "name" : "FaceTimeAction",
+                    "type" : "face_time_action",
+                    "enable" : true,
+                    "drop_radius" : 0.3,
+                    "fence_radius" : 4.0,
+                    "ceiling_height": 2.0,
+                    "floor_height": -2.0
+                }
+            ]
+        },
+        {
+            "name" : "AwarenessTimeSchema",
+            "type" : "time_update_schema",
+            "enable" : true,
+            "actions" :[
+                {
+                    "name" : "AwarenessTimeAction",
+                    "type" : "awareness_time_action",
+                    "enable" : true
+                }
+            ]
+        },
+        {
+            "name" : "MotionTimeSchema",
+            "type" : "time_update_schema",
+            "enable" : true,
+            "actions" :[
+                {
+                    "name" : "MotionTimeAction",
+                    "type" : "motion_time_action",
+                    "enable" : true,
+                    "drop_radius" : 0.3,
+                    "fence_radius" : 4.0
+                }
+            ]
+        },
+        {
+            "name" : "AudioTimeSchema",
+            "type" : "time_update_schema",
+            "enable" : true,
+            "actions" :[
+                {
+                    "name" : "AudioTimeAction",
+                    "type" : "audio_time_action",
+                    "enable" : true,
+                    "event_timeout" : 5.0
+                }
+            ]
+        },
+        {
+            "name" : "PresenceTimeSchema",
+            "type" : "time_update_schema",
+            "enable" : true,
+            "actions" :[
+                {
+                    "name" : "PresenceTimeAction",
+                    "type" : "presence_time_action",
+                    "enable" : true
+                }
+            ]
+        },
+        {
+            "name" : "AudioDetectSchema",
+            "type" : "audio_update_schema",
+            "enable" : true,
+            "actions" :[
+                {
+                    "name" : "AudioDetectionAction",
+                    "type" : "audio_detection_action",
+                    "enable" : true
+                },
+                {
+                    "name" : "AudioMeasurementAction",
+                    "type" : "audio_measurement_action",
+                    "enable" : true,
+                    "audio_angle_tolerance" : 0.5,
+                    "audio_time_tolerance" : 0.35,
+                    "in_fov_margin" : 0.1
+                }
+            ]
+        },
+        {
+            "name" : "AudioPresenceSchema",
+            "type" : "audio_update_schema",
+            "enable" : true,
+            "actions" :[
+                {
+                    "name" : "SpeakerPresenceAudioAction",
+                    "type" : "speaker_presence_audio_action",
+                    "enable" : true,
+                    "audio_angle_tolerance" : 0.5,
+                    "audio_time_tolerance" : 0.35,
+                    "in_fov_margin" : 0.1,
+                    "presence_timeout" : 10.0
+                }
+            ]
+        },
+        {
+            "name" : "AudioAwarenessSchema",
+            "type" : "audio_update_schema",
+            "enable" : true,
+            "actions" :[
+                {
+                    "name" : "AudioAwarenessAction",
+                    "type" : "audio_awareness_action",
+                    "enable" : true
+                }
+            ]
+        },
+        {
+            "name" : "AxisUpdateSchema",
+            "type" : "axis_update_schema",
+            "enable" : true,
+            "actions" :[
+                {
+                    "name" : "GeometryUpdateAction",
+                    "type" : "geometry_update_action",
+                    "enable" : true
+                },
+                {
+                    "name" : "MotionTrackerAxisUpdateAction",
+                    "type" : "motion_tracker_axis_update_action",
+                    "enable" : true
+                }
+            ]
+        }
+    ]
+}

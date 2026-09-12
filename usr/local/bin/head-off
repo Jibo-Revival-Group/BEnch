@@ -1,0 +1,4 @@
+echo head-off
+echo 0 >  /sys/class/gpio/gpio140/value
+sleep 0.2 
+cat /sys/class/gpio/gpio140/value

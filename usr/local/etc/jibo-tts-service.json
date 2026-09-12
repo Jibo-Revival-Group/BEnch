@@ -1,0 +1,110 @@
+{
+    "webCore" : {
+        "serverPort": 8089,
+        "fileRoot": "/usr/local/var/www/ttsservice",
+        "requestLogging": false
+    },
+    "TTSService" : {
+        "alsaPlaybackDevice" : "TTSOut",
+	"audioDriver" : "alsa",
+        "effectsDir" : "/usr/local/share/ttsservice/effects",
+        "enableFadeOut" : "FALSE",
+        "enableJiboDefaultSwitch" : "FALSE",
+        "enablePD" : "FALSE",
+        "postToPerformanceService" : "TRUE",
+        "enableTextNorm" : "TRUE",
+        "maxRSSMemory" : 250000,
+        "frontEnd" : "JIBO",
+        "resourcePath" : "/usr/local/share/ttsservice/voices/en_us_world/"
+    },
+    "voiceParams" : {
+        "postFilter_b" : "0.40",
+        "samplerate_s" : "48000",
+	"framerate_p" : "240",
+	"pitchbw_jf" : "0.40",
+	"halftone_fm" : "3",
+	"unvoicedvoice_u" : "0.15",
+	"allPass_a" : "0.76",
+	"gvMCEP_jm" : "0.9",
+	"speed_r" : "1",
+        "mode" : "text",
+        "outmode" : "stream",
+        "mgc_order" : "60",      
+        "frontendResource" : "/usr/local/share/ttsservice/voices/en_us/griffin/fsts/",
+        "buffer_size" : "1024",
+	"fft_size" : "1024",
+	"volume_linear" : "0.65",
+	"maxChars" : "1000"
+    },
+    "PostFilterMap" : {
+        "pitchshiftSwitch" : "pitchStrength",
+        "freqshiftSwitch" : "freqshiftAmount",
+        "autotuneSwitch" : "autotunePitch",
+        "vocoderSwitch" : "vocoderChord",
+        "phaserSwitch" : "phaserAmount",
+        "resonatorSwitch" : "resonatorPitch",
+        "ringmodSwitch" : "ringmodFreq",
+        "aliasSwitch" : "aliasAmount",
+        "flangerSwitch" : "flangerAmount",
+        "chorusSwitch" : "chorusAmount",
+        "masteringSwitch" : "masteringAmount",
+        "excitedSwitch" : "excitedAmount",
+        "worriedSwitch" : "worriedAmount",
+        "disapproveSwitch" : "disapproveAmount",
+        "neutralSwitch" : "neutralAmount",
+        "affectionateSwitch" : "affectionateAmount",
+        "sorrowSwitch" : "sorrowAmount",
+        "laughterSwitch" : "laughterAmount",
+        "listSwitch" : "listAmount",
+        "emphasisSwitch" : "emphasisAmount",
+        "fadeSwitch" : "fadeAmount",
+        "makeSimilar" : "makeSimilar",
+        "analysisSwitch" : "analysisSwitch",
+        "oo" : "1",
+        "wow" : "2",
+        "perfect" : "3",
+        "ok" : "4",
+        "ooo" : "5",
+        "ah" : "6",
+        "oh" : "7",
+        "your_welcome" : "8",
+        "cool" : "9",
+        "woo_hoo_hoo" : "10",
+        "laugh" : "11",
+        "laugh2" : "12",
+        "sweet" : "13",
+        "done" : "14",
+        "what" : "15",
+        "aw" : "16",
+        "my_bad" : "17",
+        "oops" : "18",
+        "um" : "19",
+        "huh" : "20",
+        "whoa" : "21",
+        "argh" : "22",
+        "nm_um" : "23",
+        "i_love_to_1" : "24",
+        "i_love_to_2" : "25",
+        "i_love_to_3" : "26",
+        "i_love_to_4" : "27",
+        "i_love_to_5" : "28",
+        "i_love_to_6" : "29",
+	"triggerJibonics" : "bang"
+    },
+    "logging" : {
+       "jibo_message_prefix": "C",
+       "loggers" : {
+            "root": {
+                "level": "warning"
+            },
+            "l1" : {
+                "name" : "TTSService",
+                "level" : "information"
+            },
+            "l2" : {
+                "name" : "Application",
+                "level" : "information"
+            }
+        }
+    }
+}

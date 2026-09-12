@@ -1,0 +1,67 @@
+#!/usr/bin/env node
+
+"use strict";
+var startTime = new Date().getTime();
+/**********************************************************
+*
+* Jibo Platform Test
+* Jibo, Inc. 2016
+* Author: Ana Medina Ayala, Russell Kirmayer
+* Notes: Gstreamer test
+/**********************************************************/
+
+/*
+* Requirements for testing functionality
+*/
+let fs = require('fs');
+let path = require('path');
+let Common = require('./../../lib/jibo-platform-test/common');
+let childProcess = require('child_process');
+
+// /*
+// * Logging information
+// */
+// this.logKey = 'gstreamerTest';
+// this.logPath = pathToLog;
+// this.logData = {};
+// this.logData['duration'] = {'duration': undefined};
+// this.logData['result'] = {"connects": {"pass": 0, "fail": 0}}
+
+/*****************************************************************************/
+
+console.log("Gstreamer test");
+
+// call gstreamer NUM_TESTS times and check for errors
+var NUM_TESTS = 10;
+var NUM_BUFFERS = 30;
+for(var i = 0; i < NUM_TESTS; i++){
+    try{
+        childProcess.execSync('gst-launch-1.0 videotestsrc num-buffers='+
+            NUM_BUFFERS+' ! video/x-raw,width=1280,height=720 ! videoconvert ! xvimagesink');
+
+        // this.logData['result'].connects.pass++;
+    } catch(error){
+        console.log("Error calling gstreamer pipeline: " + error);
+        // this.logData['result'].connects.fail++;
+    }
+}
+
+// call gstreamer NUM_TESTS times and check for errors
+var NUM_TESTS = 2;
+var NUM_BUFFERS = 300;
+for(var i = 0; i < NUM_TESTS; i++){
+    try{
+        childProcess.execSync('gst-launch-1.0 videotestsrc num-buffers='+
+            NUM_BUFFERS+' ! video/x-raw,width=1280,height=720 ! videoconvert ! xvimagesink');
+
+        // this.logData['result'].connects.pass++;
+    } catch(error){
+        console.log("Error calling gstreamer pipeline: " + error);
+        // this.logData['result'].connects.fail++;
+    }
+}
+/*****************************************************************************/
+
+var endTime = new Date().getTime();
+// this.logData['duration'] = String((Math.abs(startTime - endTime)/1000.0)) + " seconds";
+// Common._writeToLogFile(this.logKey, this.logPath, this.logData);

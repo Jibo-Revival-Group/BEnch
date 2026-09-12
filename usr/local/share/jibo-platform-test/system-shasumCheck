@@ -1,0 +1,82 @@
+#!/usr/bin/env node
+
+"use strict";
+var startTime = new Date().getTime();
+/**********************************************************
+*
+* Jibo Platform Test
+* Jibo, Inc. 2016
+* Author: Russell Kirmayer
+* Notes:
+* Test to check the correct permissions on all the
+* startup scripts in /etc/init.d
+/**********************************************************/
+
+/*
+* Requirements for testing functionality
+*/
+let fs = require('fs');
+let path = require('path');
+let Common = require('./../../lib/jibo-platform-test/common');
+let childProcess = require('child_process');
+
+/*****************************************************************************/
+
+//create and open output file to write shasums
+var jiboShasumFile = fs.createWriteStream('/tmp/jiboShasumFileHost.txt');
+
+let shasumList = ['/usr/local/bin/jibo-asr-service',
+                '/usr/local/bin/jibo-audio-convert',
+                '/usr/local/bin/jibo-audio-convertall',
+                '/usr/local/bin/jibo-audio-ping-test',
+                '/usr/local/bin/jibo-audio-pong-test',
+                '/usr/local/bin/jibo-audio-service',
+                '/usr/local/bin/jibo-bbfw-update',
+                '/usr/local/bin/jibo-bbutil',
+                '/usr/local/bin/jibo-body-service',
+                '/usr/local/bin/jibo-camera-calibrator',
+                '/usr/local/bin/jibo-index-body',
+                '/usr/local/bin/jibo-lps-service',
+                '/usr/local/bin/jibo-media-service',
+                '/usr/local/bin/jibo-nlu-service',
+                '/usr/local/bin/jibo-platform-test',
+                '/usr/local/bin/jibo-service-monitor',
+                '/usr/local/bin/jibo-service-registry',
+                '/usr/local/bin/jibo-service-version',
+                '/usr/local/bin/jibo-system-manager',
+                '/usr/local/bin/jibo-system-monitoring-service',
+                '/usr/local/bin/jibo-test-capture',
+                '/usr/local/bin/jibo-test-capture-service',
+                '/usr/local/bin/jibo-tts-service',
+                '/usr/local/etc/jibo-asr-service.json',
+                '/usr/local/etc/jibo-audio-service.json',
+                '/usr/local/etc/jibo-body-service.json',
+                '/usr/local/etc/jibo-camera-calibrator.json',
+                '/usr/local/etc/jibo-kinematic-model.json',
+                '/usr/local/etc/jibo-lps-service.json',
+                '/usr/local/etc/jibo-media-service.json',
+                '/usr/local/etc/jibo-nlu-service.json',
+                '/usr/local/etc/jibo-service-registry.json',
+                '/usr/local/etc/jibo-system-manager.json',
+                '/usr/local/etc/jibo-system-monitoring-service.json',
+                '/usr/local/etc/jibo-test-capture.json',
+                '/usr/local/etc/jibo-test-capture-service.json',
+                '/usr/local/etc/jibo-tts-service.json'
+                    ]
+
+// iterate over list of files and compute shasum
+jiboShasumFile.write("Shasums created with sha256sum -t <file>\n");
+
+console.log("Shasum values for Jibo programs and config files");
+for(var i = 0; i < shasumList.length; i++){
+    try{
+        let cur_shasum = String(childProcess.execSync('sha256sum -t '+ shasumList[i]));
+        jiboShasumFile.write(cur_shasum);
+    } catch(e){
+        console.log("Error getting shasum for: " + shasumList[i] + "\n");
+    }
+}
+console.log("Shasum file generated in \/tmp\/jiboShasumFileHost.txt");
+
+//close file
+jiboShasumFile.end();

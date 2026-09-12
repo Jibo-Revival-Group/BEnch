@@ -1,0 +1,29 @@
+"use strict"
+console.log("platform fs test");
+/**********************************************************
+* Jibo Platform Test
+* Jibo, Inc. 2017
+* Author: Ben Pasculano
+* Notes: platform-fs-test
+/**********************************************************/
+let fs = require('fs');
+let childProcess = require('child_process');
+let fileSystemWarningThreshold = 90;
+
+let fileSystem = childProcess.execSync('df -h');
+fileSystem = String(fileSystem).split('\n');
+
+let passing = true;
+for(let i = 1; i < fileSystem.length-1; i++){
+    //finds the % usage of the current directory
+    let number = parseInt(fileSystem[i].substring(50,55));
+    //check if any directory is above 90% capacity
+    if (number >= fileSystemWarningThreshold){
+        console.log("!!!Warning the filesystem " + fileSystem[i].substring(0,fileSystem[i].search(" ")) + " is " + number +"% full!!!");
+        passing = false;
+    }
+}
+if (passing){
+    console.log("All filesystems are under " + fileSystemWarningThreshold + "% full");
+}
+console.log("fs test is done");

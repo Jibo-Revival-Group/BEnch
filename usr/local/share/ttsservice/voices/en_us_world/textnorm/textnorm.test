@@ -1,0 +1,310 @@
+# The test file for en_us text normalisation
+# The format of a test is:
+# NAME ||| TESTSENT ||| CORRECTSENT ||| SHOULDFAIL
+# NAME = The name of the test. E.g. digit1. Does not have to be unique but it helps for debugging.
+# TESTSENT = The sentence containing the test case.
+# CORRECTSENT = The sentence which should be output by the normaliser.
+# SHOULDFAIL = If 0 we expect this test to be succesfull. If 1 we expect it not to be and that's ok.
+digits1 ||| 1 2 3 15 23 59 67 87 ||| one two three fifteen twenty three fifty nine sixty seven eighty seven [lpau] ||| 0
+digits2 ||| 123 ||| one hundred twenty three [lpau] ||| 0
+digits2.2 ||| 50 ||| fifty [lpau] ||| 0
+digits2.1 ||| 103 ||| one hundred three [lpau] ||| 0
+digits3 ||| 1234 ||| one thousand two hundred thirty four [lpau] ||| 1
+digits3.1 ||| 1234th ||| one thousand two hundred thirty fourth [lpau] ||| 0
+digits3.2 ||| 123rd ||| one hundred twenty third [lpau] ||| 0
+digits3.3 ||| 12th ||| twelvth [lpau] ||| 0
+digits3.3 ||| 65th ||| sixty fifth [lpau] ||| 0
+digits3.4 ||| 1st ||| first [lpau] ||| 0
+digits3.5 ||| 1,234 ||| one thousand two hundred thirty four [lpau] ||| 0
+digits3.5 ||| 1,234th ||| one thousand two hundred thirty fourth [lpau] ||| 0
+digits3.6 ||| 1,000 ||| one thousand [lpau] ||| 0
+digits4 ||| 12345 ||| twelve thousand three hundred forty five [lpau] ||| 0
+digits4.1 ||| 12,345 ||| twelve thousand three hundred forty five [lpau] ||| 0
+digits5 ||| 123456 ||| one hundred twenty three thousand four hundred fifty six [lpau] ||| 0
+digits5.1 ||| 123,456 ||| one hundred twenty three thousand four hundred fifty six [lpau] ||| 0
+digits6 ||| 1234567 ||| one million two hundred thirty four thousand five hundred sixty seven [lpau] ||| 0
+digits6.1 ||| 1,234,567 ||| one million two hundred thirty four thousand five hundred sixty seven [lpau] ||| 0
+digits6.2 ||| 1,234,567 ||| one million two hundred thirty four thousand five hundred sixty seven [lpau] ||| 0
+digits6.3 ||| 23,000,000 ||| twenty three million [lpau] ||| 0
+digits6.4 ||| 23,000,065 ||| twenty three million sixty five [lpau] ||| 0
+digits6.5 ||| 23,006,065 ||| twenty three million six thousand sixty five [lpau] ||| 0
+digits7 ||| 1234567000 ||| one billion two hundred thirty four million five hundred sixty seven thousand [lpau] ||| 0
+digits7.1 ||| 701000567000 ||| seven hundred one billion five hundred sixty seven thousand [lpau] ||| 0
+digits7.2 ||| 7234000567 ||| seven billion two hundred thirty four million five hundred sixty seven [lpau] ||| 0
+digits7.3 ||| 1234567000 ||| one billion two hundred thirty four million five hundred sixty seven thousand [lpau] ||| 0
+digits7.4 ||| 1,234,567,000 ||| one billion two hundred thirty four million five hundred sixty seven thousand [lpau] ||| 0
+digits8 ||| 1.1 ||| one point one [lpau] ||| 0
+digits9 ||| 1.10 ||| one point ten [lpau] ||| 0
+digits9.1 ||| 1.53 ||| one point fifty three [lpau] ||| 0
+digits10 ||| 1234.01 ||| one thousand two hundred thirty four point oletter one [lpau] ||| 0
+digits11 ||| 50,678,000.0005483762 ||| fifty million six hundred seventy eight thousand point oletter oletter oletter five four eight three seven six two [lpau] ||| 0
+digits12 ||| 50,678,000.00054 ||| fifty million six hundred seventy eight thousand point oletter oletter oletter fifty four [lpau] ||| 0
+digits13 ||| 1.15 ||| one point fifteen [lpau] ||| 0
+digits14 ||| 1.157 ||| one point one five seven [lpau] ||| 0
+digits15 ||| 0191 ||| zero one nine one [lpau] ||| 0
+digits16 ||| The answer is 1000000000000||| the answer is one trillion [lpau] ||| 1
+digits17 ||| The answer is 1,000,000,000,000 ||| the answer is one trillion [lpau] ||| 1
+digits18 ||| The answer is 1,001,000,000,000 ||| the answer is one trillion one billion [lpau] ||| 1
+digits19 ||| The answer is the 1,000,000,000,000th ||| the answer is the one trillionth [lpau] ||| 1
+digits20 ||| The 124th is today. ||| the one hundred twenty fourth is today [lpau] ||| 0
+digits21 ||| Rocky I, Rocky II, Rocky III ||| rocky one [spau] rocky two [spau] rocky three [lpau] ||| 0
+digits22 ||| Adam you're about 2,876,764,233 seconds old. ||| adam you're about two billion eight hundred seventy six million seven hundred sixty four thousand two hundred thirty three seconds old [lpau] ||| 0
+currency1 ||| $1 ||| one dollar [lpau] ||| 0
+currency2 ||| $1000 ||| one thousand dollars [lpau] ||| 0
+currency2.1 ||| $1000.50 ||| one thousand dollars fifty cents [lpau] ||| 0
+currency2.2 ||| $1000.01 ||| one thousand dollars one cent [lpau] ||| 0
+currency2.3 ||| $1.50 ||| one dollar fifty cents [lpau] ||| 0
+currency2.4 ||| $1.01 ||| one dollar one cent [lpau] ||| 0
+currency3 ||| GBP1000 ||| one thousand british pounds [lpau] ||| 0
+currency4 ||| DKK1 ||| one danish krone [lpau] ||| 0
+currency5 ||| kr1 ||| one krone [lpau] ||| 0
+currency6 ||| kr.1 ||| one krone [lpau] ||| 0
+currency5 ||| 1kr ||| one krone [lpau] ||| 0
+currency6 ||| 3kr. ||| three kroner [lpau] ||| 0
+currency7 ||| 1000mxn ||| one thousand mexican pesos [lpau] ||| 0
+currency8 ||| 1000₹ ||| one thousand rupees [lpau] ||| 0
+currency9 ||| 1000 mxn ||| one thousand mexican pesos [lpau] ||| 0
+currency9 ||| 23,478,564 isk ||| twenty three million four hundred seventy eight thousand five hundred sixty four icelandic kronur [lpau] ||| 0
+currency10 ||| 1 $ ||| one dollar [lpau] ||| 0
+currency11 ||| 1.01$ ||| one dollar one cent [lpau] ||| 0
+currency12 ||| 1.01 $ ||| one dollar one cent [lpau] ||| 0
+currency13 ||| 2.01 ₺ ||| two liras one kurus [lpau] ||| 0
+currency14 ||| 2.01₺ ||| two liras one kurus [lpau] ||| 0
+currency15 ||| 50.02kč ||| fifty korunas two halerus [lpau] ||| 0
+currency16 ||| 1.52 dkk ||| one danish krone fifty two oerer [lpau] ||| 0
+currency17 ||| 43.76 irr ||| forty three iranian rials seventy six dinars [lpau] ||| 0
+currency18 ||| $1.8 billion || one point eight billion dollars [lpau] ||| 0
+currency19 ||| The gross domestic product of Liechtenstein is about $5.49 billion per year ||| the gross domestic product of liechtenstein is about five point forty nine billion dollars per year [lpau] ||| 0
+dates1 ||| 03/21/1987 ||| march twenty first nineteen eighty seven [lpau] ||| 0
+dates2 ||| 03/21-1987 ||| march twenty first nineteen eighty seven [lpau] ||| 0
+dates3 ||| 03/21/2014 ||| march twenty first twenty fourteen [lpau] ||| 0
+dates4 ||| 07/19-1987 ||| july nineteenth nineteen eighty seven [lpau] ||| 0
+dates5 ||| 03/21/1287 ||| march twenty first twelve eighty seven [lpau] ||| 0
+dates4 ||| 05/31 1486 ||| may thirty first fourteen eighty six [lpau] ||| 0
+dates5 ||| 12/16 1734 ||| december sixteenth seventeen thirty four [lpau] ||| 0
+dates6 ||| 03/22/2000 ||| march twenty second two thousand [lpau] ||| 0
+dates7 ||| 03/23/1056 ||| march twenty third ten fifty six [lpau] ||| 0
+dates8 ||| 03/23/1000 ||| march twenty third one thousand [lpau] ||| 0
+dates9 ||| Okay, I got something. World War II, also known as the Second World War, was a global war that lasted from 1939 to 1945, although related conflicts began earlier. Good to know. ||| okay [spau] i got something [lpau] world war two [spau] also known as the second world war [spau] was a global war that lasted from nineteen thirty nine to nineteen forty five [spau] although related conflicts began earlier [lpau] good to know [lpau] ||| 0
+dates10 ||| World War II ||| world war two [lpau] ||| 0
+dates11 ||| a global war that lasted from 1939 to 1945 ||| a global war that lasted from nineteen thirty nine to nineteen forty five [lpau] ||| 0
+dates12 ||| Sept. 24, 2017. ||| september twenty fourth twenty seventeen [lpau] ||| 0
+dates13 ||| aug. 15 1539. ||| august fifteenth fifteen thirty nine [lpau] ||| 0
+dates14 ||| august 15, 1539. ||| august fifteenth fifteen thirty nine [lpau] ||| 0
+dates15 ||| dec. ||| december [lpau] ||| 0
+dates16 ||| Peter was born in 1732 ||| peter was born in seventeen thirty two [lpau] ||| 0
+dates17 ||| It happened after 1543 ||| it happened after fifteen forty three [lpau] ||| 0
+dates18 ||| This was before 1845 ||| this was before eighteen forty five [lpau] ||| 0
+dates19 ||| The events of 1563 had a huge impact on decisions in 1600 ||| the events of fifteen sixty three had a huge impact on decisions in sixteen hundred [lpau] ||| 0
+dates20 ||| It happened between 1734 and 1945 ||| it happened between seventeen thirty four and nineteen forty five [lpau] ||| 0
+dates21 ||| The war was in the years 1939-1945 ||| the war was in the years nineteen thirty nine to nineteen forty five [lpau] ||| 0
+dates22 ||| Abraham Lincoln was born on February 12th 1809 ||| abraham lincoln was born on february twelvth eighteen oletter nine [lpau] ||| 0
+dates23 ||| 9th October 1940 ||| ninth october nineteen forty [lpau] ||| 0
+dates24 ||| It wasn't until the 1990's that we started understanding it. ||| it wasn't until the nineteen nineties that we started understanding it [lpau] ||| 0
+dates25 ||| Since 1995, Mario has been voiced by Charles Martinet. ||| since nineteen ninety five [spau] mario has been voiced by charles martinet [lpau] ||| 0
+dates26 ||| 2000's ||| two thousands [lpau] ||| 0
+dates27 ||| 1900's ||| nineteen hundreds [lpau] ||| 0
+dates28 ||| 1999's ||| nineteen ninety nines [lpau] ||| 0
+dates29 ||| 1999s ||| nineteen ninety nines [lpau] ||| 0
+dates30 ||| Abraham Lincoln was an American politician and lawyer who served as the 16th President of the United States from March 1861 until his assassination in April 1865. ||| abraham lincoln was an american politician and lawyer who served as the sixteenth president of the united states from march eighteen sixty one until his assassination in april eighteen sixty five [lpau] ||| 0
+dates31 ||| The Last Temptation of Christ is a 1988 Martin Scorsese film. ||| the last temptation of christ is a nineteen eighty eight martin scorsese film [lpau] ||| 0
+dates32 ||| Maleficent is the main antagonist of Walt Disney's 1959 film Sleeping Beauty. ||| maleficent is the main antagonist of walt disney's nineteen fifty nine film sleeping beauty [lpau] ||| 0
+dates33 ||| The answer is Monday, September 9, 1850. ||| the answer is monday [spau] september ninth eighteen fifty [lpau] ||| 0
+dates34 ||| The Jurassic is a geologic period and system that extends from 201.3 Mya to 145.5 Mya, an interval of 55.8 million years. ||| the jurassic is a geologic period and system that extends from two hundred one point three million years ago to one hundred forty five point five million years ago [spau] an interval of fifty five point eight million years [lpau] ||| 0
+dates35 ||| The answer is Wednesday, April 17, 1946 ||| the answer is wednesday [spau] april seventeenth nineteen forty six [lpau] ||| 0
+dates36 ||| The Catcher in the Rye is a 1951 novel by J. D. Salinger. ||| the catcher in the rye is a nineteen fifty one novel by jletter dletter salinger [lpau] ||| 0
+dates37 ||| Nineteen Eighty-Four, often published as 1984, is a dystopian novel by English author George Orwell published in 1949. ||| nineteen eighty four [spau] often published as nineteen eighty four [spau] is a dystopian novel by english author george orwell published in nineteen forty nine [lpau] ||| 0
+dates38 ||| RMS Titanic was a British passenger liner that sank in the North Atlantic Ocean in the early morning of 15 April 1912 ||| rletter mletter sletter titanic was a british passenger liner that sank in the north atlantic ocean in the early morning of fifteenth april nineteen twelve [lpau] ||| 0
+dates39 ||| The Cat in the Hat is a children's book written and illustrated by Theodor Geisel under the pen name Dr. Seuss and first published in 1957 ||| the cat in the hat is a children's book written and illustrated by theodor geisel under the pen name doctor seuss and first published in nineteen fifty seven [lpau] ||| 0
+dates40 ||| Dracula is an 1897 Gothic horror novel ||| dracula is an eighteen ninety seven gothic horror novel [lpau] ||| 0
+dates41 ||| comes from a 1920 play in ||| comes from a nineteen twenty play in [lpau] ||| 0
+dates42 ||| Abraham Lincoln passed away on 4/15/1865 ||| abraham lincoln passed away on april fifteenth eighteen sixty five [lpau] ||| 0
+dates43 ||| Keanu Reeves was born on 9-2, 1964 ||| keanu reeves was born on september second nineteen sixty four [lpau] ||| 0
+dates47 ||| It is the year 2009. ||| it is the year two thousand nine [lpau] ||| 0
+dates47 ||| It is in the 2009's that I was born. ||| it is in the two thousand nines that i was born [lpau] ||| 0
+dates48 ||| L.V. Beethoven was born on 1770 ||| lletter vletter beethoven was born on seventeen seventy [lpau] ||| 0
+dates49 ||| May-14 ||| may fourteenth [lpau] ||| 0
+dates50 ||| John Lennon was born on 10 9, 1940. ||| john lennon was born on october ninth nineteen forty [lpau] ||| 0
+dates51 ||| "Forrest Gump" opened on this date in 1994. Run Forrest. Run. ||| forrest gump opened on this date in nineteen ninety four [lpau] run forrest [lpau] run [lpau] ||| 0
+measures1 ||| 30" ||| thirty inches [lpau] ||| 0
+measures2 ||| 21ft ||| twenty one feet [lpau] ||| 0
+measures3 ||| 40ms ||| forty milliseconds [lpau] ||| 0
+measures4 ||| 5ft6" ||| five feet six inches [lpau] ||| 0
+measures4 ||| 5 6" ||| five feet six inches [lpau] ||| 0
+measures4 ||| 1 6" ||| one foot six inches [lpau] ||| 0
+measures4 ||| 5 1" ||| five feet one inch [lpau] ||| 0
+measures5 ||| 8.9k ||| eight point nine k [lpau] ||| 0
+measures6 ||| 1m ||| one meter [lpau] ||| 0
+measures7 ||| 1kg ||| one kilo [lpau] ||| 0
+measures8 ||| 1.1m ||| one point one meters [lpau] ||| 0
+measures9 ||| 1.5oz ||| one point five ounces [lpau] ||| 0
+measures10 ||| we're going 5mph ||| we're going five miles per hour [lpau] ||| 0
+measures11 ||| The speed limit is 80km/h ||| the speed limit is eighty kilometers per hour [lpau] ||| 0
+measures12 ||| Could you get 1l milk? ||| could you get one liter milk [qpau] ||| 0
+measures13 ||| Please add 18ml of spirit ||| please add eighteen milliliters of spirit [lpau] ||| 0
+measures14 ||| The can contains 33cl of beer ||| the can contains thirty three centiliters of beer [lpau] ||| 0
+measures15 ||| It's a 12oz container ||| it's a twelve ounce container [lpau] ||| 1
+measures15 ||| It's a 12fl oz container ||| it's a twelve fluid ounce container [lpau] ||| 1
+measures15 ||| It contains 12fl oz ||| it contains twelve fluid ounces [lpau] ||| 0
+measures16 ||| Could you get 1l milk? ||| could you get one liter milk [qpau] ||| 0
+measures17 ||| Could you get 1l milk? ||| could you get one liter milk [qpau] ||| 0
+measures18 ||| 1 US quart is 4 US cups. ||| one uletter sletter quart is four uletter sletter cups [lpau] ||| 0
+measures19 ||| The answer is about 2703 miles or 3705 miles. ||| the answer is about two thousand seven hundred three miles or three thousand seven hundred five miles [lpau] ||| 0
+measures20 ||| 0 degree fahrenheit is approximately -17.78 degree celsius. ||| zero degree fahrenheit is approximately minus seventeen point seventy eight degree celsius [lpau] ||| 0
+measures21 ||| One U.S. cup is 8 us ounces. ||| one uletter sletter cup is eight uletter sletter ounces [lpau] ||| 0
+measures22 ||| How much is 1935l in tonnes? ||| how much is one thousand nine hundred thirty five liters in tonnes [qpau] ||| 0
+measures23 ||| How much is 1935 ounces in tonnes? ||| how much is one thousand nine hundred thirty five ounces in tonnes [qpau] ||| 0
+measures24 ||| 1 US tablespoons equal 3 US teaspoons. ||| one uletter sletter tablespoons equal three uletter sletter teaspoons [lpau] ||| 0
+measures25 ||| 1 US gallon is 128 US fluid ounces . ||| one uletter sletter gallon is one hundred twenty eight uletter sletter fluid ounces [lpau] ||| 0
+measures26 ||| It'll take 10 min. Or maybe 1 mins. Or 1 min. Or 12 min. ||| it'll take ten minutes [lpau] or maybe one minute [lpau] or one minute [lpau] or twelve minutes [lpau] ||| 0
+measures27 ||| it'll take 3 hrs 45 mins to make . ||| it'll take three hours forty five minutes to make [lpau] ||| 0
+address1 ||| Mulholland Dr. ||| mulholland drive [lpau] ||| 1
+measures28 ||| In 1 cup of peaches stewed. ||| in one cup of peaches stewed [lpau] ||| 0
+measures29 ||| 54°40′N ||| fifty four degrees forty minutes north [lpau] ||| 0
+measures30 ||| 1°2′3″ ||| one degrees two minutes three seconds [lpau] ||| 0
+measures31 ||| It's going to be light snow (1–2 in.) until evening. ||| it's going to be light snow [spau] one to two inches [spau] until evening [lpau] ||| 0
+phone1 ||| (310) 555-1212 ||| three one zero five five five one two one two [lpau] ||| 0
+phone2 ||| 310 555-1212 ||| three one zero five five five one two one two [lpau] ||| 0
+phone3 ||| (310) 555 1212 ||| three one zero five five five one two one two [lpau] ||| 0
+phone4 ||| +1 (310) 555-1212 ||| plus one three one zero five five five one two one two [lpau] ||| 0
+phone5 ||| +44 (310) 555 1212 ||| plus forty four three one zero five five five one two one two [lpau] ||| 0
+phone6 ||| 310 555 1212 ||| three one zero five five five one two one two [lpau] ||| 0
+phone6 ||| 662-312-1363 ||| six six two three one two one three six three [lpau] ||| 0
+phone7 ||| 001 310 555 1212 ||| zero zero one three one zero five five five one two one two [lpau] ||| 0
+phone8 ||| 1-800-I Fly SWA ||| one eight hundred i fly swa [lpau] ||| 1
+time1 ||| It's 5pm ||| it's five pletter mletter [lpau] ||| 0
+time2 ||| It's 5p.m. ||| it's five pletter mletter [lpau] ||| 0
+time3 ||| It's 10 pm ||| it's ten pletter mletter [lpau] ||| 0
+time4 ||| It's 10 a.m. ||| it's ten aletter mletter [lpau] ||| 0
+time5 ||| It's 12 a.m. ||| it's midnight [lpau] ||| 0
+time6 ||| It's 12 p.m. ||| it's noon [lpau] ||| 0
+time7 ||| It's 00 a.m. ||| it's midnight [lpau] ||| 0
+time8 ||| It's 00 p.m. ||| it's noon [lpau] ||| 0
+time9 ||| It's 12:00 p.m. ||| it's noon [lpau] ||| 0
+time10 ||| It's 00:00 a.m. ||| it's midnight [lpau] ||| 0
+time10.1 ||| It's 7:00 a.m. ||| it's seven aletter mletter [lpau] ||| 0
+time10.2 ||| It's 7:05 a.m. ||| it's seven oletter five aletter mletter [lpau] ||| 0
+time11 ||| It's 00:00 p.m. ||| it's noon [lpau] ||| 0
+time12 ||| It's 10:30 pm ||| it's ten thirty pletter mletter [lpau] ||| 0
+time13 ||| It's 10:39 a.m. ||| it's ten thirty nine aletter mletter [lpau] ||| 0
+time14 ||| It's 12:21 pm ||| it's twelve twenty one pletter mletter [lpau] ||| 0
+time14.1 ||| It's 12:21 am ||| it's twelve twenty one aletter mletter [lpau] ||| 0
+time15 ||| It's 4:59 a.m. ||| it's four fifty nine aletter mletter [lpau] ||| 0
+time12.1 ||| It's 10.30pm ||| it's ten thirty pletter mletter [lpau] ||| 0
+time13.1 ||| It's 10.39a.m. ||| it's ten thirty nine aletter mletter [lpau] ||| 0
+time14.2 ||| It's 12.21 pm ||| it's twelve twenty one pletter mletter [lpau] ||| 0
+time14.3 ||| It's 12.21 am ||| it's twelve twenty one aletter mletter [lpau] ||| 0
+time15.1 ||| It's 4.59 a.m. ||| it's four fifty nine aletter mletter [lpau] ||| 0
+time16 ||| It's 4.59 o'clock ||| it's four fifty nine o'clock [lpau] ||| 0
+time17 ||| The answer is 12:00 am EDT; Sunday, September 18, 2016 ||| the answer is midnight eletter dletter tletter [lpau] sunday [spau] september eighteenth twenty sixteen [lpau] ||| 0
+time18 ||| You've already got an alarm set for 10:15 AM. Should I delete that one? ||| you've already got an alarm set for ten fifteen aletter mletter [lpau] should i delete that one [qpau] ||| 0
+time19 ||| Right now , it's partly sunny and 79 , and today's forecast shows partly sunny skies with a high of 81 and a low of 67 . Also , there's a severe thunderstorm watch in effect until 9 : 00 : 00PM today . ||| right now [spau] it's partly sunny and seventy nine [spau] and today's forecast shows partly sunny skies with a high of eighty one and a low of sixty seven [lpau] also [spau] there's a severe thunderstorm watch in effect until nine pletter mletter today [lpau] ||| 0
+abbrev1 ||| Mr. and Mrs. Martins ||| mister and misses martins [lpau] ||| 0
+abbrev1.1 ||| No. I'm Jibo. ||| no [lpau] i'm jibo [lpau] ||| 0
+abbrev2 ||| it's in dec. ||| it's in december [lpau] ||| 0
+abbrev3 ||| 35th ave. ||| thirty fifth avenue [lpau] ||| 0
+abbrev4 ||| 42nd ave ||| forty second avenue [lpau] ||| 0
+abbrev5 ||| Mary J. Blige ||| mary jletter blige [lpau] ||| 0
+abbrev5 ||| John F. Kennedy ||| john fletter kennedy [lpau] ||| 0
+abbrev5.1 ||| Ms. Mary Blige ||| miss mary blige [lpau] ||| 0
+abbrev6 ||| In CA ||| in california [lpau] ||| 0
+abbrev7 ||| In ca. ||| in california [lpau] ||| 0
+abbrev8 ||| no. 501 ||| number five hundred one [lpau] ||| 0
+abbrev9 ||| km || kilometers [lpau] ||| 0
+abbrev10 ||| kind've ||| kind've [lpau] ||| 0
+abbrev11 ||| it's ||| it's [lpau] ||| 0
+abbrev12 ||| it’s ||| it's [lpau] ||| 0
+abbrev12 ||| it’ve ||| it've [lpau] ||| 0
+abbrev12 ||| it’ve it’s ||| it've it's [lpau] ||| 0
+abbrev13 ||| the Wizard of Oz ||| the wizard of oz [lpau] ||| 0
+abbrev14 ||| t o m a t o ||| t o m a t o [lpau] ||| 0
+# x and v expands due to simple roman numeral stuff which is intended
+abbrev14.1 ||| a b c d e f g h i j k l m n o p q r s t u v w x y z ||| a b c d e f g h i j k l m n o p q r s t u v w x y z [lpau] ||| 0
+abbrev15 ||| The gross domestic product of the United States is about 18.2 trillion US dollars per year. ||| the gross domestic product of the united states is about eighteen point two trillion uletter sletter dollars per year [lpau] ||| 0
+abbrev16 ||| In the US it is normal to drink. ||| in the uletter sletter it is normal to drink [lpau] ||| 0
+abbrev17 ||| R2D2 and C3PO ||| rletter two dletter two and cletter three pletter oletter [lpau] ||| 0
+abbrev17.1 ||| R2-D2 and C-3PO ||| rletter two dletter two and cletter three pletter oletter [lpau] ||| 0
+abbrev18 ||| It will be planned with version 2 in mind. ||| it will be planned with version two in mind [lpau] ||| 0
+abbrev19 ||| Washington D.C. ||| washington dletter cletter [lpau] ||| 0
+abbrev20 ||| Washington, D.C. ||| washington dletter cletter [lpau] ||| 0
+abbrev21 ||| Arthur Steven "Artie" Lange, Jr. ||| arthur steven artie lange [spau] junior [lpau] ||| 0
+abbrev22 ||| The full name of Barack Obama is Barack Hussein Obama II ||| the full name of barack obama is barack hussein obama the second [lpau] ||| 1
+abbrev23 ||| It's St. Patrick's Day today. ||| it's saint patrick's day today [lpau] ||| 0
+abbrev24 ||| Please take a look at BBC right now. ||| please take a look at bletter bletter cletter right now [lpau] ||| 0
+abbrev25 ||| The GDP of Thailand is 1000 USD ||| the gletter dletter pletter of thailand is one thousand uletter sletter dollars [lpau] ||| 0
+abbrev26 ||| LTS BLT OBT NOT BT MK MKTT ||| lletter tletter sletter bletter lletter tletter obt not bletter tletter mletter kletter mletter kletter tletter tletter [lpau] ||| 0
+abbrev27 ||| A.T.M. bla P.T. bla L.S.M. bla U.U.U.U.U. ||| aletter tletter mletter bla pletter tletter bla lletter sletter mletter bla uletter uletter uletter uletter uletter [lpau] ||| 0
+abbrev28 ||| ITM bla PT bla LSM bla UUUUU ||| itm bla pletter tletter bla lletter sletter mletter bla uletter uletter uletter uletter uletter [lpau] ||| 0
+abbrev29 ||| Hi. ||| hi [lpau] ||| 0
+abbrev30 ||| I have a steady flow of electricity, strong Wi-Fi signal, stimulating conversations like this one. ||| i have a steady flow of electricity [spau] strong wifi signal [spau] stimulating conversations like this one [lpau] ||| 0
+abbrev31 ||| Abraham Lincoln was born in Hodgenville, KY. ||| abraham lincoln was born in hodgenville kentucky [lpau] ||| 0
+abbrev32 ||| There is no difference between Ken and Ken . ||| there is no difference between ken and ken [lpau] ||| 0
+abbrev32 ||| St. Patricks day ||| saint patricks day [lpau] ||| 0
+abbrev33 ||| CIA and FBI are abbreviations. ||| cletter iletter aletter and fletter bletter iletter are abbreviations [lpau] ||| 0
+abbrev34 ||| sci-fi techies ||| scifi techies [lpau] ||| 0
+abbrev35 ||| Post Office S. Q. ||| post office square [lpau] ||| 0
+abbrev36 ||| UN security council ||| uletter nletter security council [lpau] ||| 0
+abbrev37 ||| ESPN debuted ||| eletter sletter pletter nletter debuted [lpau] ||| 0
+abbrev38 ||| LTS's B.L.T.'s N.O.T.'s BT's MKTT's ||| lletter tletter sletter 's bletter lletter tletter 's nletter oletter tletter 's bletter tletter 's mletter kletter tletter tletter 's [lpau] ||| 1
+abbrev39 ||| DNA's ||| dletter nletter aletter 's [lpau] ||| 0
+abbrev40 ||| CES ||| cletter eletter sletter [lpau] ||| 0
+exceptions1 ||| Miss World 1994 pageant. ||| miss world nineteen ninety four pageant [lpau] ||| 0
+exceptions2 ||| Apple is spelled a p p l e ||| apple is spelled [spau] aletter [spau] pletter [spau] pletter [spau] lletter [spau] eletter [lpau] ||| 0
+exceptions3 ||| Banana is spelled b a n a n a , I believe. ||| banana is spelled [spau] bletter [spau] aletter [spau] nletter [spau] aletter [spau] nletter [spau] aletter [spau] i believe [lpau] ||| 0
+exceptions4 ||| The answer is -5 ||| the answer is minus five [lpau] ||| 0
+exceptions5 ||| 9-1-1 ||| nine one one [lpau] ||| 0
+exceptions6 ||| Hi, I'm ken. ||| hi [spau] i'm ken [lpau] ||| 0
+exceptions7 ||| Ready in 3, 2, 1. ||| ready in three [spau] two [spau] one [lpau] ||| 0
+exceptions8 ||| Ready in 3. 2. 1. ||| ready in three [spau] two [spau] one [lpau] ||| 0
+exceptions9 ||| roche broes ||| roche brothers [lpau] ||| 0
+exceptions10 ||| from 1997 to present . ||| from nineteen ninety seven to present2 [lpau] ||| 0
+exceptions11 ||| Barack Hussein Obama II is an American politician. ||| barack hussein obama the second is an american politician [lpau] ||| 0
+exceptions12 ||| xi jinping . ||| shii jinping [lpau] ||| 0
+exceptions13 ||| The House Un-American Activities Committee ||| the house unamerican activities committee [lpau] ||| 0
+exceptions14 ||| super bowl li . ||| super bowl fifty one [lpau] ||| 0
+exceptions15 ||| super bowl lii . ||| super bowl fifty two [lpau] ||| 0
+exceptions16 ||| 2000–2004 ||| two thousand to two thousand four [lpau] ||| 0
+www1 ||| broadway.com ||| broadway dot com [lpau] ||| 0
+www2 ||| www.virgin.co.uk ||| wletter wletter wletter dot virgin dot kletter oletter dot uletter kletter [lpau] ||| 0
+www3 ||| According to wikipedia.org, Barack Obama is an American politician who served as the 44th President of the United States from 2009 to 2017. ||| according to wikipedia dot org [spau] barack obama is an american politician who served as the forty fourth president of the united states from two thousand nine to twenty seventeen [lpau] ||| 0
+specchar1 ||| me & you ||| me and you [lpau] ||| 0
+specchar2 ||| I heard these words, but don't understand their meaning together... Because I'm a robot. ||| i heard these words [spau] but don't understand their meaning together [lpau] because i'm a robot [lpau] ||| 0
+specchar3 ||| ,.; ||| [spau] [lpau] ||| 0
+specchar4 ||| ?? ||| [qpau] ||| 0
+specchar5 ||| ` ||| [lpau] ||| 0
+specchar6 ||| I have 7%. ||| i have seven percent [lpau] ||| 0
+# There is currently a bug in NLU which causes memory issues with just "/ \" as input
+specchar7 ||| / bla \ ||| bla [lpau] ||| 0
+specchar8 ||| μ Φ ||| μ Φ [lpau] ||| 0
+# Currently we split on | and do not have a tokenizer that can split on ||| which is annoying
+#specchar9 ||| cocoa | coffee | cotton | phosphates. ||| cocoa coffee cotton phosphates [lpau] ||| 0
+specchar10 ||| @midnight @realDonaldTrump ||| at midnight at realdonaldtrump [lpau] ||| 0
+specchar11 ||| #MeToo ||| hashtag metoo [lpau] ||| 0
+address1 ||| Rasmus Dall, 234, 24th W Avenue, Boston, CA 23456. ||| rasmus dall [spau] two three four [spau] twenty fourth west avenue [spau] boston [spau] california two three four five six [lpau] ||| 0
+address2 ||| 2345, Apt. #7, 24th SE Dakota Blvd. ||| two three four five [spau] apartment seven [spau] twenty fourth south east dakota boulevard [lpau] ||| 0
+address3 ||| 2345, Ste. no. 7, Dakota St NW ||| two three four five [spau] suite seven [spau] dakota street north west [lpau] ||| 0
+address4 ||| 39514 wainwright comm, fremont, ca. ||| three nine five one four [spau] wainwright common [spau] fremont california [lpau] ||| 0
+address5 ||| Dr. Mandela Dr. ||| doctor mandela drive [lpau] ||| 0
+address6 ||| consulate general of japan in NY, 299 park ave. 18th FL, new york, ny 10171 ||| consulate general of japan in new york [spau] two nine nine [spau] park avenue eighteenth floor [spau] new york [spau] new york one zero one seven one [lpau] ||| 0
+address7 ||| 201 Harrison st., Apt #412 san francisco, ca 94105 ||| two zero one [spau] harrison street [spau] apartment four one two [spau] san francisco [spau] california nine four one zero five [lpau] ||| 0
+address8 ||| 3256 MLK Blvd, san jose, ca-94539 ||| three two five six [spau] mletter lletter kletter boulevard [spau] san jose [spau] california nine four five three nine [lpau] ||| 0
+address9 ||| I think your name is Ken. Is that right? ||| i think your name is ken [lpau] is that right [qpau] ||| 0
+maths1 ||| 1 + 1 ||| one plus one [lpau] ||| 0
+maths2 ||| 3+67=70 ||| three plus sixty seven equals seventy [lpau] ||| 0
+maths4 ||| 5*6-6=24 ||| five times six minus six equals twenty four [lpau] ||| 0
+maths5 ||| 2^5 / 7 * 45 ||| two to the power of five divided by seven times forty five [lpau] ||| 0
+maths6 ||| The answer is about 3×10^23 ||| the answer is about three times ten to the power of twenty three [lpau] ||| 0
+maths7 ||| Approximately 5.88×10^12 miles. ||| approximately five point eighty eight times ten to the power of twelve miles [lpau] ||| 0
+maths8 ||| 3 x 6 is 18 ||| three times six is eighteen [lpau] ||| 0
+maths9 ||| 10 / 5 is 2 . ||| ten divided by five is two [lpau] ||| 0
+maths10 ||| 10 / -5 is 2 . ||| ten divided by minus five is two [lpau] ||| 0
+maths11 ||| -5 . ||| minus five [lpau] ||| 0
+maths12 ||| i.e. Φ = B ⋅ S. ||| iletter eletter Φ equals b times sletter [lpau] ||| 0
+maths13 ||| thirty two + 48 is 80 . ||| thirty two plus forty eight is eighty [lpau] ||| 0
+maths14 ||| if x > y then z || if x greater than y then z [lpau] ||| 0
+maths15 ||| if a < b then c || if a less than b then c [lpau] ||| 0
+maths16 ||| infinity ^ ~ ||| complex infinity [lpau] ||| 0
+ambiguous1 ||| The answer is 1931. ||| the answer is nineteen thirty one [lpau] ||| 0
+ambiguous2 ||| The answer is 3931. ||| the answer is three thousand nine hundred thirty one [lpau] ||| 0
+ambiguous3 ||| 3/20 is March Twentieth. But 3/40 is three divided by forty. ||| march twentieth is march twentieth [lpau] but three divided by forty is three divided by forty [lpau] ||| 0
+ambiguous4 ||| 4/2 ||| april second [lpau] ||| 0

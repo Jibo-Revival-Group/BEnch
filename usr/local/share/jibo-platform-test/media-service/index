@@ -1,0 +1,4 @@
+describe('Media Service API Tests', function() {
+   require('./ms-HTTPTest');
+   require('./ms-WSTest')
+});

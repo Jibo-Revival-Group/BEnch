@@ -1,0 +1,35 @@
+{"list" : 
+    [
+        {"type": "POST", "url": "/asr_interface", "args":
+            {
+                "action": "init",
+                "task": "",
+                "task_id": "",
+                "audio_source_id": "",
+                "request_id": ""
+            }
+        },
+		{"type": "POST", "url": "/audio_source", "args":
+            {
+                "action": "start",
+                "audio_source_id": "alsa1",
+                "audio_source": "alsa",
+                "wav_files": []
+            }
+        },
+        {"type": "POST", "url": "/asr_simple_interface", "args":{"":""}},
+        {"type": "POST", "url": "/asr_control", "args":{"":""},
+            "statusExpect": 400
+        },
+        {"type": "POST", "url": "/status", "args":{"":""}},
+        {"type": "POST", "url": "/spkr_id_interface", "args":{"":""},
+            "statusExpect": 400
+        },
+        {"type": "POST", "url": "/pronun_interface", "args":{"":""},
+            "statusExpect": 400
+        },
+        {"type": "POST", "url": "/upload_interface","args":{"":""},
+            "statusExpect": 400
+        }
+    ]
+}

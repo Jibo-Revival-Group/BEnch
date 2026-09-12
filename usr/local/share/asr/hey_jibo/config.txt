@@ -1,0 +1,55 @@
+::Name
+Trigger: en_US heyjibo
+
+::Vocabulary
+hey jibo
+
+::Sensitivity
+Sensitivity: 1
+Sensitivity: 2
+Sensitivity: 3
+Sensitivity: 4
+Sensitivity: 5
+Sensitivity: 6
+Sensitivity: 7
+Sensitivity: 8
+Sensitivity: 9
+Sensitivity: 10
+Sensitivity: 11
+Sensitivity: 12
+Sensitivity: 13
+Sensitivity: 14
+Sensitivity: 15
+Sensitivity: 16
+Sensitivity: 17
+Sensitivity: 18
+Sensitivity: 19
+Sensitivity: 20
+Sensitivity: 21
+
+::Search
+jibo_jibo_heyjibo_en_US_sfs14_b1e3cbba_delivery04_search_1.raw
+jibo_jibo_heyjibo_en_US_sfs14_b1e3cbba_delivery04_search_2.raw
+jibo_jibo_heyjibo_en_US_sfs14_b1e3cbba_delivery04_search_3.raw
+jibo_jibo_heyjibo_en_US_sfs14_b1e3cbba_delivery04_search_4.raw
+jibo_jibo_heyjibo_en_US_sfs14_b1e3cbba_delivery04_search_5.raw
+jibo_jibo_heyjibo_en_US_sfs14_b1e3cbba_delivery04_search_6.raw
+jibo_jibo_heyjibo_en_US_sfs14_b1e3cbba_delivery04_search_7.raw
+jibo_jibo_heyjibo_en_US_sfs14_b1e3cbba_delivery04_search_8.raw
+jibo_jibo_heyjibo_en_US_sfs14_b1e3cbba_delivery04_search_9.raw
+jibo_jibo_heyjibo_en_US_sfs14_b1e3cbba_delivery04_search_10.raw
+jibo_jibo_heyjibo_en_US_sfs14_b1e3cbba_delivery04_search_11.raw
+jibo_jibo_heyjibo_en_US_sfs14_b1e3cbba_delivery04_search_12.raw
+jibo_jibo_heyjibo_en_US_sfs14_b1e3cbba_delivery04_search_13.raw
+jibo_jibo_heyjibo_en_US_sfs14_b1e3cbba_delivery04_search_14.raw
+jibo_jibo_heyjibo_en_US_sfs14_b1e3cbba_delivery04_search_15.raw
+jibo_jibo_heyjibo_en_US_sfs14_b1e3cbba_delivery04_search_16.raw
+jibo_jibo_heyjibo_en_US_sfs14_b1e3cbba_delivery04_search_17.raw
+jibo_jibo_heyjibo_en_US_sfs14_b1e3cbba_delivery04_search_18.raw
+jibo_jibo_heyjibo_en_US_sfs14_b1e3cbba_delivery04_search_19.raw
+jibo_jibo_heyjibo_en_US_sfs14_b1e3cbba_delivery04_search_20.raw
+jibo_jibo_heyjibo_en_US_sfs14_b1e3cbba_delivery04_search_21.raw
+
+::Net
+jibo_jibo_heyjibo_en_US_sfs14_b1e3cbba_delivery04_am.raw
+

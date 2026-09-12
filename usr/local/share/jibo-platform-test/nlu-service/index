@@ -1,0 +1,4 @@
+describe('NLU Service API Tests', function() {
+   require('./nlu-HTTPTest');
+   require('./nlu-WSTest')
+});

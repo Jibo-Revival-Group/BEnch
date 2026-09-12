@@ -1,0 +1,19 @@
+::Name
+Trigger: en_us pause_continue_01
+
+::Vocabulary
+( (go ahead)  (say more)  (continue)  (keep going)  (go on)  (move along) )
+( (hang on)  (wait a sec) (pause)  (hold on))
+(  )
+
+::Sensitivity
+Sensitivity: 5
+Sensitivity: 10
+
+::Search
+jibo_pause_continue_02_pause_continue_01_en_us_sfs_delivery02_search_5.raw
+jibo_pause_continue_02_pause_continue_01_en_us_sfs_delivery02_search_10.raw
+
+::Net
+jibo_pause_continue_02_pause_continue_01_en_us_sfs_delivery02_am.raw
+

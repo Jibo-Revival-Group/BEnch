@@ -1,0 +1,32 @@
+"use strict";
+
+const assert = require('assert');
+const Common = require('./../../../lib/jibo-platform-test/common');
+
+const JSONlist = require("./sr-HTTPTest.json");
+const testList = JSONlist.list;
+
+describe('Service Registry HTTP Tests', function() {
+
+    before(function() {
+        this.request = {
+            'POST': Common._post,
+            'GET': Common._get
+        };
+    });
+
+    for(let i = 0; i < testList.length; i++) {
+        const test = testList[i];
+        it('Testing the ' + test.url.substring(1) + ' API', function(done) {
+            this.request[test.type]("localhost", test.url, 8181, test.args, function(error, response, body) {
+                assert(!error, 'Error ' + error);
+                assert(body, 'Response body is undefined');
+                assert(response.statusCode < 300, 'Bad status code ' + response.statusCode);
+                done();
+            });
+        });
+    }
+    after(function() {
+        console.log("- Finished testing the service registry HTTP APIs");
+    });
+});

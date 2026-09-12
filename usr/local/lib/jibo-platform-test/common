@@ -1,0 +1,162 @@
+"use strict";
+
+let fs = require('fs');
+var http = require('http');
+var WebSocket = require('ws');
+
+module.exports = {
+    _testF() {
+        console.log('COMMON TEST');
+    },
+
+    _writeToLogFile(logKey, logPath, logData) {
+        if (!logKey) {
+            return; // nothing flagged to write anything
+        }
+
+        var data = {};
+        if (fs.existsSync(logPath)) {
+            // read in old one first
+            data = JSON.parse(fs.readFileSync(logPath, 'utf8'));
+        }
+        data[logKey] = ((logData !== undefined) ? logData : {});
+
+
+        try{
+            fs.writeFileSync(logPath, JSON.stringify(data, null, '    '), 'utf8');
+        } catch(error) {
+            console.log("\nError writing \"" + logPath + "\". " + error + "\n");
+        }
+    },
+
+    _testJSON(ip, port, path, cb){
+        var self = this;
+        //establish web socket
+        var host = ip + port;
+        var socket = new WebSocket('ws://' + host + path);
+
+        socket.onerror = function() {
+            console.log("Error connecting to " + path);
+            cb(new Error('Socket Error'));
+        }
+
+        //listen for a message from the ws
+        socket.on('message', function(message) {
+            socket.close();
+            try{
+            var data = JSON.parse(message);
+            cb();
+            }
+            //bad JSON data
+            catch(err){
+            cb(err);
+            }
+        });
+    },
+
+    //get all the files from a given directory
+     _getFiles(dir) {
+
+        var filesystem = require("fs");
+        var fileResults = [];
+        var dirResults = [];
+        var results = [];
+
+
+        filesystem.readdirSync(dir).forEach(function(file) {
+
+            file = dir+'/'+file;
+            var stat = filesystem.statSync(file);
+            if (stat && stat.isDirectory()) {
+                // console.log('file in here: ' +file);
+
+                dirResults.push(file);
+                fileResults = fileResults.concat(module.exports._getFiles(file))
+            } else {
+                // console.log('file in else: ' + file);
+                fileResults.push(file);
+            }
+        });
+        results = [fileResults, dirResults];
+        return results;
+    },
+
+    //determine if skill is 'installed' onto robot
+    _fileExist(identity_file){
+        let onRobot = undefined;
+        if(fs.existsSync(identity_file)) {
+            onRobot = true;
+        } else {
+            onRobot = false;
+        }
+        return onRobot;
+    },
+
+    ///// GET FUNCTION /////
+    _get(host, path, port, args, cb){
+        //Build up options for get request
+        var options = {
+            host: host,
+            port: port,
+            path: path,
+            body: args
+        };
+
+        //build up body to return
+        var msg = "";
+        http.get(options, function(resp){
+            resp.on('data', function(chunk){
+                //build up return body
+                msg += chunk.toString();
+            });
+            resp.on('end', function(chunk){
+                cb(null, resp, msg);
+            });
+        }).on('error', function(e){
+            cb(e);
+        });
+    },
+
+    ///// POST FUNCTION /////
+    _post(host, path, port, args, cb){
+        //Build up options for get request
+        var options = {
+            host: host,
+            port: port,
+            method: "POST",
+            path: path,
+            headers: {
+                'Content-Type': 'application/json',
+                'Content-Length': Buffer.byteLength(JSON.stringify(args))
+            }
+        };
+
+        //build up body to return
+        var msg = "";
+        var post_req = http.request(options, function(resp){
+            resp.on('data', function(chunk){
+                msg += chunk.toString();
+            });
+            resp.on('end', function(chunk){
+                cb(null, resp, msg);
+            });
+        }).on('error', function(e){
+            cb(e);
+        }); 
+        post_req.write(JSON.stringify(args));
+        post_req.end();
+    },
+    ///// RANDOM NUMBER GENERATOR IN RANGE /////
+    _getRInt(min, max){
+        return parseInt(Math.floor(Math.random() * (max - min + 1)) + min);
+    },
+
+    _getRFloat(min, max){
+        return parseFloat((Math.random() * (max - min) + min).toFixed(1)); 
+    },
+
+    _getRBool(){
+        var float = Math.random();
+        return float >= 0.5 ? true : false;
+    }
+}

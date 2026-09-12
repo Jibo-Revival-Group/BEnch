@@ -1,0 +1,229 @@
+{"list" : 
+    [
+        {"type": "POST", "url": "/beam", "args":
+            {
+                "manual_override": false,
+                "selection": 0 
+            }
+        },
+        {"type": "POST", "url": "/beam", "args":
+            {
+                "manual_override": true,
+                "selection": 1
+            }
+        },
+        {"type": "POST", "url": "/beam", "args":
+            {
+                "manual_override": false,
+                "selection": 2
+            }
+        },
+        {"type": "POST", "url": "/beam", "args":
+            {
+                "manual_override": true,
+                "selection": 3
+            }
+        },
+        {"type": "POST", "url": "/beam", "args":
+            {
+                "manual_override": false,
+                "selection": 4
+            }
+        },
+        {"type": "POST", "url": "/beam", "args":
+            {
+                "manual_override": true,
+                "selection": 5
+            }
+        },
+        {"type": "POST", "url": "/beam", "args":
+            {
+                "manual_override": false,
+                "selection": 6 
+            }
+        },
+        {"type": "POST", "url": "/beam", "args":
+            {
+                "manual_override": true,
+                "selection": 7
+            }
+        },
+        {"type": "GET", "url": "/beam/state"},
+        {"type": "GET", "url": "/beam/info"},
+        {"type": "POST", "url": "/debug", "args":
+            {
+                "injectWhiteNoise": false,
+                "injectSine": false
+            }
+        },
+        {"type": "POST", "url": "/debug", "args":
+            {
+                "injectWhiteNoise": true,
+                "injectSine": true
+            }
+        },
+        {"type": "POST", "url": "/debug", "args":
+            {
+                "injectWhiteNoise": true,
+                "injectSine": false
+            }
+        },
+        {"type": "POST", "url": "/debug", "args":
+            {
+                "injectWhiteNoise": false,
+                "injectSine": true
+            }
+        },
+        {"type": "POST", "url": "/debug", "args":
+            {
+                "injectWhiteNoise": false,
+                "injectSine": false 
+            }
+        },
+        {"type": "GET", "url": "/debug"},
+        {"type": "POST", "url": "/diag", "args":
+            {
+                "diags": 
+                [
+                    {
+                        "name": "refp_hpf_cutoff_hz",
+                        "value": [75]
+                    }
+                ]
+            }
+        },
+        {"type": "GET", "url": "/diag"},
+        {"type": "GET", "url": "/levels"},
+        {"type": "POST", "url": "/log", "args":
+            {
+                "logging": true
+            }
+        },
+        {"type": "POST", "url": "/log", "args":
+            {
+                "logging": false
+            }
+        },
+        {"type": "POST", "url": "/log", "args":
+            {
+                "logging": true
+            }
+        },
+        {"type": "GET", "url": "/log"},
+        {"type": "POST", "url": "/mixer", "args":
+            {
+                "master":
+                {
+                    "recordVolume":0,
+                    "playbackVolume":0,
+                    "mute":false
+                },
+                "skills":
+                {
+                    "recordVolume":0,
+                    "playbackVolume":0,
+                    "mute":false
+                },
+                "asr":
+                {
+                    "recordVolume":0,
+                    "playbackVolume":0,
+                    "mute":false
+                },
+                "tts":
+                {
+                    "recordVolume":0,
+                    "playbackVolume":0,
+                    "mute":false
+                },
+                "media":
+                {
+                    "recordVolume":0,
+                    "playbackVolume":0,
+                    "mute":false
+                }
+            }
+        },
+        {"type": "POST", "url": "/mixer", "args":
+            {
+                "master":
+                {
+                    "recordVolume":1,
+                    "playbackVolume":1,
+                    "mute":false
+                },
+                "skills":
+                {
+                    "recordVolume":1,
+                    "playbackVolume":1,
+                    "mute":false
+                },
+                "asr":
+                {
+                    "recordVolume":1,
+                    "playbackVolume":1,
+                    "mute":false
+                },
+                "tts":
+                {
+                    "recordVolume":1,
+                    "playbackVolume":1,
+                    "mute":false
+                },
+                "media":
+                {
+                    "recordVolume":1,
+                    "playbackVolume":1,
+                    "mute":false
+                }
+            }
+        },
+        {"type": "GET", "url": "/mixer"},
+        {"type": "POST", "url": "/mode", "args":
+            {
+                "mode": 0,
+                "suppressNoise": false
+            }
+        },
+        {"type": "POST", "url": "/mode", "args":
+            {
+                "mode": 1,
+                "suppressNoise": false
+            }
+        },
+        {"type": "POST", "url": "/mode", "args":
+            {
+                "mode": 2,
+                "suppressNoise": false
+            }
+        },
+        {"type": "POST", "url": "/mode", "args":
+            {
+                "mode": 0,
+                "suppressNoise": true
+            }
+        },
+        {"type": "POST", "url": "/mode", "args":
+            {
+                "mode": 1,
+                "suppressNoise": true
+            }
+        },
+        {"type": "POST", "url": "/mode", "args":
+            {
+                "mode": 2,
+                "suppressNoise": true
+            }
+        },
+ 
+        {"type": "GET", "url": "/mode"},
+        {"type": "GET", "url": "/loc_cfg"},
+        {"type": "GET", "url": "/loc_track"},
+        {"type": "POST", "url": "/loc_track", "args":
+            {
+                "ts": [0,0],
+                "channel": 1
+            }
+        }
+    ]
+}

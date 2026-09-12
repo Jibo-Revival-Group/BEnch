@@ -1,0 +1,133 @@
+<html>
+<head>
+<script src="jquery-2.1.3.js"></script>
+<script type="text/javascript">
+$(document).ready(function() {
+    updateServices();
+
+    $("#addButton").click(function() {
+        setService("PUT");
+    });
+
+    $("#modifyButton").click(function() {
+        setService("POST");
+    });
+
+});
+
+function setService(method) {
+    var vname = $("#name").val();
+    var vhost = $("#host").val();
+    var vport = parseInt($("#port").val());
+    var vpath = $("#path").val();
+    var vttl = parseInt($("#ttl").val());
+    var vtls = $("#tls").val();
+    var vdata = {
+        name : vname,
+        host : vhost,
+        port : vport,
+        path : vpath,
+        ttl  : vttl,
+        tls  : vtls
+    };
+    $.ajax({
+        url: "/registry",
+        type: method,
+        dataType: "json",
+        data: JSON.stringify(vdata),
+        success: function() {
+            // nothing...
+        },
+        error: function(xhr, status, error) {
+            alert("Error: " + error);
+        }
+    });
+};
+
+function updateServices() {
+    $.ajax({
+        type: "GET",
+        url: "/registry",
+        dataType: "json",
+        success: parseServices,
+        error: function(xhr, status, error) { 
+            console.log("ERROR " + status + " "  + error); 
+        }
+    });
+    setTimeout(function() { updateServices(); }, 1000);
+};
+
+function parseServices(data) {
+    $("#services").text("");
+    var table = $("<table>", { border: 1, width: "80%"});
+    table.append($("<th>").text("Name"));
+    table.append($("<th>").text("Root URL"));
+    table.append($("<th>").text("Debug Webpage"));
+    table.append($("<th>").text("TTL"));
+    table.append($("<th>").text("Delete?"));
+    $.each(data.records, function(index, element) {
+        var row = $("<tr>");
+        row.append($("<td>").text(element.name));
+        var url = "http://" + element.host + ":" + element.port + element.path;
+        row.append($("<td>").text(url));
+        var page = "http://" + element.host + ":" + element.port 
+            + "/index.html";
+        var pagetxt = element.name + " debug page";
+        var pagelink = $("<a>", {href: page, text: pagetxt, target: "_blank"})
+        row.append($("<td>").append(pagelink));
+        row.append($("<td>").text(element.ttl));
+        row.append($("<td>").append(
+            $("<button>", { 
+                text: "Delete", 
+                click: function() { 
+                    deleteService(element);
+                } 
+            })
+        ));
+        table.append(row);
+    });
+    $("#services").append(table);
+};
+
+function deleteService(data) {
+    $.ajax({
+        url: "/registry",
+        type: "DELETE",
+        dataType: "json",
+        data: JSON.stringify(data),
+        success: function() {
+            // nothing...
+        },
+        error: function(xhr, status, error) {
+            alert("Error: " + error);
+        }
+    });
+};
+
+</script>
+</head>
+<title>Service Registry</title>
+<body>
+<h1>Registered Services</h1>
+<div id="services"></div>
+<h1>Add/Modify Service</h1>
+<div>
+<form id="addForm" method="POST">
+    Name:
+    <input type="text" id="name" name="name" />
+    <br>Host:
+    <input type="text" id="host" name="host" />
+    <br>Port:
+    <input type="text" id="port" name="port" />
+    <br>Path:
+    <input type="text" id="path" name="path" />
+    <br>TTL:
+    <input type="text" id="ttl" name="ttl" />
+    <br>TLS:
+    <input type="text" id="tls" name="tls" />
+</form>
+<button id="addButton">Add</button>
+<button id="modifyButton">Modify</button>
+</div>
+</body>
+</html>

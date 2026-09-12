@@ -1,0 +1,8 @@
+echo getting info from torso
+
+info
+
+echo running flashmode command, then exiting ...
+
+flashmode
+
