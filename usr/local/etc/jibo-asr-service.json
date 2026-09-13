@@ -37,7 +37,7 @@
 	"max_logfile_size": 1000,
 	"log_upload_time_interval": 60000,
 	"min_available_log_partition_space": 5000,
-	"max_asr_log_dir_size_before_upload_trigger": 10000,
+	"max_asr_log_dir_size_before_upload_trigger": 999999,
 	"max_asr_log_dir_size": 12000,
 	"size_to_free_up_when_dir_overflowing": 1000,
   "asr_resource_path" : "/usr/local/share/asr/",    
