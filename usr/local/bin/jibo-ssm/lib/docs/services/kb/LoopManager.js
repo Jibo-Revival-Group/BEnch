@@ -1,8 +1,7 @@
-/** Synchronize the loop in the KB with the cloud, one-way.
- * Polls the cloud server in the background every 2 hours and
- * adds/removes/updates loop members as needed. Forces the loop to
- * match the cloud, all local loop changes will (eventually) be
- * overwritten by the LoopManager.
+/** Synchronize the loop seed (owner + robot) with the cloud.
+ * Polls the cloud server in the background and refreshes owner/robot
+ * edges as needed. Household humans are owned by BEacon on the robot:
+ * local human members are not pruned or overwritten from cloud.
  *
  * Also informs the NLU and ASR services of all the names (and
  * associated ids) of the loop members upon startup, and again each

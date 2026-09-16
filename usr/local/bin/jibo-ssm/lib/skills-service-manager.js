@@ -7715,150 +7715,168 @@ class LoopManager extends SyncManager_1.default {
         try {
             let model = this.model;
             let rootNode = this.rootNode;
-            let newLoop = [];
-            let sameLoop = [];
-            let removeLoop = [];
-            let loopNodes = this._fetchLoop();
-            cloudLoop.members.forEach((cloudLoopEntry) => {
-                let found = false;
-                for (let i = 0; i < loopNodes.length; i++) {
-                    let loopNode = loopNodes[i];
-                    if (cloudLoopEntry.id === loopNode._id) {
-                        sameLoop.push(cloudLoopEntry);
-                        found = true;
-                        break;
-                    }
-                }
-                if (!found) {
-                    newLoop.push(cloudLoopEntry);
-                }
-            });
-            loopNodes.forEach((loopNode) => {
-                let found = false;
-                for (let i = 0; i < cloudLoop.members.length; i++) {
-                    let cloudLoopMember = cloudLoop.members[i];
-                    if (cloudLoopMember.id === loopNode._id) {
-                        found = true;
-                        break;
-                    }
-                }
-                if (!found) {
-                    removeLoop.push(loopNode);
-                }
-            });
-            if (removeLoop.length > 0) {
-                log.info('pruning local loop members not present in cloud roster', {
-                    pruneCount: removeLoop.length,
-                    prunedIds: removeLoop.map((node) => node._id)
-                });
-            }
-            let loopChanged = false;
-            loopChanged = this._applyCloudLoopToLocalLoopRootNode(cloudLoop, rootNode);
-            let memberIdsByAccountId = {};
-            cloudLoop.members.forEach((member) => {
-                if (member.accountId) {
-                    memberIdsByAccountId[member.accountId] = member.id;
-                }
-            });
-            rootNode.clearEdges(['owner', 'robot']);
-            let ownerMemberId = memberIdsByAccountId[cloudLoop.owner];
-            if (!ownerMemberId) {
-                const ownerByType = cloudLoop.members.find((member) => member && member.type === 'owner');
-                ownerMemberId = ownerByType && ownerByType.id;
-            }
-            if (typeof ownerMemberId === 'string' && ownerMemberId.length > 0) {
-                rootNode.addEdges(ownerMemberId, 'owner');
-            }
-            else {
-                log.warn('Loop sync: could not resolve owner member id; skipping owner edge', {
-                    owner: cloudLoop.owner,
-                    memberAccountIds: Object.keys(memberIdsByAccountId)
-                });
-            }
-            let robotMemberId = memberIdsByAccountId[cloudLoop.robot];
-            if (!robotMemberId) {
-                const robotByType = cloudLoop.members.find((member) => member && member.type === 'robot');
-                robotMemberId = robotByType && robotByType.id;
-            }
-            if (typeof robotMemberId === 'string' && robotMemberId.length > 0) {
-                rootNode.addEdges(robotMemberId, 'robot');
-            }
-            else {
-                log.warn('Loop sync: could not resolve robot member id; skipping robot edge', {
-                    robot: cloudLoop.robot,
-                    memberAccountIds: Object.keys(memberIdsByAccountId)
-                });
-            }
-            let newLoopMemberIds = newLoop.map((member) => { return member.id; });
-            model.load(newLoopMemberIds, (err) => {
+            // Reload from disk so BEacon writes are visible and saveLayers cannot
+            // drop newly added user edges from a stale in-memory cache.
+            model.loadLayers(rootNode, ['owner', 'user', 'robot'], (reloadErr) => {
                 try {
-                    log.iferr(err, 'model.load');
-                    newLoop.forEach((newLoopEntry) => {
-                        let oldNode = this.model.fetch(newLoopEntry.id, true);
-                        let newNode;
-                        if (oldNode) {
-                            newNode = oldNode;
-                        }
-                        else {
-                            newNode = this._createNodeWithId(newLoopEntry.id, this.model, 'user');
-                        }
-                        let account = newLoopEntry.account || {};
-                        this._applyCloudLoopMemberAndAccountToLocalLoopNode(newLoopEntry, account, newNode);
-                        rootNode.addEdges(newNode, 'user');
-                        loopChanged = true;
-                    });
-                    sameLoop.forEach((sameLoopEntry) => {
-                        let sameNode = this.model.fetch(sameLoopEntry.id);
-                        let account = sameLoopEntry.account || {};
-                        let changed = this._applyCloudLoopMemberAndAccountToLocalLoopNode(sameLoopEntry, account, sameNode);
-                        if (changed) {
-                            loopChanged = true;
-                        }
-                    });
-                    removeLoop.forEach((removeNode) => {
-                        rootNode.removeEdges(removeNode, 'user');
-                        loopChanged = true;
-                    });
-                    this._syncLoopPhotos((photoErr, changed) => {
-                        try {
-                            if (changed) {
-                                loopChanged = true;
-                            }
-                            if (!rootNode.data.lastFullSyncTimestamp) {
-                                log.info('adding credentials hash to unchanged loop');
-                                loopChanged = true;
-                            }
-                            if (loopChanged) {
-                                log.info('loop changed. saving...');
-                                rootNode.data.lastFullSyncTimestamp = Number(new Date());
-                                rootNode.data.lastFullSyncCredentialsHash = SyncManager_1.default.credentialsHash;
-                                this.model.saveLayers(rootNode, 'user', (saveErr) => {
-                                    log.iferr(saveErr, 'model.saveLayers');
-                                    log.info('finished saving loop');
-                                    log.debug('new loop', rootNode.getEdges('user'));
-                                    callback(saveErr || null, loopChanged);
-                                });
-                            }
-                            else {
-                                callback(null, false);
-                            }
-                        }
-                        catch (photoApplyErr) {
-                            log.error('_applyLoopChanges photo finalize threw', photoApplyErr);
-                            callback(photoApplyErr);
-                        }
-                    });
+                    log.iferr(reloadErr, 'loadLayers before _applyLoopChanges');
+                    this._applyLoopChangesAfterReload(cloudLoop, callback);
                 }
-                catch (loadApplyErr) {
-                    log.error('_applyLoopChanges model.load callback threw', loadApplyErr);
-                    callback(loadApplyErr);
+                catch (applyErr) {
+                    log.error('_applyLoopChanges after reload threw', applyErr);
+                    callback(applyErr);
                 }
             });
         }
         catch (applyErr) {
-            log.error('_applyLoopChanges threw before model.load', applyErr);
+            log.error('_applyLoopChanges threw before loadLayers', applyErr);
             callback(applyErr);
         }
+    }
+    _isCloudRobotMember(cloudLoopEntry) {
+        return !!(cloudLoopEntry && cloudLoopEntry.type === 'robot');
+    }
+    _isLocalHumanMember(localLoopNode) {
+        if (!localLoopNode) {
+            return false;
+        }
+        const data = localLoopNode.data || {};
+        if (data.type === 'robot') {
+            return false;
+        }
+        if (data.type === 'owner' || data.type === 'member') {
+            return true;
+        }
+        // UserNode.isJibo is !data.firstName — humans always have a first name.
+        return !!data.firstName;
+    }
+    _applyLoopChangesAfterReload(cloudLoop, callback) {
+        let model = this.model;
+        let rootNode = this.rootNode;
+        let newLoop = [];
+        let sameLoop = [];
+        let loopNodes = this._fetchLoop();
+        cloudLoop.members.forEach((cloudLoopEntry) => {
+            let found = false;
+            for (let i = 0; i < loopNodes.length; i++) {
+                let loopNode = loopNodes[i];
+                if (cloudLoopEntry.id === loopNode._id) {
+                    sameLoop.push(cloudLoopEntry);
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                newLoop.push(cloudLoopEntry);
+            }
+        });
+        // BEacon owns household membership. Never prune local humans who are
+        // absent from the cloud roster (cloud only seeds owner + robot).
+        let loopChanged = false;
+        loopChanged = this._applyCloudLoopToLocalLoopRootNode(cloudLoop, rootNode);
+        let memberIdsByAccountId = {};
+        cloudLoop.members.forEach((member) => {
+            if (member.accountId) {
+                memberIdsByAccountId[member.accountId] = member.id;
+            }
+        });
+        rootNode.clearEdges(['owner', 'robot']);
+        let ownerMemberId = memberIdsByAccountId[cloudLoop.owner];
+        if (!ownerMemberId) {
+            const ownerByType = cloudLoop.members.find((member) => member && member.type === 'owner');
+            ownerMemberId = ownerByType && ownerByType.id;
+        }
+        if (typeof ownerMemberId === 'string' && ownerMemberId.length > 0) {
+            rootNode.addEdges(ownerMemberId, 'owner');
+        }
+        else {
+            log.warn('Loop sync: could not resolve owner member id; skipping owner edge', {
+                owner: cloudLoop.owner,
+                memberAccountIds: Object.keys(memberIdsByAccountId)
+            });
+        }
+        let robotMemberId = memberIdsByAccountId[cloudLoop.robot];
+        if (!robotMemberId) {
+            const robotByType = cloudLoop.members.find((member) => member && member.type === 'robot');
+            robotMemberId = robotByType && robotByType.id;
+        }
+        if (typeof robotMemberId === 'string' && robotMemberId.length > 0) {
+            rootNode.addEdges(robotMemberId, 'robot');
+        }
+        else {
+            log.warn('Loop sync: could not resolve robot member id; skipping robot edge', {
+                robot: cloudLoop.robot,
+                memberAccountIds: Object.keys(memberIdsByAccountId)
+            });
+        }
+        let newLoopMemberIds = newLoop.map((member) => { return member.id; });
+        model.load(newLoopMemberIds, (err) => {
+            try {
+                log.iferr(err, 'model.load');
+                newLoop.forEach((newLoopEntry) => {
+                    let oldNode = this.model.fetch(newLoopEntry.id, true);
+                    let newNode;
+                    if (oldNode) {
+                        newNode = oldNode;
+                    }
+                    else {
+                        newNode = this._createNodeWithId(newLoopEntry.id, this.model, 'user');
+                    }
+                    let account = newLoopEntry.account || {};
+                    // New cloud seed members (owner/robot) take cloud values once.
+                    this._applyCloudLoopMemberAndAccountToLocalLoopNode(newLoopEntry, account, newNode, {
+                        localWins: false
+                    });
+                    rootNode.addEdges(newNode, 'user');
+                    loopChanged = true;
+                });
+                sameLoop.forEach((sameLoopEntry) => {
+                    let sameNode = this.model.fetch(sameLoopEntry.id);
+                    let account = sameLoopEntry.account || {};
+                    let localWins = this._isLocalHumanMember(sameNode) &&
+                        !this._isCloudRobotMember(sameLoopEntry);
+                    let changed = this._applyCloudLoopMemberAndAccountToLocalLoopNode(sameLoopEntry, account, sameNode, {
+                        localWins: localWins
+                    });
+                    if (changed) {
+                        loopChanged = true;
+                    }
+                });
+                this._syncLoopPhotos((photoErr, changed) => {
+                    try {
+                        if (changed) {
+                            loopChanged = true;
+                        }
+                        if (!rootNode.data.lastFullSyncTimestamp) {
+                            log.info('adding credentials hash to unchanged loop');
+                            loopChanged = true;
+                        }
+                        if (loopChanged) {
+                            log.info('loop changed. saving...');
+                            rootNode.data.lastFullSyncTimestamp = Number(new Date());
+                            rootNode.data.lastFullSyncCredentialsHash = SyncManager_1.default.credentialsHash;
+                            this.model.saveLayers(rootNode, 'user', (saveErr) => {
+                                log.iferr(saveErr, 'model.saveLayers');
+                                log.info('finished saving loop');
+                                log.debug('new loop', rootNode.getEdges('user'));
+                                callback(saveErr || null, loopChanged);
+                            });
+                        }
+                        else {
+                            callback(null, false);
+                        }
+                    }
+                    catch (photoApplyErr) {
+                        log.error('_applyLoopChanges photo finalize threw', photoApplyErr);
+                        callback(photoApplyErr);
+                    }
+                });
+            }
+            catch (loadApplyErr) {
+                log.error('_applyLoopChanges model.load callback threw', loadApplyErr);
+                callback(loadApplyErr);
+            }
+        });
     }
     _recordSyncDiagnostics(errorMessage, cloudLoop, callback) {
         const done = typeof callback === 'function' ? callback : () => { return; };
@@ -7910,7 +7928,9 @@ class LoopManager extends SyncManager_1.default {
         let changed = this._syncObject(cloudLoop, localLoopRootNode.data, loopFields);
         return changed;
     }
-    _applyCloudLoopMemberAndAccountToLocalLoopNode(cloudLoopEntry, cloudAccount, localLoopNode) {
+    _applyCloudLoopMemberAndAccountToLocalLoopNode(cloudLoopEntry, cloudAccount, localLoopNode, options) {
+        const localWins = !!(options && options.localWins);
+        // When localWins, BEacon owns profile fields — only sync structural/enrollment metadata.
         let loopMemberFields = [
             'id',
             'loopId',
@@ -7920,23 +7940,28 @@ class LoopManager extends SyncManager_1.default {
             'status',
             'type',
             'agreementId',
-            'nickname',
-            'phoneticName',
             'legalGuardianId',
             'created'
         ];
+        if (!localWins) {
+            loopMemberFields = loopMemberFields.concat(['nickname', 'phoneticName']);
+        }
         let accountFields = [
             'email',
-            'firstName',
-            'lastName',
-            'gender',
             'birthday',
-            'photoUrl',
             'facebookAccessToken',
             'isChild',
             'phoneNumber',
             'messagingAllowed'
         ];
+        if (!localWins) {
+            accountFields = accountFields.concat([
+                'firstName',
+                'lastName',
+                'gender',
+                'photoUrl'
+            ]);
+        }
         let fieldsToRename = {
             'nickname': 'nickName'
         };
@@ -7951,7 +7976,9 @@ class LoopManager extends SyncManager_1.default {
         loop.forEach((user) => {
             const photoUrl = user.data.photoUrl;
             const photoAsset = user.getAssets('photo')[0];
-            if (photoUrl) {
+            const isHttpPhoto = typeof photoUrl === 'string' &&
+                (photoUrl.indexOf('http://') === 0 || photoUrl.indexOf('https://') === 0);
+            if (isHttpPhoto) {
                 const urlParts = url.parse(photoUrl);
                 const pathParts = path.parse(urlParts.pathname);
                 const urlFile = pathParts.name;
@@ -7980,17 +8007,7 @@ class LoopManager extends SyncManager_1.default {
                     });
                 }
             }
-            else {
-                if (photoAsset) {
-                    const oldAssets = user.getAssets('photo');
-                    oldAssets.forEach((oldAsset) => {
-                        tasks.push((done) => {
-                            user.removeAsset(oldAsset, done);
-                            changed = true;
-                        });
-                    });
-                }
-            }
+            // Never delete a local BEacon photo just because cloud has no photoUrl.
         });
         async.series(tasks, () => {
             callback(null, changed);
