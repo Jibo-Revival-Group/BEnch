@@ -6637,7 +6637,8 @@ class KBService extends jibo_service_framework_1.HTTPWSService {
                 return callback();
             }
             let url = 'http://127.0.0.1:' + this.port;
-            this.loopManager = new LoopManager_1.default(url, ENABLE_CLOUD_LOOP_SYNCING);
+            // BEacon owns the household roster; cloud seed must not rewrite /jibo/loop.
+            this.loopManager = new LoopManager_1.default(url, false);
             this.loopManager.init(err => {
                 if (err) {
                     log_1.default.error('Error initializing loop manager', err);
@@ -7712,6 +7713,11 @@ class LoopManager extends SyncManager_1.default {
         }
     }
     _applyLoopChanges(cloudLoop, callback) {
+        if (!this.enableCloud) {
+            log.info('loop cloud sync disabled; skipping _applyLoopChanges');
+            callback(null, false);
+            return;
+        }
         try {
             let model = this.model;
             let rootNode = this.rootNode;
