@@ -1,8 +1,12 @@
 'use strict';
 
+const path = require('path');
 const x11 = require("x11");
 const Jimp = require('jimp');
 const ssm = require('../lib/skills-service-manager').default;
+
+const TITLE_FONT = path.join(__dirname, 'fonts/proxima-nova-soft-96-white/proxima-nova-soft-96-white.fnt');
+const SUBTITLE_FONT = path.join(__dirname, 'fonts/proxima-nova-light-42-white/proxima-nova-light-42-white.fnt');
 
 const States = {
     Loading: 0,
@@ -227,8 +231,8 @@ class StartupView {
 
     _loadFonts() {
         Promise.all([
-            Jimp.loadFont(Jimp.FONT_SANS_64_WHITE),
-            Jimp.loadFont(Jimp.FONT_SANS_32_WHITE)
+            Jimp.loadFont(TITLE_FONT),
+            Jimp.loadFont(SUBTITLE_FONT)
         ]).then(fonts => {
             this._fonts = {title: fonts[0], sub: fonts[1]};
             if (this._state === States.Success && this.alive && this.X) {
