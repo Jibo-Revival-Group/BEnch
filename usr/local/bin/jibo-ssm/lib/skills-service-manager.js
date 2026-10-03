@@ -15165,7 +15165,124 @@ class JetstreamServiceSim extends jibo_service_framework_1.HTTPWSService {
             }
         });
     }
+    _readHomeAssistantPairing() {
+        try {
+            const fs = require('fs');
+            return JSON.parse(fs.readFileSync('/opt/jibo/Knowledge/beacon/homeassistant.json', 'utf8'));
+        }
+        catch (err) {
+            return null;
+        }
+    }
+    _forwardHomeAssistantCommand(data) {
+        const saved = this._readHomeAssistantPairing();
+        if (!saved || !saved.password || !saved.haIp || !saved.webhookId) {
+            log_1.default.warn('HA_COMMAND ignored; robot is not paired with Home Assistant');
+            return;
+        }
+        const http = require('http');
+        const body = {
+            type: 'command',
+            password: saved.password,
+            command: data && data.command,
+            requestId: data && data.requestId
+        };
+        ['targetName', 'temperature', 'delta', 'entityId', 'action', 'blacklistHeat', 'blacklistCool']
+            .forEach((key) => {
+            if (data && data[key] !== undefined && data[key] !== null) {
+                body[key] = data[key];
+            }
+        });
+        const payload = JSON.stringify(body);
+        const req = http.request({
+            host: saved.haIp,
+            port: Number(saved.haPort) || 8123,
+            path: '/api/webhook/' + saved.webhookId,
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Content-Length': Buffer.byteLength(payload)
+            }
+        }, (res) => {
+            const chunks = [];
+            res.on('data', (chunk) => chunks.push(chunk));
+            res.on('end', () => {
+                if (!data || !data.callbackToken) {
+                    return;
+                }
+                this._postHomeAssistantResult(data, Buffer.concat(chunks).toString('utf8'));
+            });
+        });
+        req.on('error', (err) => {
+            log_1.default.error('HA_COMMAND forward failed', err && err.message);
+            if (data && data.callbackToken) {
+                this._postHomeAssistantResult(data, JSON.stringify({
+                    type: 'command_result',
+                    requestId: data.requestId,
+                    status: 'error',
+                    message: err && err.message
+                }));
+            }
+        });
+        req.write(payload);
+        req.end();
+    }
+    _postHomeAssistantResult(data, resultText) {
+        let result;
+        try {
+            result = JSON.parse(resultText);
+        }
+        catch (err) {
+            result = {
+                type: 'command_result',
+                requestId: data.requestId,
+                status: 'error',
+                message: 'bad_result'
+            };
+        }
+        if (!result || typeof result !== 'object') {
+            result = {
+                type: 'command_result',
+                requestId: data.requestId,
+                status: 'error',
+                message: 'bad_result'
+            };
+        }
+        result.callbackToken = data.callbackToken;
+        if (!result.requestId) {
+            result.requestId = data.requestId;
+        }
+        if (!result.type) {
+            result.type = 'command_result';
+        }
+        const http = require('http');
+        const https = require('https');
+        const callbackPath = data.callbackPath || '/v1/homeassistant/robot-result';
+        const options = this.createHubOptions(callbackPath);
+        const secure = options.port === 443;
+        const payload = JSON.stringify(result);
+        const req = (secure ? https : http).request({
+            host: options.hostname,
+            port: options.port,
+            path: callbackPath,
+            method: 'POST',
+            rejectUnauthorized: false,
+            headers: {
+                'Content-Type': 'application/json',
+                'Content-Length': Buffer.byteLength(payload)
+            }
+        }, (res) => {
+            res.resume();
+        });
+        req.on('error', (err) => log_1.default.error('HA result callback failed', err && err.message));
+        req.write(payload);
+        req.end();
+    }
     subscribeToCommonEvents(session, requestID, suppressed) {
+        session.events.on('HA_COMMAND', (data) => {
+            log_1.default.info(`Received from hub 'HA_COMMAND': `, data && data.command);
+            this._forwardHomeAssistantCommand(data);
+        });
         session.events.on('SKILL_ACTION', (data) => {
             log_1.default.info(`Received from hub 'SKILL_ACTION': `, data);
             this.writeToJetStreamClient({
