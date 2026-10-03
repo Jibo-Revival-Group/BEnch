@@ -15034,6 +15034,7 @@ class JetstreamServiceSim extends jibo_service_framework_1.HTTPWSService {
             if (turn !== this.activeTurn) {
                 return;
             }
+            this._markHomeAssistantContext(context);
             log_1.default.debug('Sending context message to hub', context);
             session.writeContext(context);
             yield this.updateSpeechTurn(options);
@@ -15156,6 +15157,7 @@ class JetstreamServiceSim extends jibo_service_framework_1.HTTPWSService {
                     });
                 });
                 const context = Object.assign({}, CONTEXT_MSG, yield this.getContext());
+                this._markHomeAssistantContext(context);
                 log_1.default.debug('Sending context message to hub', context);
                 this.activeProactiveSession.writeContext(context);
             }
@@ -15166,13 +15168,29 @@ class JetstreamServiceSim extends jibo_service_framework_1.HTTPWSService {
         });
     }
     _readHomeAssistantPairing() {
-        try {
-            const fs = require('fs');
-            return JSON.parse(fs.readFileSync('/opt/jibo/Knowledge/beacon/homeassistant.json', 'utf8'));
+        const fs = require('fs');
+        const files = [
+            '/opt/jibo/Knowledge/beacon/homeassistant.json',
+            '/opt/tmp/beacon/homeassistant.json'
+        ];
+        for (let i = 0; i < files.length; i++) {
+            try {
+                return JSON.parse(fs.readFileSync(files[i], 'utf8'));
+            }
+            catch (err) { /* try the next location */ }
         }
-        catch (err) {
-            return null;
+        return null;
+    }
+    _markHomeAssistantContext(context) {
+        if (!context || typeof context !== 'object' || !this._readHomeAssistantPairing()) {
+            return context;
         }
+        context.haLocal = true;
+        if (!context.general || typeof context.general !== 'object') {
+            context.general = {};
+        }
+        context.general.haLocal = true;
+        return context;
     }
     _forwardHomeAssistantCommand(data) {
         const saved = this._readHomeAssistantPairing();
@@ -15284,6 +15302,11 @@ class JetstreamServiceSim extends jibo_service_framework_1.HTTPWSService {
             this._forwardHomeAssistantCommand(data);
         });
         session.events.on('SKILL_ACTION', (data) => {
+            if (data && data.skill && data.skill.id === '@be/homeassistant') {
+                log_1.default.info(`Received from hub Home Assistant command: `, data.action && data.action.command);
+                this._forwardHomeAssistantCommand(data.action || {});
+                return;
+            }
             log_1.default.info(`Received from hub 'SKILL_ACTION': `, data);
             this.writeToJetStreamClient({
                 type: jetstream_client_1.types.ServiceEventType.SKILL_ACTION,
