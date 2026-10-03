@@ -15175,7 +15175,10 @@ class JetstreamServiceSim extends jibo_service_framework_1.HTTPWSService {
         ];
         for (let i = 0; i < files.length; i++) {
             try {
-                return JSON.parse(fs.readFileSync(files[i], 'utf8'));
+                const saved = JSON.parse(fs.readFileSync(files[i], 'utf8'));
+                if (saved && saved.password && saved.haIp && saved.webhookId) {
+                    return saved;
+                }
             }
             catch (err) { /* try the next location */ }
         }
@@ -15195,7 +15198,13 @@ class JetstreamServiceSim extends jibo_service_framework_1.HTTPWSService {
     _forwardHomeAssistantCommand(data) {
         const saved = this._readHomeAssistantPairing();
         if (!saved || !saved.password || !saved.haIp || !saved.webhookId) {
-            log_1.default.warn('HA_COMMAND ignored; robot is not paired with Home Assistant');
+            log_1.default.warn('HA_COMMAND rejected; pairing missing or incomplete requestId=' + (data && data.requestId));
+            if (data && data.callbackToken) {
+                this._postHomeAssistantResult(data, JSON.stringify({
+                    type: 'command_result', requestId: data.requestId,
+                    status: 'error', message: 'pairing_required'
+                }));
+            }
             return;
         }
         const http = require('http');
@@ -15212,6 +15221,23 @@ class JetstreamServiceSim extends jibo_service_framework_1.HTTPWSService {
             }
         });
         const payload = JSON.stringify(body);
+        log_1.default.info('HA_COMMAND forwarding requestId=' + body.requestId +
+            ' command=' + body.command + ' host=' + saved.haIp +
+            ' port=' + (Number(saved.haPort) || 8123));
+        let completed = false;
+        let timer;
+        const finish = (resultText) => {
+            if (completed) { return; }
+            completed = true;
+            clearTimeout(timer);
+            if (data && data.callbackToken) {
+                this._postHomeAssistantResult(data, resultText);
+            }
+        };
+        const fail = (message) => finish(JSON.stringify({
+            type: 'command_result', requestId: body.requestId,
+            status: 'error', message: message
+        }));
         const req = http.request({
             host: saved.haIp,
             port: Number(saved.haPort) || 8123,
@@ -15225,23 +15251,23 @@ class JetstreamServiceSim extends jibo_service_framework_1.HTTPWSService {
             const chunks = [];
             res.on('data', (chunk) => chunks.push(chunk));
             res.on('end', () => {
-                if (!data || !data.callbackToken) {
-                    return;
-                }
-                this._postHomeAssistantResult(data, Buffer.concat(chunks).toString('utf8'));
+                log_1.default.info('HA_COMMAND response requestId=' + body.requestId +
+                    ' httpStatus=' + res.statusCode);
+                finish(Buffer.concat(chunks).toString('utf8'));
             });
+            res.on('error', () => fail('disconnected'));
+            res.on('aborted', () => fail('disconnected'));
         });
         req.on('error', (err) => {
-            log_1.default.error('HA_COMMAND forward failed', err && err.message);
-            if (data && data.callbackToken) {
-                this._postHomeAssistantResult(data, JSON.stringify({
-                    type: 'command_result',
-                    requestId: data.requestId,
-                    status: 'error',
-                    message: err && err.message
-                }));
-            }
+            log_1.default.error('HA_COMMAND forward failed requestId=' + body.requestId,
+                err && err.code);
+            fail('disconnected');
         });
+        timer = setTimeout(() => {
+            log_1.default.warn('HA_COMMAND forward timed out requestId=' + body.requestId);
+            fail('timeout');
+            req.destroy();
+        }, 2500);
         req.write(payload);
         req.end();
     }
@@ -15277,7 +15303,7 @@ class JetstreamServiceSim extends jibo_service_framework_1.HTTPWSService {
         const https = require('https');
         const callbackPath = data.callbackPath || '/v1/homeassistant/robot-result';
         const options = this.createHubOptions(callbackPath);
-        const secure = options.port === 443;
+        const secure = Number(options.port) === 443;
         const payload = JSON.stringify(result);
         const req = (secure ? https : http).request({
             host: options.hostname,
@@ -15290,9 +15316,19 @@ class JetstreamServiceSim extends jibo_service_framework_1.HTTPWSService {
                 'Content-Length': Buffer.byteLength(payload)
             }
         }, (res) => {
+            clearTimeout(timer);
+            log_1.default.info('HA result callback requestId=' + result.requestId +
+                ' status=' + result.status + ' httpStatus=' + res.statusCode);
             res.resume();
         });
-        req.on('error', (err) => log_1.default.error('HA result callback failed', err && err.message));
+        const timer = setTimeout(() => {
+            log_1.default.warn('HA result callback timed out requestId=' + result.requestId);
+            req.destroy();
+        }, 2000);
+        req.on('error', (err) => {
+            clearTimeout(timer);
+            log_1.default.error('HA result callback failed requestId=' + result.requestId, err && err.code);
+        });
         req.write(payload);
         req.end();
     }
