@@ -26,10 +26,10 @@
                 {
                     "name": "body",
                     "order": 0,
-                    "executable": "/usr/local/bin/jibo-body-service",
+                    "executable": "/usr/local/bin/jibo-service-start",
                     "modes": {
                         "default": {
-                            "arguments": ["-c","/usr/local/etc/jibo-body-service.json"],
+                            "arguments": ["body", "/usr/local/bin/jibo-body-service", "-c","/usr/local/etc/jibo-body-service.json"],
                             "environment": {
                                 "DISPLAY": ":0",
                                 "XAUTHORITY": "/tmp/.Xauthority"
@@ -48,10 +48,10 @@
                 {
                     "name": "audio",
                     "order": 1,
-                    "executable": "/usr/local/bin/jibo-audio-service",
+                    "executable": "/usr/local/bin/jibo-service-start",
                     "modes": {
                         "default": {
-                            "arguments": ["-c","/usr/local/etc/jibo-audio-service.json"],
+                            "arguments": ["audio", "/usr/local/bin/jibo-audio-service", "-c","/usr/local/etc/jibo-audio-service.json"],
                             "environment": {},
                             "directory": "",
                             "enabled":true
@@ -67,10 +67,10 @@
                 {
                     "name": "tts",
                     "order": 2,
-                    "executable": "/usr/local/bin/jibo-tts-service",
+                    "executable": "/usr/local/bin/jibo-service-start",
                     "modes": {
                         "default": {
-                            "arguments": ["-c","/usr/local/etc/jibo-tts-service.json"],
+                            "arguments": ["tts", "/usr/local/bin/jibo-tts-service", "-c","/usr/local/etc/jibo-tts-service.json"],
                             "environment": {},
                             "directory": "",
                             "enabled":true
@@ -89,10 +89,10 @@
                 {
                     "name": "asr",
                     "order": 2,
-                    "executable": "/usr/local/bin/jibo-asr-service",
+                    "executable": "/usr/local/bin/jibo-service-start",
                     "modes": {
                         "default": {
-                            "arguments": ["-c","/usr/local/etc/jibo-asr-service.json"],
+                            "arguments": ["asr", "/usr/local/bin/jibo-asr-service", "-c","/usr/local/etc/jibo-asr-service.json"],
                             "environment": {},
                             "directory": "",
                             "enabled":true
@@ -111,10 +111,10 @@
                 {
                     "name": "jetstream",
                     "order": 2,
-                    "executable": "/usr/local/bin/jibo-jetstream-service",
+                    "executable": "/usr/local/bin/jibo-service-start",
                     "modes": {
                         "default": {
-                            "arguments": ["-c","/usr/local/etc/jibo-jetstream-service.json"],
+                            "arguments": ["jetstream", "/usr/local/bin/jibo-jetstream-service", "-c","/usr/local/etc/jibo-jetstream-service.json"],
                             "environment": {},
                             "directory": "",
                             "enabled": true
@@ -133,10 +133,10 @@
                 {
                     "name": "nlu",
                     "order": 2,
-                    "executable": "/usr/local/bin/jibo-nlu-service",
+                    "executable": "/usr/local/bin/jibo-service-start",
                     "modes": {
                         "default": {
-                            "arguments": ["-c","/usr/local/etc/jibo-nlu-service.json"],
+                            "arguments": ["nlu", "/usr/local/bin/jibo-nlu-service", "-c","/usr/local/etc/jibo-nlu-service.json"],
                             "environment": {},
                             "directory": "",
                             "enabled":false
@@ -155,10 +155,10 @@
                 {
                     "name": "identity",
                     "order": 2,
-                    "executable": "/usr/local/bin/jibo-identity-service",
+                    "executable": "/usr/local/bin/jibo-service-start",
                     "modes": {
                         "default": {
-                            "arguments": ["-c","/usr/local/etc/jibo-identity-service.json"],
+                            "arguments": ["identity", "/usr/local/bin/jibo-identity-service", "-c","/usr/local/etc/jibo-identity-service.json"],
                             "environment": {
                                 "GLOG_minloglevel": "2" 
                             },
@@ -179,10 +179,10 @@
                 {
                     "name": "lps",
                     "order": 3,
-                    "executable": "/usr/local/bin/jibo-lps-service",
+                    "executable": "/usr/local/bin/jibo-service-start",
                     "modes": {
                         "default": {
-                            "arguments": ["-c","/usr/local/etc/jibo-lps-service.json"],
+                            "arguments": ["lps", "/usr/local/bin/jibo-lps-service", "-c","/usr/local/etc/jibo-lps-service.json"],
                             "environment": {
                                 "DISPLAY": ":0",
                                 "XAUTHORITY": "/tmp/.Xauthority",
@@ -204,16 +204,18 @@
                 {
                     "name": "secure-transfer",
                     "order": 4,
-                    "executable": "/usr/bin/node",
+                    "executable": "/usr/local/bin/jibo-service-start",
                     "modes": {
                         "default": {
-                            "arguments": ["/usr/local/bin/jibo-sts/index.js"],
+                            "arguments": ["secure-transfer", "/usr/bin/node", "/usr/local/bin/jibo-sts/index.js"],
                             "environment": {},
                             "directory": "",
                             "enabled":true
                         },
                         "int-developer": {
                             "arguments": [
+                                "secure-transfer",
+                                "/usr/bin/node",
                                 "--inspect=10775",
                                 "/usr/local/bin/jibo-sts/index.js"
                             ],
@@ -235,10 +237,12 @@
                 {
                     "name": "security-controller-service",
                     "order": 4,
-                    "executable": "/usr/bin/node",
+                    "executable": "/usr/local/bin/jibo-service-start",
                     "modes": {
                         "default": {
                             "arguments": [
+                                "security-controller-service",
+                                "/usr/bin/node",
                                 "/usr/local/bin/jibo-ssm/jibo-scs.js"
                             ],
                             "environment": {},
@@ -247,6 +251,8 @@
                         },
                         "int-developer": {
                             "arguments": [
+                                "security-controller-service",
+                                "/usr/bin/node",
                                 "--inspect=10226",
                                 "/usr/local/bin/jibo-ssm/jibo-scs.js"
                             ],
@@ -268,10 +274,12 @@
                 {
                     "name": "media-manager",
                     "order": 4,
-                    "executable": "/usr/bin/node",
+                    "executable": "/usr/local/bin/jibo-service-start",
                     "modes": {
                         "default": {
                             "arguments": [
+                                "media",
+                                "/usr/bin/node",
                                 "/usr/local/bin/jibo-ssm/jibo-mms.js"
                             ],
                             "environment": {},
@@ -280,6 +288,8 @@
                         },
                         "int-developer": {
                             "arguments": [
+                                "media",
+                                "/usr/bin/node",
                                 "--inspect=10225",
                                 "/usr/local/bin/jibo-ssm/jibo-mms.js"
                             ],
@@ -301,10 +311,10 @@
                 {
                     "name": "monitor",
                     "order": 4,
-                    "executable": "/usr/local/bin/jibo-system-monitoring-service",
+                    "executable": "/usr/local/bin/jibo-service-start",
                     "modes": {
                         "default": {
-                            "arguments": ["-c","/usr/local/etc/jibo-system-monitoring-service.json"],
+                            "arguments": ["monitor", "/usr/local/bin/jibo-system-monitoring-service", "-c","/usr/local/etc/jibo-system-monitoring-service.json"],
                             "environment": {},
                             "directory": "",
                             "enabled":true
@@ -320,10 +330,10 @@
                 {
                     "name": "server",
                     "order": 4,
-                    "executable": "/usr/local/bin/jibo-server-service",
+                    "executable": "/usr/local/bin/jibo-service-start",
                     "modes": {
                         "default": {
-                            "arguments": ["-c","/usr/local/etc/jibo-server-service.json"],
+                            "arguments": ["server", "/usr/local/bin/jibo-server-service", "-c","/usr/local/etc/jibo-server-service.json"],
                             "environment": {},
                             "directory": "",
                             "enabled":true
@@ -342,10 +352,12 @@
                 {
                     "name": "ssm",
                     "order": 5,
-                    "executable": "/usr/bin/node",
+                    "executable": "/usr/local/bin/jibo-service-start",
                     "modes": {
                         "default": {
                             "arguments": [
+                                "ssm",
+                                "/usr/bin/node",
                                 "/usr/local/bin/jibo-ssm/jibo-ssm.js"
                             ],
                             "environment": {
@@ -360,6 +372,8 @@
                         },
                         "int-developer": {
                             "arguments": [
+                                "ssm",
+                                "/usr/bin/node",
                                 "--inspect=10223",
                                 "/usr/local/bin/jibo-ssm/jibo-ssm.js"
                             ],
@@ -387,10 +401,12 @@
                 {
                     "name": "expression",
                     "order": 4,
-                    "executable": "/usr/bin/node",
+                    "executable": "/usr/local/bin/jibo-service-start",
                     "modes": {
                         "default": {
                             "arguments": [
+                                "expression",
+                                "/usr/bin/node",
                                 "/usr/local/bin/jibo-ssm/lib/expression-process.js"
                             ],
                             "environment": {
@@ -402,6 +418,8 @@
                         },
                         "int-developer": {
                             "arguments": [
+                                "expression",
+                                "/usr/bin/node",
                                 "--inspect=10224",
                                 "/usr/local/bin/jibo-ssm/jibo-expression.js"
                             ],
@@ -426,10 +444,12 @@
                 {
                     "name": "certification",
                     "order": 0,
-                    "executable": "/usr/local/bin/jibo-certification-service",
+                    "executable": "/usr/local/bin/jibo-service-start",
                     "modes": {
                         "default": {
                             "arguments": [
+                                "certification",
+                                "/usr/local/bin/jibo-certification-service",
                                 "-c", "/usr/local/etc/jibo-certification-service.json"
                             ],
                             "environment": {},
@@ -438,6 +458,8 @@
                         },
                         "certification": {
                             "arguments": [
+                                "certification",
+                                "/usr/local/bin/jibo-certification-service",
                                 "-c", "/usr/local/etc/jibo-certification-service.json"
                             ],
                             "environment": {},
@@ -446,6 +468,8 @@
                         },
                         "service": {
                             "arguments": [
+                                "certification",
+                                "/usr/local/bin/jibo-certification-service",
                                 "-c", "/usr/local/etc/jibo-certification-service.json"
                             ],
                             "environment": {},
@@ -460,10 +484,12 @@
                 {
                     "name": "service-center",
                     "order": 5,
-                    "executable": "/usr/local/bin/jibo-service-center-service",
+                    "executable": "/usr/local/bin/jibo-service-start",
                     "modes": {
                         "default": {
                             "arguments": [
+                                "service-center",
+                                "/usr/local/bin/jibo-service-center-service",
                                 "-c", "/usr/local/etc/jibo-service-center-service.json"
                             ],
                             "environment": {
@@ -476,6 +502,8 @@
                         },
                         "service": {
                             "arguments": [
+                                "service-center",
+                                "/usr/local/bin/jibo-service-center-service",
                                 "-c", "/usr/local/etc/jibo-service-center-service.json"
                             ],
                             "environment": {

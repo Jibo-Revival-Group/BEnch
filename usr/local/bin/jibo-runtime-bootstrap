@@ -1,0 +1,22 @@
+#!/usr/bin/node
+'use strict';
+var runtime = require('../lib/jibo/runtime-state');
+var args = process.argv.slice(2);
+var options = {};
+var knowledge = false;
+while (args.length) {
+    var name = args.shift();
+    if (name === '--knowledge') { knowledge = true; continue; }
+    if ((name === '--root' || name === '--service') && args.length) {
+        options[name.slice(2)] = args.shift();
+    } else { console.error('Usage: jibo-runtime-bootstrap [--root DIR] [--service NAME] [--knowledge]'); process.exit(2); }
+}
+try { runtime.ensure(options); }
+catch (err) { console.error('[bootstrap] ' + err.message); process.exit(1); }
+
+if (knowledge) {
+    require('../lib/jibo/knowledge-bootstrap').initialize(options, function (err) {
+        if (err) { console.error('[bootstrap] KB initialization failed: ' + err.message); }
+        process.exit(err ? 1 : 0);
+    });
+}

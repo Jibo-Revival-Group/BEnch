@@ -6382,11 +6382,9 @@ class HolidayManager extends SyncManager_1.default {
                 this.model = baseModel.begin();
                 this._preloadHolidayModel(() => {
                     log.info('local cached holidays loaded, count: ', this._holidaysSize());
-                    if (SyncManager_1.default.canSkipFullSync) {
-                        log.info('doing first full sync in the background');
-                        callback();
-                        callback = () => { return; };
-                    }
+                    // Local state is ready; cloud availability must not gate boot.
+                    callback();
+                    callback = () => { return; };
                     if (this.enableCloud) {
                         log.info('starting holiday cloud syncing...');
                         this._syncWithCloud(() => {
@@ -8064,11 +8062,9 @@ class MediaListManager extends SyncManager_1.default {
                     else {
                         log.info('local cached media list loaded, count: ', this._mediaSize());
                     }
-                    if (SyncManager_1.default.canSkipFullSync) {
-                        log.info('doing first full sync in the background');
-                        callback();
-                        callback = () => { return; };
-                    }
+                    // Local state is ready; cloud availability must not gate boot.
+                    callback();
+                    callback = () => { return; };
                     if (this.enableCloud) {
                         log.info('starting media list cloud syncing...');
                         this._syncWithCloud(() => {
@@ -8738,11 +8734,9 @@ class RobotManager extends SyncManager_1.default {
                 this.model = KBClient_1.default.createModel(KB_SLICE_NAME, this.httpUrl);
                 this._preloadRobotModel(() => {
                     log.info('local cached robot properties loaded, count: ', this._robotSize());
-                    if (SyncManager_1.default.canSkipFullSync) {
-                        log.info('doing first full sync in the background');
-                        callback();
-                        callback = () => { return; };
-                    }
+                    // Local state is ready; cloud availability must not gate boot.
+                    callback();
+                    callback = () => { return; };
                     if (this.enableCloud) {
                         log.info('starting robot properties cloud syncing...');
                         this._syncWithCloud(() => {
@@ -8905,11 +8899,12 @@ class SyncManager extends events_1.EventEmitter {
                     const hash = crypto.createHash('sha256');
                     hash.update(JSON.stringify(credentials));
                     SyncManager.credentialsHash = hash.digest('base64');
+                    // Local KB initialization does not require cloud connectivity.
+                    callback();
                     this._networkIsRequired((err) => {
                         if (err) {
                             ErrorService_1.default.instance.addError(NO_SYNC_SERVER_ERROR);
                         }
-                        callback(err);
                     });
                 }
             });
@@ -15214,7 +15209,7 @@ class JetstreamServiceSim extends jibo_service_framework_1.HTTPWSService {
             command: data && data.command,
             requestId: data && data.requestId
         };
-        ['targetName', 'temperature', 'delta', 'entityId', 'action', 'blacklistHeat', 'blacklistCool']
+        ['targetName', 'temperature', 'delta', 'entityId', 'action', 'blacklistHeat', 'blacklistCool', 'domain', 'scope', 'value', 'unit']
             .forEach((key) => {
             if (data && data[key] !== undefined && data[key] !== null) {
                 body[key] = data[key];

@@ -131,6 +131,16 @@ function runTests(source, assert, Buffer) {
         assert(!f.logs.join(' ').includes('token'));
         passed++;
     }
+    {
+        const f = fixture({ [path]: JSON.stringify(valid) });
+        const action = Object.assign({}, command, {command: 'entity_control', domain: 'light',
+            action: 'color', scope: 'area', targetName: 'bedroom', value: 'blue', unit: ''});
+        f.robot._forwardHomeAssistantCommand(action);
+        const body = JSON.parse(f.requests[0].payload);
+        ['command', 'domain', 'action', 'scope', 'targetName', 'value', 'unit'].forEach(key =>
+            assert.strictEqual(body[key], action[key]));
+        passed++;
+    }
     return passed;
 }
 if (typeof module !== 'undefined') { module.exports = runTests; }

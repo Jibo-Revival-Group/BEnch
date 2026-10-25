@@ -1,0 +1,11 @@
+#!/bin/sh
+# System-manager invokes this for each start/restart. exec preserves signals/PID.
+set -e
+[ "$#" -ge 2 ] || { echo 'Usage: jibo-service-start SERVICE EXECUTABLE [ARGS...]' >&2; exit 2; }
+service=$1
+shift
+case "$service" in
+    ssm) /usr/local/bin/jibo-runtime-bootstrap --service ssm --knowledge ;;
+    *) /usr/local/bin/jibo-runtime-bootstrap --service "$service" ;;
+esac
+exec "$@"
