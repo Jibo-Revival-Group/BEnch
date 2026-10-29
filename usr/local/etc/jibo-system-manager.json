@@ -517,6 +517,22 @@
                     "startup_timeout": 10000,
                     "shutdown_timeout": 10000,
                     "crash_code": "SERVICE_CRASH_SERVICE_CENTER"
+                },
+                {
+                    "name": "resolv-watcher",
+                    "order": 0,
+                    "executable": "/usr/local/bin/resolv-watcher",
+                    "modes": {
+                        "default": {
+                            "arguments": [],
+                            "environment": {},
+                            "directory": "",
+                            "enabled": true
+                        }
+                    },
+                    "startup_timeout": 10000,
+                    "shutdown_timeout": 10000,
+                    "crash_code": "SERVICE_CRASH_RESOLV_WATCHER"
                 }
             ]
         },

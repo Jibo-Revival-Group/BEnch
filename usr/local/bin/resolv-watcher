@@ -1,75 +1,116 @@
-#!/usr/bin/env sh
-
-###############################################################################
-#
-#   Watcher for the /run/resolv.conf file
-#
-#   Watches the file for write operations and restores it if has been erased.
-#
-#   Note: Created to patch JIBO-10227, should be remove in future once we have
-#       a better fix.
-#
-#   Usage: Run by cron every 15 minutes
-###############################################################################
-
-# The file we are watching
-RESOLV_FILE='/run/resolv.conf'
-
-# Cron runperiod in seconds
-CRON_INTERVAL=900 # 15 minutes
-
-# Process info for logging
-PROC_NAME=`basename $0`
-PROC_PID=$$
-
-# Debugging flag
-# set -x
-
-# Log a message to syslog with propper pid, name, and error level
-#   ARG: 
-#       $@  :   Message to write
-log_err(){
-    logger \
-        --priority err      \
-        --id=$PROC_PID      \
-        --tag $PROC_NAME    \
-        $@
-}
-
-# Contents to be written back the file when restored
-#   ARG: 
-#       $1  :   Timestamp to write
-resolv_backup(){
-cat <<EOF
-# Restored @ $1
-nameserver 8.8.8.8
+#!/bin/sh
+# Restore an unusable resolver file without replacing an existing symlink.
+set -eu
+LC_ALL=C
+export LC_ALL
+RESOLV_FILE=${RESOLV_FILE:-/etc/resolv.conf}
+INTERVAL=${RESOLV_WATCH_INTERVAL:-60}
+RUN_ONCE=${RESOLV_WATCH_ONCE:-0}
+BACKUP='nameserver 8.8.8.8
 nameserver 8.8.4.4
-EOF
+'
+
+valid_ipv4() {
+    ipv4_address=$1
+    case "$ipv4_address" in ''|*[!0-9.]*|.*|*..*|*.) return 1 ;; esac
+    ipv4_saved_ifs=$IFS
+    IFS=.
+    set -- $ipv4_address
+    IFS=$ipv4_saved_ifs
+    [ "$#" -eq 4 ] || return 1
+    for octet do
+        case "$octet" in
+            [0-9]|[0-9][0-9]|[0-1][0-9][0-9]|2[0-4][0-9]|25[0-5]) ;;
+            *) return 1 ;;
+        esac
+    done
 }
 
-# Watch for write events on file
-#   ARG: 
-#       $1  :   Name of file
-#   RETURNS: 
-#       A sequence of lines of the format: "{filename} {event} {timestamp}",
-#       where:
-#           {filename}  :   The name of the file modified
-#           {event}     :   Comma-separated names of events
-#           {timestamp} :   Timestamp of the event 
-on_file_write(){
-    inotifywait -m -q -t$CRON_INTERVAL \
-        -e close_write      \
-        --format '%w %e %T' \
-        --timefmt '%FT%T'   \
-        $1
+valid_hextets() {
+    segment=$1
+    IPV6_GROUPS=0
+    [ -n "$segment" ] || return 0
+    case "$segment" in *[!0-9A-Fa-f:]* ) return 1 ;; esac
+    saved_ifs=$IFS
+    IFS=:
+    set -- $segment
+    IFS=$saved_ifs
+    for group do
+        case "$group" in ''|?????*|*[!0-9A-Fa-f]*) return 1 ;; esac
+    done
+    IPV6_GROUPS=$#
 }
 
-# Do the thing
-on_file_write $RESOLV_FILE | while read -r filename event timestamp; do
-    # if $RESOLV_FILE has less than 2 lines assume it's empty
-    if [[ $(wc -l </run/resolv.conf) -lt 2 ]] ; then
-        log_err "File '$filename' received event $event  at $timestamp"
-        log_err "Restoring file '$RESOLV_FILE' from backup" 
-        resolv_backup $timestamp > $RESOLV_FILE
+valid_ipv6() {
+    address=$1
+    case "$address" in *:*) ;; *) return 1 ;; esac
+    case "$address" in *[!0-9A-Fa-f:.]* ) return 1 ;; esac
+    prefix=$address
+    extra_groups=0
+    case "$address" in
+        *.*)
+            ipv4_tail=${address##*:}
+            valid_ipv4 "$ipv4_tail" || return 1
+            prefix=${address%:*}
+            [ "$prefix" != "$address" ] || return 1
+            case "$prefix" in *:) prefix=${prefix}: ;; esac
+            extra_groups=2
+            ;;
+    esac
+    case "$prefix" in *::*::* ) return 1 ;; esac
+    case "$prefix" in
+        *::* )
+            before=${prefix%%::*}
+            after=${prefix#*::}
+            case "$after" in *::* ) return 1 ;; esac
+            if [ -n "$before" ]; then valid_hextets "$before" || return 1; before_groups=$IPV6_GROUPS; else before_groups=0; fi
+            if [ -n "$after" ]; then valid_hextets "$after" || return 1; after_groups=$IPV6_GROUPS; else after_groups=0; fi
+            total=$((before_groups + after_groups + extra_groups))
+            [ "$total" -lt 8 ]
+            ;;
+        *)
+            valid_hextets "$prefix" || return 1
+            total=$((IPV6_GROUPS + extra_groups))
+            [ "$total" -eq 8 ]
+            ;;
+    esac
+}
+
+valid_nameserver() {
+    valid_ipv4 "$1" || valid_ipv6 "$1"
+}
+
+check_resolver() {
+    if [ ! -f "$RESOLV_FILE" ]; then
+        printf '%s' "$BACKUP" > "$RESOLV_FILE"
+        return
     fi
-done;
+
+    found_nameserver=0
+    set -f
+    while :; do
+        line=
+        if IFS= read -r line; then
+            :
+        elif [ -n "$line" ]; then
+            :
+        else
+            break
+        fi
+        set -- $line
+        if [ "$#" -ge 2 ] && [ "$1" = nameserver ] && valid_nameserver "$2"; then
+            found_nameserver=1
+            break
+        fi
+    done < "$RESOLV_FILE"
+    if [ "$found_nameserver" -ne 1 ]; then
+        # Redirection follows a symlink; deliberately do not use mv/rename.
+        printf '%s' "$BACKUP" > "$RESOLV_FILE"
+    fi
+}
+
+while :; do
+    check_resolver
+    [ "$RUN_ONCE" = 1 ] && exit 0
+    sleep "$INTERVAL"
+done

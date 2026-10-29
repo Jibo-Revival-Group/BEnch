@@ -20,6 +20,11 @@ try {
     assert.strictEqual(fs.readFileSync(env.BOOTSTRAP_LOG, 'utf8'), '--service\nasr\n');
     var config = require('../usr/local/etc/jibo-system-manager.json');
     config.SystemManager.service.services.forEach(function (service) {
+        if (service.name === 'resolv-watcher') {
+            assert.strictEqual(service.executable, '/usr/local/bin/resolv-watcher');
+            assert.deepEqual(service.modes.default.arguments, []);
+            return;
+        }
         assert.strictEqual(service.executable, '/usr/local/bin/jibo-service-start');
         Object.keys(service.modes).forEach(function (mode) {
             var args = service.modes[mode].arguments;

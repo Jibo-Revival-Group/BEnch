@@ -21,15 +21,12 @@ function initialize(options, callback) {
                 try { process.kill(owner, 0); }
                 catch (error) {
                     if (error.code !== 'ESRCH') { throw error; }
-                    fs.unlinkSync(path.join(lock, 'pid'));
-                    fs.rmdirSync(lock);
+                    // shortcut: stale locks need manual removal, upgrade when exclusion can be proven.
+                    callback(new Error('KB bootstrap stale lock requires manual removal')); return;
                 }
             } catch (error) {
                 if (error.code === 'ENOENT') {
                     // A creator may be between mkdir and publishing its PID.
-                    try {
-                        if (Date.now() - fs.statSync(lock).mtime.getTime() > 30000) { fs.rmdirSync(lock); }
-                    } catch (ignored) { /* creator released it */ }
                 } else { callback(error); return; }
             }
             if (Date.now() - started > 30000) { callback(new Error('KB bootstrap lock timeout')); return; }
@@ -93,3 +90,41 @@ function initialize(options, callback) {
     acquire();
 }
 module.exports = { initialize: initialize, namespaces: namespaces };
+
+
+// Run by jibo-runtime-bootstrap under flock, so no supported initializer can
+// hold the old directory lock now; legacy ones end at the OTA reboot.
+if (require.main === module) {
+    try {
+        var options = JSON.parse(process.argv[2]);
+        var root = options.root ? path.resolve(options.root) : '';
+        var lock = root + '/opt/jibo/Knowledge/.bootstrap-lock';
+        var stat;
+        try { stat = fs.lstatSync(lock); }
+        catch (err) { if (err.code !== 'ENOENT') { throw err; } }
+        if (stat) {
+            var entries = stat.isDirectory() ? fs.readdirSync(lock) : null;
+            if (!entries || entries.length > 1 || (entries.length === 1 && entries[0] !== 'pid')) {
+                throw new Error('Unknown KB bootstrap lock');
+            }
+            if (entries.length) {
+                var pidFile = path.join(lock, 'pid');
+                var pidStat = fs.lstatSync(pidFile);
+                if (!pidStat.isFile()) { throw new Error('Unknown KB bootstrap lock owner'); }
+                var text = fs.readFileSync(pidFile, 'utf8');
+                var boot = Number(/^btime (\d+)$/m.exec(fs.readFileSync('/proc/stat', 'utf8'))[1]) * 1000;
+                // Before this boot the owner is gone even if its PID was reused.
+                if (/^[1-9][0-9]{0,9}$/.test(text) && pidStat.mtime.getTime() >= boot) {
+                    try { process.kill(Number(text), 0); throw new Error('KB bootstrap lock owner is live'); }
+                    catch (err) { if (err.code !== 'ESRCH') { throw err; } }
+                }
+                fs.unlinkSync(pidFile);
+            }
+            fs.rmdirSync(lock);
+        }
+        initialize(options, function (err) {
+            if (err) { console.error('[bootstrap] KB initialization failed: ' + err.message); }
+            process.exit(err ? 1 : 0);
+        });
+    } catch (err) { console.error('[bootstrap] KB initialization failed: ' + err.message); process.exit(1); }
+}

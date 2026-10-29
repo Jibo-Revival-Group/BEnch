@@ -23,6 +23,23 @@ not against a live KB writer. Boot and PM invoke it before services; the SSM
 launcher invokes it on restarts. Concurrent initializers serialize KB creation.
 KB readiness uses local data while cloud synchronization runs in the background.
 
+KB bootstrap uses `/usr/bin/flock -w 30` on the permanent
+`/var/jibo/.knowledge-bootstrap-flock` file; do not remove or replace that file.
+While holding flock, a leftover `.bootstrap-lock` (empty, dead, malformed, or
+from before this boot) is removed. Only a live owner from this boot or
+unexpected entries are preserved and fail closed. Existing KB stores are not
+removed.
+
+This recovery assumes stock reboot-based services OTA: the reboot ends old
+processes and S72 applies the update before S76 and S78 start services. Every
+earlier BEach S04 hook, if installed, must finish before S72 replaces the code.
+Every subsequent KB initializer must use the new `jibo-runtime-bootstrap` CLI,
+including BEach boot/install. Old launchers, direct module calls, mixed-version
+starts, custom boot ordering, and rollback without equivalent quiescence are
+outside this boundary; flock cannot exclude them. Do not run initialization
+against a live SSM KB writer. The lock file must remain on a trusted local
+filesystem with working flock semantics.
+
 PM installs the early `S04jibo-bootstrap` boot hook. System-manager launches its
 managed services through `jibo-service-start SERVICE EXECUTABLE [ARGS...]`, which
 prepares storage and uses `exec` to retain process IDs, signals, and arguments.

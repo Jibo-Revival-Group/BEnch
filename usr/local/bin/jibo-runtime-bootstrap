@@ -15,8 +15,12 @@ try { runtime.ensure(options); }
 catch (err) { console.error('[bootstrap] ' + err.message); process.exit(1); }
 
 if (knowledge) {
-    require('../lib/jibo/knowledge-bootstrap').initialize(options, function (err) {
-        if (err) { console.error('[bootstrap] KB initialization failed: ' + err.message); }
-        process.exit(err ? 1 : 0);
-    });
+    var path = require('path');
+    var child = require('child_process');
+    var root = options.root ? path.resolve(options.root) : '';
+    var lock = root + '/var/jibo/.knowledge-bootstrap-flock';
+    var result = child.spawnSync('/usr/bin/flock', ['-w', '30', lock, process.execPath,
+        require.resolve('../lib/jibo/knowledge-bootstrap'), JSON.stringify(options)], { stdio: 'inherit' });
+    if (result.error) { console.error('[bootstrap] ' + result.error.message); }
+    process.exit(result.status === null ? 1 : result.status);
 }

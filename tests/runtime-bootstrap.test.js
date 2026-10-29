@@ -67,6 +67,7 @@ try {
     fs.mkdirSync(staleLock);
     fs.writeFileSync(path.join(staleLock, 'pid'), '2147483647');
     assert.strictEqual(run(['--knowledge']).status, 0, 'Interrupted bootstrap locks recover');
+    assert(!fs.existsSync(staleLock));
     Object.keys(originals).forEach(function (name) { assert.strictEqual(fs.readFileSync(file(name), 'utf8'), originals[name]); });
     remove(file('/opt/jibo/Knowledge/jukebox'));
     runtime.ensure({ root: root, service: 'beam', credentials: false });
