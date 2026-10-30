@@ -73,18 +73,30 @@ try {
     runtime.ensure({ root: root, service: 'beam', credentials: false });
     assert(fs.statSync(file('/opt/jibo/Knowledge/jukebox/music')).isDirectory());
     var credentialPath = file('/var/jibo/credentials.json');
-    fs.writeFileSync(credentialPath, '{bad');
-    var bad = run();
-    assert.strictEqual(bad.status, 1);
-    assert.strictEqual(fs.readFileSync(credentialPath, 'utf8'), '{bad');
-    assert(!bad.stderr.includes('secretAccessKey'));
+    // A damaged credentials.json (e.g. 0 bytes after power loss) warns but must not block any service or S04.
+    ['{bad', '', '[]', '{}'].forEach(function (damaged) {
+        fs.writeFileSync(credentialPath, damaged);
+        [[], ['--service', 'body'], ['--service', 'ssm', '--knowledge']].forEach(function (args) {
+            var bad = run(args);
+            assert.strictEqual(bad.status, 0, JSON.stringify(damaged) + ' ' + args.join(' ') + ': ' + bad.stderr);
+            assert(/warning/.test(bad.stderr));
+            assert(!bad.stderr.includes('secretAccessKey'));
+        });
+        assert.strictEqual(fs.readFileSync(credentialPath, 'utf8'), damaged, 'Damaged credentials are never overwritten');
+    });
+    fs.writeFileSync(credentialPath, '');
+    var launcher = fs.readFileSync(path.resolve(__dirname, '../usr/local/bin/jibo-service-start'), 'utf8')
+        .replace(/\/usr\/local\/bin\/jibo-runtime-bootstrap/g, process.execPath + ' ' + bootstrap + ' --root ' + root);
+    var started = child.spawnSync('sh', ['-c', launcher, 'jibo-service-start', 'audio', 'echo', 'audio started'], { encoding: 'utf8' });
+    assert.strictEqual(started.status, 0, started.stderr);
+    assert.strictEqual(started.stdout, 'audio started\n');
     fs.writeFileSync(credentialPath, originals['/var/jibo/credentials.json']);
     var unitsPath = file('/opt/jibo/Knowledge/beacon/units.json');
     fs.writeFileSync(unitsPath, '{"temperature":"celsius","extra":"preserve"}');
     runtime.ensure({ root: root });
     assert.strictEqual(json('/opt/jibo/Knowledge/beacon/units.json').extra, 'preserve');
     fs.writeFileSync(unitsPath, 'malformed');
-    assert.strictEqual(run().status, 1);
+    assert.strictEqual(run(['--service', 'ssm']).status, 0, 'A damaged units.json is read as Fahrenheit, not fatal');
     assert.strictEqual(fs.readFileSync(unitsPath, 'utf8'), 'malformed');
     fs.unlinkSync(unitsPath);
     fs.chmodSync(file('/opt/jibo/Knowledge'), 320);

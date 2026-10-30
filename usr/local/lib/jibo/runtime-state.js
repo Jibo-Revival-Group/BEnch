@@ -60,9 +60,14 @@ function defaultObject(file, data, validate, mode) {
 function beamData(dir) {
     directory(dir);
     ['eye', 'themes', 'custom-skills'].forEach(function (name) { directory(path.join(dir, name)); });
-    defaultObject(path.join(dir, 'units.json'), { temperature: 'fahrenheit' }, function (v) {
-        return v.temperature === 'fahrenheit' || v.temperature === 'celsius';
-    });
+    try {
+        defaultObject(path.join(dir, 'units.json'), { temperature: 'fahrenheit' }, function (v) {
+            return v.temperature === 'fahrenheit' || v.temperature === 'celsius';
+        });
+    } catch (err) {
+        // units.js already reads a damaged file as Fahrenheit; a unit preference must not stop Be booting.
+        if (!/JSON|Invalid settings/.test(err.message)) { throw err; }
+    }
     defaultObject(path.join(dir, 'camera-stream-settings.json'), { enabled: true }, function (v) {
         return typeof v.enabled === 'boolean';
     });
@@ -112,7 +117,14 @@ function ensure(options) {
     }
     if (opts.credentials !== false) { directory(root + '/var/jibo', 0o755); }
     dirs.forEach(function (dir) { directory(root + dir, dir === '/var/jibo/keys' ? 0o700 : undefined); });
-    if (opts.credentials !== false) { credentials(root); }
+    if (opts.credentials !== false) {
+        try { credentials(root); }
+        catch (err) {
+            // Only cloud clients read credentials; a damaged file must not stop body, audio or SSM from starting.
+            if (!/JSON|Invalid settings/.test(err.message)) { throw err; }
+            console.error('[bootstrap] warning: ' + err.message + ' (left unchanged)');
+        }
+    }
     if (service === 'all' || service === 'beam' || service === 'ssm') {
         beamData(root + '/opt/jibo/Knowledge/beacon');
     }
