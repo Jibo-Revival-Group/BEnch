@@ -8,4 +8,8 @@ case "$service" in
     ssm) /usr/local/bin/jibo-runtime-bootstrap --service ssm --knowledge ;;
     *) /usr/local/bin/jibo-runtime-bootstrap --service "$service" ;;
 esac
+# TTS: route speech through the 5x1 voice effects (vibrato/volume) when the plugin is installed.
+if [ "$service" = tts ] && [ -f /usr/local/lib/ladspa/jibo_voicefx.so ] && [ -f /usr/local/share/ttsservice/alsa/.asoundrc ]; then
+    export HOME=/usr/local/share/ttsservice/alsa
+fi
 exec "$@"

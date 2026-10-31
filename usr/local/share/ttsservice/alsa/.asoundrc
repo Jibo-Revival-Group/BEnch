@@ -1,0 +1,20 @@
+# Loaded by jibo-tts-service only (jibo-service-start sets HOME to this folder for "tts").
+# Inserts the 5x1 voice effects (vibrato, volume) between TTS and the stock TTS fader.
+pcm.!TTSOut {
+    type plug
+    slave.pcm "tts_voicefx"
+}
+pcm.tts_voicefx {
+    type ladspa
+    slave.pcm "tts_voicefx_out"
+    path "/usr/local/lib/ladspa"
+    plugins [ {
+        label jibo_voicefx
+        input { bindings { 0 "Input" } }
+        output { bindings { 0 "Output" } }
+    } ]
+}
+pcm.tts_voicefx_out {
+    type plug
+    slave.pcm "tts_faders"
+}
