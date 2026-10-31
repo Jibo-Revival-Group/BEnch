@@ -9,7 +9,7 @@ case "$service" in
     *) /usr/local/bin/jibo-runtime-bootstrap --service "$service" ;;
 esac
 # TTS: route speech through the 5x1 voice effects (vibrato/volume) when the plugin is installed.
-if [ "$service" = tts ] && [ -f /usr/local/lib/ladspa/jibo_voicefx.so ] && [ -f /usr/local/share/ttsservice/alsa/.asoundrc ]; then
+if [ "$service" = tts ] && [ -f /usr/local/lib/ladspa/jibo_voicefx.so ] && [ -f /usr/local/share/ttsservice/alsa/.asoundrc ] && [ -f /opt/jibo/Knowledge/beacon/voices/fx.txt ]; then
     export HOME=/usr/local/share/ttsservice/alsa
 fi
 exec "$@"

@@ -8,7 +8,8 @@
 
 The plugin adds vibrato (a sine-modulated delay line) and volume. BEacon's custom voices write the
 settings to `/opt/jibo/Knowledge/beacon/voices/fx.txt` as `<vibrato semitones> <vibrato Hz> <volume>`;
-the plugin re-reads it about 10 times a second while Jibo speaks. No file means no effect.
+the plugin re-reads it about 10 times a second while Jibo speaks. Without that file (custom voices
+are turned off in BEacon for now) the launcher leaves TTS on the stock ALSA chain.
 Pitch, speed and formants are applied by the TTS engine itself (BEam `beacon/lib/voice-tts.js`).
 
 Build (from `jibo_voicefx.c`, needs only glibc 2.4-2.7 symbols, no libm):

@@ -15,11 +15,14 @@ try {
         .replace(/\/usr\/local\/bin\/jibo-runtime-bootstrap/g, bootstrap)
         .replace(/\/usr\/local\/lib\/ladspa\/jibo_voicefx\.so/g, plugin)
         .replace(/\/usr\/local\/share\/ttsservice\/alsa\/\.asoundrc/g, rc)
+        .replace(/\/opt\/jibo\/Knowledge\/beacon\/voices\/fx\.txt/g, path.join(root, 'fx-settings.txt'))
         .replace(/HOME=\/usr\/local\/share\/ttsservice\/alsa/g, 'HOME=' + path.join(root, 'alsa')));
     var env = Object.assign({}, process.env, { HOME: '/original-home' });
     function home(service) { return child.spawnSync('sh', [wrapper, service, '/bin/sh', '-c', 'echo $HOME'], { env: env, encoding: 'utf8' }).stdout.trim(); }
     assert.strictEqual(home('tts'), '/original-home', 'Without the plugin installed, TTS starts exactly as before');
     fs.writeFileSync(plugin, ''); fs.writeFileSync(rc, '');
+    assert.strictEqual(home('tts'), '/original-home', 'Custom voices off (no fx.txt): stock TTS chain');
+    fs.writeFileSync(path.join(root, 'fx-settings.txt'), '0 5 1\n');
     assert.strictEqual(home('tts'), path.join(root, 'alsa'), 'TTS loads the voice-effects ALSA chain');
     assert.strictEqual(home('asr'), '/original-home', 'Other services are untouched');
 
