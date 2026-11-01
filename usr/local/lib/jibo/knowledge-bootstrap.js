@@ -5,6 +5,91 @@ var fs = require('fs');
 var path = require('path');
 var runtime = require('./runtime-state');
 var namespaces = ['/jibo/loop', '/jibo/robot', '/jibo/holidays', '/jibo/media', '/jibo/location'];
+var SKIP_DIRS = { 'beacon': true, '5x1-release-backups': true, 'assets': true };
+// shortcut: bigger databases are not checked at startup (memory, and SSM's 60 s launch window); stream them if one ever needs repair.
+var MAX_REPAIR_BYTES = 64 * 1024 * 1024;
+
+// Synchronous so the message survives process.exit even when stderr is a pipe; syslog so it shows in /var/log/messages.
+function report(message, opts) {
+    try { fs.writeSync(2, '[bootstrap] ' + message + '\n'); } catch (e) {}
+    if (opts && opts.root) { return; }
+    try { require('child_process').spawnSync('/usr/bin/logger', ['-t', 'jibo-kb-bootstrap', message]); } catch (e) {}
+}
+
+function isRecord(value) { return !!value && typeof value === 'object' && !Array.isArray(value); }
+function parseRecord(text) { try { var v = JSON.parse(text); return isRecord(v) ? v : null; } catch (e) { return null; } }
+
+// Pull every complete JSON object out of a damaged line: NUL padding, "{a}{b}" with a lost newline, a cut-off record.
+function salvage(line) {
+    var found = [], from = 0;
+    // shortcut: huge damaged lines are dropped, not scanned; real records are a few KB.
+    if (line.length > 1048576) { return found; }
+    while (from < line.length) {
+        var start = line.indexOf('{', from);
+        if (start < 0) { break; }
+        var depth = 0, quoted = false, escaped = false, end = -1;
+        for (var i = start; i < line.length && end < 0; i++) {
+            var c = line[i];
+            if (quoted) {
+                if (escaped) { escaped = false; } else if (c === '\\') { escaped = true; } else if (c === '"') { quoted = false; }
+            } else if (c === '"') { quoted = true; }
+            else if (c === '{') { depth++; }
+            else if (c === '}' && --depth === 0) { end = i; }
+        }
+        var record = end < 0 ? null : parseRecord(line.slice(start, end + 1));
+        if (record) { found.push(JSON.stringify(record)); from = end + 1; } else { from = start + 1; }
+    }
+    return found;
+}
+
+// Keeps every valid record and everything salvageable from damaged lines; the original is kept beside it.
+function repairFile(filename) {
+    var raw = fs.readFileSync(filename), kept = [], damaged = 0, salvaged = 0;
+    raw.toString('utf8').split('\n').forEach(function (line) {
+        if (!line.trim()) { return; }
+        if (parseRecord(line)) { kept.push(line); return; }
+        damaged++;
+        var parts = salvage(line);
+        salvaged += parts.length;
+        kept = kept.concat(parts);
+    });
+    if (!damaged) { return null; }
+    var mode = fs.statSync(filename).mode & 511;
+    var backup = filename + '.damaged-' + new Date().toISOString().replace(/[:.]/g, '-');
+    var tmp = filename + '.repair';
+    // The original stays in place until the rename; a failed write (e.g. disk full) leaves no partial files.
+    try {
+        fs.writeFileSync(backup, raw); fs.chmodSync(backup, mode);
+        fs.writeFileSync(tmp, kept.length ? kept.join('\n') + '\n' : ''); fs.chmodSync(tmp, mode);
+        var fd = fs.openSync(tmp, 'r'); fs.fsyncSync(fd); fs.closeSync(fd);
+    } catch (err) {
+        try { fs.unlinkSync(tmp); } catch (e) {}
+        try { fs.unlinkSync(backup); } catch (e) {}
+        throw err;
+    }
+    fs.renameSync(tmp, filename);
+    return { damaged: damaged, salvaged: salvaged, kept: kept.length, backup: backup };
+}
+
+// Every Knowledge database is a "nodes" JSON-lines file; repair them all before SSM opens them.
+function repairTree(dir, opts) {
+    var names;
+    try { names = fs.readdirSync(dir); } catch (e) { report('cannot read ' + dir + ': ' + e.message, opts); return; }
+    names.forEach(function (name) {
+        var file = path.join(dir, name), stat;
+        try { stat = fs.lstatSync(file); } catch (e) { return; }
+        if (stat.isDirectory()) { if (!SKIP_DIRS[name]) { repairTree(file, opts); } return; }
+        if (name !== 'nodes' || !stat.isFile()) { return; }
+        if (stat.size > MAX_REPAIR_BYTES) { report('not checked (too large, ' + stat.size + ' bytes): ' + file, opts); return; }
+        try {
+            var result = repairFile(file);
+            if (result) {
+                report('repaired ' + file + ': ' + result.damaged + ' damaged line(s), ' + result.salvaged +
+                    ' record(s) recovered from them, ' + result.kept + ' kept; original saved as ' + result.backup, opts);
+            }
+        } catch (e) { report('could not repair ' + file + ': ' + e.message, opts); }
+    });
+}
 
 function initialize(options, callback) {
     var opts = options || {};
@@ -48,6 +133,7 @@ function initialize(options, callback) {
             callback(err);
         }
         try {
+            repairTree(base, opts);
             var kb = opts.kb || require('../../bin/jibo-ssm/node_modules/jibo-kb');
             Database = kb.KnowledgeDatabase;
             originalRoot = Database.getRootDirectory;
@@ -64,22 +150,9 @@ function initialize(options, callback) {
                     var db = new Database(name);
                     var filename = Database.getKbFilename(name);
                     runtime.directory(path.dirname(filename));
-                    // Existing databases belong to SSM; preserve their bytes.
+                    // Existing databases belong to SSM (already repaired above); don't let NeDB compact them here.
                     try {
-                        if (fs.statSync(filename).size > 0) {
-                            // Validate the native JSONL store without NeDB compaction
-                            // rewriting existing data during preparation.
-                            fs.readFileSync(filename, 'utf8').split('\n').forEach(function (line) {
-                                if (!line.trim()) { return; }
-                                var value;
-                                try { value = JSON.parse(line); }
-                                catch (error) { throw new Error('Malformed Knowledge database: ' + filename); }
-                                if (!value || typeof value !== 'object' || Array.isArray(value)) {
-                                    throw new Error('Malformed Knowledge database: ' + filename);
-                                }
-                            });
-                            next(); return;
-                        }
+                        if (fs.statSync(filename).size > 0) { next(); return; }
                     } catch (error) { if (error.code !== 'ENOENT') { throw error; } }
                     db.init(next);
                 } catch (error) { finish(error); }
@@ -89,7 +162,7 @@ function initialize(options, callback) {
     }
     acquire();
 }
-module.exports = { initialize: initialize, namespaces: namespaces };
+module.exports = { initialize: initialize, namespaces: namespaces, repairFile: repairFile, salvage: salvage };
 
 
 // Run by jibo-runtime-bootstrap under flock, so no supported initializer can
@@ -123,8 +196,8 @@ if (require.main === module) {
             fs.rmdirSync(lock);
         }
         initialize(options, function (err) {
-            if (err) { console.error('[bootstrap] KB initialization failed: ' + err.message); }
+            if (err) { report('KB initialization failed: ' + err.message, options); }
             process.exit(err ? 1 : 0);
         });
-    } catch (err) { console.error('[bootstrap] KB initialization failed: ' + err.message); process.exit(1); }
+    } catch (err) { report('KB initialization failed: ' + err.message); process.exit(1); }
 }

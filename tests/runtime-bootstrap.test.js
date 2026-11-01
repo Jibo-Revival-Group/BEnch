@@ -60,8 +60,13 @@ try {
     var store = file('/opt/jibo/Knowledge/jibo/loop/nodes');
     var savedStore = fs.readFileSync(store, 'utf8');
     fs.writeFileSync(store, 'malformed database');
-    assert.strictEqual(run(['--knowledge']).status, 1);
-    assert.strictEqual(fs.readFileSync(store, 'utf8'), 'malformed database');
+    // Damaged databases are repaired (kb-repair.test.js covers salvage); the original is kept beside them.
+    assert.strictEqual(run(['--knowledge']).status, 0, 'A damaged database must not stop SSM');
+    var damaged = fs.readdirSync(path.dirname(store)).filter(function (n) { return /^nodes\.damaged-/.test(n); });
+    assert.strictEqual(damaged.length, 1);
+    assert.strictEqual(fs.readFileSync(path.join(path.dirname(store), damaged[0]), 'utf8'), 'malformed database');
+    fs.readFileSync(store, 'utf8').trim().split('\n').forEach(function (line) { JSON.parse(line); });
+    fs.unlinkSync(path.join(path.dirname(store), damaged[0]));
     fs.writeFileSync(store, savedStore);
     var staleLock = file('/opt/jibo/Knowledge/.bootstrap-lock');
     fs.mkdirSync(staleLock);
