@@ -50,6 +50,8 @@ getter.getConfig(function(error, configPath, mode) {
             }
             else {
                 view.complete();
+                // SSM is up: tell the Knowledge bootstrap the launch finished (no deep repair next time).
+                try { require('fs').unlinkSync('/run/jibo-ssm-pending'); } catch (e) {}
                 //listen to events from the skills service for when skills are stopped/started
                 //in int-developer mode
                 const skills = ssm.SkillsService.instance;

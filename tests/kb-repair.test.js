@@ -12,6 +12,10 @@ assert.deepStrictEqual(salvage('\u0000\u0000{"_id":"c","n":"x}{y"}'), ['{"_id":"
 assert.deepStrictEqual(salvage('{"_id":"d","path":"/opt/jib{"_id":"e"}'), ['{"_id":"e"}'], 'cut-off record, then the next one');
 assert.deepStrictEqual(salvage('{"_id":"f","n":'), [], 'cut-off record alone');
 assert.deepStrictEqual(salvage('[1,2]'), [], 'not a record');
+assert.deepStrictEqual(salvage('{"_id":"h","data":{"history":[{"description":{"a":1},"t":2},{"t":3}],"x":'), [],
+    'pieces nested inside a cut-off record are not records');
+assert.deepStrictEqual(salvage('{"_id":"h","data":{"items":[{"t":1}],"x":{"_id":"i","n":1}'), ['{"_id":"i","n":1}'],
+    'a record-shaped piece is kept (it was written as one)');
 
 var root = fs.mkdtempSync(path.join(os.tmpdir(), 'kb-repair-'));
 try {

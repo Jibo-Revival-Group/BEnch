@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<!-- Same layout as the stock @be/settings error screen (assets/errors/error.json), with Jibo's own fonts and icon. -->
+<link rel="stylesheet" href="file:///opt/jibo/Jibo/Skills/@be/be/node_modules/jibo/resources/fonts.css">
+<style>
+    html, body { margin: 0; width: 1280px; height: 720px; overflow: hidden; background: #000; color: #fff; cursor: none; }
+    .code { position: absolute; left: 30px; top: 30px; font: 45px 'Proxima Nova Light', sans-serif; color: #BBC6CA; }
+    .icon { position: absolute; left: 480px; top: 30px; width: 320px; height: 320px; }
+    .header, .message { position: absolute; left: 0; width: 1280px; text-align: center; }
+    .header { top: 380px; font: bold 80px 'Proxima Nova Soft', sans-serif; }
+    .message { top: 480px; font: 45px 'Proxima Nova Light', sans-serif; }
+    .dots::after { content: ''; animation: dots 1.5s steps(4) infinite; }
+    @keyframes dots { 0% { content: ''; } 25% { content: '.'; } 50% { content: '..'; } 75% { content: '...'; } }
+</style>
+</head>
+<body>
+    <div class="code">Error KB</div>
+    <img class="icon" src="file:///opt/jibo/Jibo/Skills/@be/be/skills/settings/assets/errors/icons/error.png" onerror="this.style.display='none'">
+    <div class="header">Something went wrong with KB,</div>
+    <div class="message"><span class="dots">attempting to repair</span></div>
+</body>
+</html>

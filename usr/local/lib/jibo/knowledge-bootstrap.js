@@ -19,14 +19,22 @@ function report(message, opts) {
 function isRecord(value) { return !!value && typeof value === 'object' && !Array.isArray(value); }
 function parseRecord(text) { try { var v = JSON.parse(text); return isRecord(v) ? v : null; } catch (e) { return null; } }
 
-// Pull every complete JSON object out of a damaged line: NUL padding, "{a}{b}" with a lost newline, a cut-off record.
+// NeDB records (and its index markers); nested objects inside a cut-off record are not records.
+function isDatabaseRecord(value) {
+    return isRecord(value) && (value._id !== undefined || value.$$indexCreated !== undefined || value.$$deleted !== undefined);
+}
+var RECORD_START = /\{"(_id|\$\$)/g;
+
+// Pull every complete record out of a damaged line: NUL padding, "{a}{b}" with a lost newline, a cut-off record.
 function salvage(line) {
-    var found = [], from = 0;
-    // shortcut: huge damaged lines are dropped, not scanned; real records are a few KB.
-    if (line.length > 1048576) { return found; }
+    var found = [], from = 0, match;
+    // shortcut: damaged lines over 16 MB are dropped, not scanned; real records are at most hundreds of KB.
+    if (line.length > 16 * 1048576) { return found; }
     while (from < line.length) {
-        var start = line.indexOf('{', from);
-        if (start < 0) { break; }
+        RECORD_START.lastIndex = from;
+        match = RECORD_START.exec(line);
+        if (!match) { break; }
+        var start = match.index;
         var depth = 0, quoted = false, escaped = false, end = -1;
         for (var i = start; i < line.length && end < 0; i++) {
             var c = line[i];
@@ -37,6 +45,7 @@ function salvage(line) {
             else if (c === '}' && --depth === 0) { end = i; }
         }
         var record = end < 0 ? null : parseRecord(line.slice(start, end + 1));
+        if (record && !isDatabaseRecord(record)) { record = null; }
         if (record) { found.push(JSON.stringify(record)); from = end + 1; } else { from = start + 1; }
     }
     return found;
@@ -162,7 +171,8 @@ function initialize(options, callback) {
     }
     acquire();
 }
-module.exports = { initialize: initialize, namespaces: namespaces, repairFile: repairFile, salvage: salvage };
+module.exports = { initialize: initialize, namespaces: namespaces, repairFile: repairFile, salvage: salvage,
+    report: report, SKIP_DIRS: SKIP_DIRS, MAX_REPAIR_BYTES: MAX_REPAIR_BYTES };
 
 
 // Run by jibo-runtime-bootstrap under flock, so no supported initializer can
@@ -171,6 +181,19 @@ if (require.main === module) {
     try {
         var options = JSON.parse(process.argv[2]);
         var root = options.root ? path.resolve(options.root) : '';
+        // SSM's startup removes this marker once it is up; still present = the last launch never finished.
+        var pending = root + '/run/jibo-ssm-pending', deepDone = root + '/run/jibo-kb-deep-repair.done';
+        if (options.service === 'ssm') {
+            if (fs.existsSync(pending) && !fs.existsSync(deepDone)) {
+                // Hand over to the deep repair; it waits for this flock, so SSM stays down until it finishes.
+                report('SSM did not start last time; running a deep Knowledge check', options);
+                var deep = require('child_process').spawn('/usr/bin/flock', ['-w', '1800', root + '/var/jibo/.knowledge-bootstrap-flock',
+                    process.execPath, path.join(__dirname, 'kb-deep-repair.js'), JSON.stringify(options)], { detached: true, stdio: 'ignore' });
+                deep.unref();
+                process.exit(1);
+            }
+            try { fs.writeFileSync(pending, String(Date.now())); } catch (e) {}
+        }
         var lock = root + '/opt/jibo/Knowledge/.bootstrap-lock';
         var stat;
         try { stat = fs.lstatSync(lock); }
