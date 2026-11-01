@@ -8472,6 +8472,7 @@ class MediaListManager extends SyncManager_1.default {
         let newMedia = [];
         let sameMedia = [];
         let removeMedia = [];
+        let keptMedia = [];
         let mediaChanged = false;
         let hangingEdges = false;
         let localMediaList = this._fetchMedia();
@@ -8518,7 +8519,14 @@ class MediaListManager extends SyncManager_1.default {
                 }
             }
             if (!found) {
-                removeMedia.push(localMedia);
+                // 5x1: the media list request carries no robot identity, so the cloud cannot list
+                // this robot's photos. Keep local photos it leaves out; only drop ones deleted here.
+                if (localMedia.data.isDeleted) {
+                    removeMedia.push(localMedia);
+                }
+                else {
+                    keptMedia.push(localMedia._id);
+                }
             }
         });
         if (hangingEdges) {
@@ -8557,6 +8565,9 @@ class MediaListManager extends SyncManager_1.default {
                 });
                 pendingUploadIds.forEach((pendingUploadId) => {
                     rootNode.addEdges(pendingUploadId, 'media');
+                });
+                keptMedia.forEach((keptId) => {
+                    rootNode.addEdges(keptId, 'media');
                 });
             }
             let edgesChanged = this._setupThumbnailEdges();
