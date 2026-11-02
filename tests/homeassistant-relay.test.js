@@ -141,6 +141,12 @@ function runTests(source, assert, Buffer) {
             assert.strictEqual(body[key], action[key]));
         passed++;
     }
+    {
+        const f = fixture({ [path]: JSON.stringify(valid) });
+        f.robot._forwardHomeAssistantCommand(Object.assign({}, command, {command: 'conversation', text: 'is the front door locked'}));
+        assert.strictEqual(JSON.parse(f.requests[0].payload).text, 'is the front door locked');
+        passed++;
+    }
     return passed;
 }
 if (typeof module !== 'undefined') { module.exports = runTests; }
