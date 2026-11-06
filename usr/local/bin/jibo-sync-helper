@@ -1,0 +1,88 @@
+#!/usr/bin/node
+'use strict';
+// JiboSync helper: lets BEacon (uid 2000) read and install face/voice enrollment, which only root can touch.
+// Listens on 127.0.0.1 only. GET /summary, GET /export?id=ID, POST /import {items:[{id, from, face, voice}]},
+// POST /voice-done?id=ID once createSpeakerModel(ID) has built the model from the staged recordings,
+// POST /voice-gone?id=ID once removeSpeakerModel(ID) has dropped it.
+const fs = require('fs');
+const http = require('http');
+const url = require('url');
+const store = require('/usr/local/lib/jibo/jibo-sync-store.js');
+
+const PORT = Number(process.env.JIBO_SYNC_HELPER_PORT) || 8494;
+const ROOT = process.env.JIBO_SYNC_ROOT || '';
+const MAX_BODY = 64 * 1024 * 1024;
+const IDENTITY_BIN = '/usr/local/bin/jibo-identity-service';
+
+function send (res, status, body) {
+    res.writeHead(status, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(body));
+}
+
+function identityList (cb) {
+    http.get({ host: '127.0.0.1', port: 8489, path: '/identity/list', timeout: 5000 }, (res) => {
+        let text = '';
+        res.on('data', (d) => { text += d; });
+        res.on('end', () => { try { cb(null, JSON.parse(text)); } catch (err) { cb(err); } });
+    }).on('error', cb);
+}
+
+// The identity service reads its files only at start: kill it (no save on SIGKILL, so it can't write
+// its old state over ours) and the system manager starts it again. Wait until it lists the new faces.
+function reloadIdentity (ids, done) {
+    if (ROOT) return done(null);
+    fs.readdirSync('/proc').filter((p) => /^\d+$/.test(p)).forEach((pid) => {
+        let cmd = '';
+        try { cmd = fs.readFileSync('/proc/' + pid + '/cmdline', 'utf8'); } catch (err) { return; }
+        if (cmd.split('\0')[0] === IDENTITY_BIN) { try { process.kill(Number(pid), 'SIGKILL'); } catch (err) { /* gone */ } }
+    });
+    const until = Date.now() + 90000;
+    (function poll () {
+        identityList((err, list) => {
+            const names = (!err && list && list.face || []).map((f) => f.name);
+            if (!err && ids.every((id) => names.indexOf(id) >= 0)) return done(null);
+            if (Date.now() > until) return done(new Error('the identity service did not load the new faces'));
+            setTimeout(poll, 1000);
+        });
+    })();
+}
+
+const server = http.createServer((req, res) => {
+    const u = url.parse(req.url, true);
+    if (req.method === 'GET' && u.pathname === '/summary') {
+        try { return send(res, 200, store.summary(ROOT)); } catch (err) { return send(res, 500, { error: err.message }); }
+    }
+    if (req.method === 'GET' && u.pathname === '/export') {
+        try { return send(res, 200, store.exportPerson(ROOT, u.query.id)); } catch (err) { return send(res, 400, { error: err.message }); }
+    }
+    if (req.method === 'POST' && u.pathname === '/voice-done') {
+        try { return send(res, 200, store.commitVoice(ROOT, u.query.id)); } catch (err) { return send(res, 400, { error: err.message }); }
+    }
+    if (req.method === 'POST' && u.pathname === '/voice-gone') {
+        try { return send(res, 200, store.forgetVoice(ROOT, u.query.id)); } catch (err) { return send(res, 400, { error: err.message }); }
+    }
+    if (req.method === 'POST' && u.pathname === '/import') {
+        const chunks = [];
+        let size = 0;
+        req.on('data', (d) => {
+            size += d.length;
+            if (size > MAX_BODY) { send(res, 413, { error: 'too large' }); req.destroy(); return; }
+            chunks.push(d);
+        });
+        req.on('end', () => {
+            if (size > MAX_BODY) return;
+            let result;
+            try {
+                const body = JSON.parse(Buffer.concat(chunks).toString('utf8'));
+                result = store.importPeople(ROOT, body.items || []);
+            } catch (err) { return send(res, 400, { error: err.message }); }
+            if (!result.faceIds.length) return send(res, 200, result);
+            reloadIdentity(result.faceIds, (err) => send(res, err ? 500 : 200, err ? { error: err.message, faceIds: result.faceIds, voiceIds: result.voiceIds } : result));
+        });
+        return;
+    }
+    send(res, 404, { error: 'not found' });
+});
+server.listen(PORT, '127.0.0.1', () => {
+    if (process.env.JIBO_SYNC_HELPER_READY) fs.writeSync(1, 'ready ' + server.address().port + '\n');
+});

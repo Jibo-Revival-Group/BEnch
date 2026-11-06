@@ -533,6 +533,22 @@
                     "startup_timeout": 10000,
                     "shutdown_timeout": 10000,
                     "crash_code": "SERVICE_CRASH_RESOLV_WATCHER"
+                },
+                {
+                    "name": "jibo-sync-helper",
+                    "order": 0,
+                    "executable": "/usr/local/bin/jibo-service-start",
+                    "modes": {
+                        "default": {
+                            "arguments": ["jibo-sync-helper", "/usr/local/bin/jibo-sync-helper"],
+                            "environment": {},
+                            "directory": "",
+                            "enabled": true
+                        }
+                    },
+                    "startup_timeout": 10000,
+                    "shutdown_timeout": 10000,
+                    "crash_code": "SERVICE_CRASH_JIBO_SYNC_HELPER"
                 }
             ]
         },
