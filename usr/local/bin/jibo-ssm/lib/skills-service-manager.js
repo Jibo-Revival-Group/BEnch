@@ -12506,6 +12506,9 @@ class WifiService extends jibo_service_framework_1.HTTPWSService {
         url.post('/get_saved_networks', (req, res) => {
             this._onGetSavedNetworks(req, res);
         });
+        url.post('/get_scan_results', (req, res) => {
+            this._onGetScanResults(req, res);
+        });
         url.post('/verify_connection', (req, res) => {
             this._onVerifyConnection(req, res);
         });
@@ -12760,6 +12763,44 @@ class WifiService extends jibo_service_framework_1.HTTPWSService {
                 this.sendJson(res, { error: error.stack || error }, 500);
             });
         });
+    }
+    // 5x1: nearby networks for Settings › New Wi-Fi. Same scan the location lookup uses.
+    _onGetScanResults(req, res) {
+        req.resume();
+        req.on('end', () => {
+            this.getScanResults().then((lines) => {
+                this.sendJson(res, { status: 'OK', networks: WifiService.parseScanResults(lines) });
+            }, (error) => {
+                return this.sendJson(res, { error: error.stack || String(error) }, 500);
+            });
+        });
+    }
+    // wpa_cli scan_results lines: bssid, frequency, signal dBm, flags, ssid (tab-separated).
+    static parseScanResults(lines) {
+        const best = {};
+        (lines || []).forEach((line) => {
+            const parts = String(line).split('\t');
+            if (parts.length < 5) { return; }
+            const ssid = WifiService.decodeSsid(parts.slice(4).join('\t'));
+            const signal = parseInt(parts[2], 10);
+            // Hidden networks have no name; mesh backhaul links can't be joined.
+            if (!ssid.replace(/\u0000/g, '').trim() || isNaN(signal) || /MESH/.test(parts[3])) { return; }
+            const secure = /WPA|WEP|RSN|SAE|EAP/.test(parts[3]);
+            if (!best[ssid] || signal > best[ssid].signal) { best[ssid] = { ssid: ssid, signal: signal, secure: secure, flags: parts[3] }; }
+        });
+        return Object.keys(best).map((k) => best[k]).sort((a, b) => b.signal - a.signal);
+    }
+    // wpa_cli prints non-ASCII SSID bytes as \xNN.
+    static decodeSsid(text) {
+        if (text.indexOf('\\') < 0) { return text; }
+        const bytes = [];
+        for (let i = 0; i < text.length; i++) {
+            const hex = text[i] === '\\' && text[i + 1] === 'x' && /^[0-9a-fA-F]{2}$/.test(text.substr(i + 2, 2));
+            if (hex) { bytes.push(parseInt(text.substr(i + 2, 2), 16)); i += 3; }
+            else if (text[i] === '\\' && text[i + 1] === '\\') { bytes.push(92); i += 1; }
+            else { bytes.push(text.charCodeAt(i) & 0xFF); }
+        }
+        return Buffer.from(bytes).toString('utf8');
     }
     _onGetSavedNetworks(req, res) {
         let chunk = "";
