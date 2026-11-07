@@ -34,7 +34,7 @@ try {
     var loop = write('jibo/loop/nodes', cleanText);
     var past = new Date(2020, 0, 1); fs.utimesSync(loop, past, past);
     var beacon = write('beacon/nodes', '{broken', 420);
-    var big = write('jibo/interactionmemory/nodes', '{broken');
+    var big = write('jibo/huge/nodes', '{broken');
     fs.truncateSync(big, 64 * 1024 * 1024 + 1);
 
     var r = child.spawnSync(process.execPath, [boot, '--root', root, '--service', 'ssm', '--knowledge'], { encoding: 'utf8', timeout: 20000 });

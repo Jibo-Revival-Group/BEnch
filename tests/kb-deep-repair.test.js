@@ -50,7 +50,7 @@ try {
 
     // Whole flow through the real startup step.
     child.spawnSync('mkdir', ['-p', root + '/run']);
-    var damagedBig = write('jibo/interactionmemory/nodes', '{"_id":"m1"}\n{"_id":"m2"}\u0000\u0000\u0000\n');
+    var damagedBig = write('jibo/huge/nodes', '{"_id":"m1"}\n{"_id":"m2"}\u0000\u0000\u0000\n');
     fs.truncateSync(damagedBig, 64 * 1024 * 1024 + 4096);   // too big for the normal startup check
     function start() { return child.spawnSync(process.execPath, [boot, '--root', root, '--service', 'ssm', '--knowledge'], { encoding: 'utf8', timeout: 30000 }); }
     var first = start();

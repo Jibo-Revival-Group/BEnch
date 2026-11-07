@@ -80,6 +80,64 @@ function repairFile(filename) {
     return { damaged: damaged, salvaged: salvaged, kept: kept.length, backup: backup };
 }
 
+// Interaction memory: greetings look back at most 6 days; keep 2 weeks plus each person's last 3 events.
+// Same rule as noteEvent in BEam's jibo-interaction-memory.
+var HISTORY_KEEP_MS = 14 * 86400000, HISTORY_KEEP_PER_PERSON = 3;
+function pruneHistory(history, now) {
+    var seen = {}, kept = [];
+    for (var i = history.length - 1; i >= 0; i--) {
+        var e = history[i], keep = now - Number(e && e.timestamp) <= HISTORY_KEEP_MS;
+        ((e && e.description && e.description.personIDs) || []).forEach(function (id) {
+            seen[id] = (seen[id] || 0) + 1;
+            if (seen[id] <= HISTORY_KEEP_PER_PERSON) { keep = true; }
+        });
+        if (keep) { kept.push(e); }
+    }
+    return kept.reverse();
+}
+
+// NeDB appends the whole history record on every save and only compacts when it loads the file, which it can't once
+// the file is too big (931 MB seen). Keep the newest copy of each record, with its history pruned.
+function compactInteractionMemory(file, now) {
+    var latest = {}, order = [], stat = fs.statSync(file), tmp = file + '.compact', out;
+    function keep(key, line) { if (!(key in latest)) { order.push(key); } latest[key] = line; }
+    function take(record) {
+        if (record.$$deleted) { delete latest[record._id]; return; }
+        keep(record.$$indexCreated ? '$$index ' + record.$$indexCreated.fieldName : record._id, JSON.stringify(record));
+    }
+    require('./kb-deep-repair').eachLine(file, function (line) {
+        if (line === null || !line.trim()) { return; }
+        // Fast path for the ~300 KB copies: id from the prefix; a line cut off mid-record doesn't end in "}".
+        var m = /^\{"_id":"([^"]*)"/.exec(line);
+        if (m && line[line.length - 1] === '}') { keep(m[1], line); return; }
+        var record = parseRecord(line);
+        if (record && isDatabaseRecord(record)) { take(record); return; }
+        salvage(line).forEach(function (part) { take(JSON.parse(part)); });
+    });
+    var kept = 0;
+    try {
+        out = fs.openSync(tmp, 'w', stat.mode & 511);
+        order.forEach(function (key) {
+            if (!(key in latest)) { return; }
+            var line = latest[key], record = parseRecord(line);
+            if (!record) { return; }
+            if (record.type === 'history' && record.data && Array.isArray(record.data.history)) {
+                record.data.history = pruneHistory(record.data.history, now);
+                line = JSON.stringify(record);
+            }
+            fs.writeSync(out, line + '\n'); kept++;
+        });
+        fs.fsyncSync(out); fs.closeSync(out); out = null;
+        fs.chmodSync(tmp, stat.mode & 511);
+        fs.renameSync(tmp, file);
+    } catch (err) {
+        if (out !== null && out !== undefined) { try { fs.closeSync(out); } catch (e) {} }
+        try { fs.unlinkSync(tmp); } catch (e) {}
+        throw err;
+    }
+    return { before: stat.size, after: fs.statSync(file).size, kept: kept };
+}
+
 // Every Knowledge database is a "nodes" JSON-lines file; repair them all before SSM opens them.
 function repairTree(dir, opts) {
     var names;
@@ -89,6 +147,13 @@ function repairTree(dir, opts) {
         try { stat = fs.lstatSync(file); } catch (e) { return; }
         if (stat.isDirectory()) { if (!SKIP_DIRS[name]) { repairTree(file, opts); } return; }
         if (name !== 'nodes' || !stat.isFile()) { return; }
+        if (stat.size > MAX_REPAIR_BYTES && path.basename(dir) === 'interactionmemory') {
+            try {
+                var c = compactInteractionMemory(file, Date.now());
+                report('compacted ' + file + ': ' + c.before + ' -> ' + c.after + ' bytes, ' + c.kept + ' record(s)', opts);
+            } catch (e) { report('could not compact ' + file + ': ' + e.message, opts); }
+            return;
+        }
         if (stat.size > MAX_REPAIR_BYTES) { report('not checked (too large, ' + stat.size + ' bytes): ' + file, opts); return; }
         try {
             var result = repairFile(file);
@@ -172,6 +237,7 @@ function initialize(options, callback) {
     acquire();
 }
 module.exports = { initialize: initialize, namespaces: namespaces, repairFile: repairFile, salvage: salvage,
+    pruneHistory: pruneHistory, compactInteractionMemory: compactInteractionMemory,
     report: report, SKIP_DIRS: SKIP_DIRS, MAX_REPAIR_BYTES: MAX_REPAIR_BYTES };
 
 
