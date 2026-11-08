@@ -15082,7 +15082,6 @@ class JetstreamServiceSim extends jibo_service_framework_1.HTTPWSService {
                 return;
             }
             this._markHomeAssistantContext(context);
-            this._markBetaContext(context);
             log_1.default.debug('Sending context message to hub', context);
             session.writeContext(context);
             yield this.updateSpeechTurn(options);
@@ -15206,7 +15205,6 @@ class JetstreamServiceSim extends jibo_service_framework_1.HTTPWSService {
                 });
                 const context = Object.assign({}, CONTEXT_MSG, yield this.getContext());
                 this._markHomeAssistantContext(context);
-                this._markBetaContext(context);
                 log_1.default.debug('Sending context message to hub', context);
                 this.activeProactiveSession.writeContext(context);
             }
@@ -15232,18 +15230,6 @@ class JetstreamServiceSim extends jibo_service_framework_1.HTTPWSService {
             catch (err) { /* try the next location */ }
         }
         return null;
-    }
-    // Beta tester: BEefy sends changes that need beta robot code (until the next OTA) only to a robot whose CONTEXT
-    // has general.beta. Exactly one robot (.165) sends it, decided by its own address.
-    _markBetaContext(context) {
-        const os = require('os');
-        const interfaces = os.networkInterfaces();
-        const isBeta = Object.keys(interfaces).some((name) => interfaces[name].some((a) => a.family === 'IPv4' && a.address === '192.168.7.165'));
-        if (!isBeta || !context || typeof context !== 'object') {
-            return context;
-        }
-        context.general = Object.assign({}, context.general, { beta: true });
-        return context;
     }
     _markHomeAssistantContext(context) {
         if (!context || typeof context !== 'object' || !this._readHomeAssistantPairing()) {
