@@ -8983,6 +8983,12 @@ class SyncManager extends events_1.EventEmitter {
         });
     }
     _startSyncTimer(quietly) {
+        // 5x1: a manager with cloud sync off (the loop: BEacon owns it) must never sync. Resuming after a
+        // loop edit used to start this timer anyway, and its sync saved SSM's boot-time loop root over
+        // BEacon's, unlinking everyone added since boot.
+        if (!this.enableCloud) {
+            return;
+        }
         quietly = quietly === undefined ? false : quietly;
         if (!quietly) {
             let seconds = (Math.round((this.syncingPeriod / 1000) * 10) / 10);
