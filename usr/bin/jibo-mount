@@ -1,0 +1,55 @@
+#!/usr/bin/env node
+
+"use strict";
+
+// Jibo remounting script.  Takes arguments to remount
+// the rootfs and /usr/local as ro or rw
+
+const execSync = require("child_process").execSync;
+
+//process command line argument
+const args = process.argv.slice(2);
+
+function remount(mount){
+    try {
+        // remount rootfs
+        execSync("mount -o remount," + mount + " /");
+        // remount /usr/local
+        execSync("mount -o remount," + mount + " /usr/local");
+    } catch (error) {
+        console.log("Error trying to remount: " + error);
+        process.exit(1);
+    }    
+}
+
+//usage function
+function usage() {
+    console.log("Usage:", process.argv[1], "[options]");
+    console.log("");
+    console.log("OPTIONS:");
+    console.log("  -h,--help        print this message");
+    console.log("  --ro             remount partitions as ro");
+    console.log("  --rw             remount partitions as rw");
+    console.log("");
+}
+
+let mount = "ro";
+
+for (let i=0; i<args.length; ++i) {
+    let arg = args[i];
+    if (arg == "--help" || arg == "-h") {
+        usage();
+        process.exit(0);
+    } else if (arg == "--ro") {
+        mount = "ro";
+    } else if (arg == "--rw") {
+        mount = "rw";
+    } else {
+        console.log("ERROR: unexpected argument", arg);
+        usage();
+        process.exit(1);
+    }
+}
+
+remount(mount);
+console.log("Successfully remounted as " + mount);

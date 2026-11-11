@@ -1,0 +1,64 @@
+#!/bin/sh
+#
+# Fixup OS inconsistencies between builds
+#
+
+set -e
+
+# make directory if it doesn't exist
+# arguments <dir> <owner> <perm>
+make_dir() {
+    dir=$1
+    owner=$2
+    perm=$3
+    if [ ! -e "$dir" ]; then
+        echo -n "create $dir... "
+        mkdir "$dir"
+        chown "$owner":"$owner" "$dir"
+        chmod "$perm" "$dir"
+    fi
+}
+
+# skill users did not exist in RTM2, and their home directories
+# are not part of the rootfs, so we need to create them after the fact
+make_skill_home_dirs() {
+    make_dir /opt/home root 0755
+    make_dir /opt/home/jibo-skill jibo-skill 0755
+}
+
+INTERFACES="/var/etc/network/interfaces"
+
+# patch the interfaces file for RTM2 robots, if needed
+patch_network_interfaces() {
+    if ! grep -q "post-up wireless-startup" "${INTERFACES}"; then
+        sed -i "s|post-up wpa_supplicant -B -i wlan0 -c /var/etc/wpa_supplicant.conf|post-up wireless-startup|" ${INTERFACES}
+        #else
+        # This is already fixed
+    fi
+}
+
+
+start() {
+    echo -n "Fixup OS: "
+    make_skill_home_dirs
+    patch_network_interfaces
+    echo "OK"
+}
+
+stop() {
+    echo -n "Fixup OS: "
+    echo "OK"
+}
+
+case "$1" in
+    start)
+        start
+        ;;
+    stop)
+        stop
+        ;;
+    *)
+        echo "Usage: $0 {start|stop}" >&2
+        exit 1
+        ;;
+esac

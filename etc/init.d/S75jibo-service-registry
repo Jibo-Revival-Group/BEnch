@@ -1,0 +1,57 @@
+#!/bin/sh
+#
+# Jibo Service Registry init script
+#
+
+PROCESS=jibo-service-registry
+BIN_DIR=/usr/local/bin
+CFG_DIR=/usr/local/etc
+
+check_mode() {
+    my_mode=$(/usr/bin/jibo-getmode)
+    if [ $? -ne 0 ]; then
+        echo "Unspecified mode. SKIP"
+        exit 0;
+    fi
+    if [ "$my_mode" != "oobe" \
+        -a "$my_mode" != "int-developer" \
+        -a "$my_mode" != "developer" \
+        -a "$my_mode" != "normal" \
+        -a "$my_mode" != "certification" \
+        -a "$my_mode" != "service" ]; then
+        echo "Mode is $my_mode. SKIP"
+        exit 0;
+    fi
+}
+
+start() {
+    echo -n "Starting $PROCESS: "
+    check_mode
+    # set ulimit so we can get core dumps
+    ulimit -c unlimited
+    $BIN_DIR/$PROCESS -c $CFG_DIR/$PROCESS.json --daemon
+    test $? -eq 0 && echo "OK" || echo "ERROR"
+}
+
+stop() {
+    echo -n "Stopping $PROCESS: "
+    killall $PROCESS
+    test $? -eq 0 && echo "OK" || echo "ERROR"
+}
+
+case "$1" in
+    start)
+        start
+        ;;
+    stop)
+        stop
+        ;;
+    restart)
+        stop
+        start
+        ;;
+    *)
+        echo "Usage: $0 {start|stop|restart}" >&2
+        exit 1
+        ;;
+esac

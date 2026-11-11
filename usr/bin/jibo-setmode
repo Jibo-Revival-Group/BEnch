@@ -1,0 +1,80 @@
+#!/usr/bin/env node
+
+"use strict";
+
+// Jibo mode modification script
+//
+// Sets Jibo's operating mode.
+
+let fs = require("fs");
+
+// location to write mode.json
+let mode_dir = "/var/jibo";
+let mode_file = mode_dir + "/mode.json";
+
+// allowable modes
+let allowed_modes = [
+    "identified",
+    "oobe",
+    "int-developer",
+    "developer",
+    "certification",
+    "normal",
+    "service"
+];
+
+// write the provided mode struct to mode.json
+function write_mode(mode) {
+    try {
+        fs.statSync(mode_dir);
+    } catch (err) {
+        fs.mkdirSync(mode_dir);
+    } finally {
+        fs.writeFileSync(mode_file, JSON.stringify(mode));
+    }
+}
+
+// process commmand-line arguments
+let args = process.argv.slice(2);
+
+function usage() {
+    console.log("Usage:", process.argv[1], "[options] <mode>");
+    console.log("");
+    console.log("OPTIONS:");
+    console.log("  -h,--help        print this message");
+    console.log("");
+    console.log("MODES:");
+    for (let i=0; i<allowed_modes.length; ++i) {
+        console.log("  " + allowed_modes[i]);
+    }
+}
+
+let mode = null;
+for (let i=0; i<args.length; ++i) {
+    let arg = args[i];
+    if (arg == "--help" || arg == "-h") {
+        usage();
+        process.exit(0);
+    } else {
+        // anything else must be the mode
+        for (let i=0; i<allowed_modes.length; ++i) {
+            if (arg == allowed_modes[i]) {
+                mode = arg;
+            }
+        }
+        if (mode === null) {
+            console.log("ERROR: Unexpected argument '" + arg + "'!\n");
+            usage();
+            process.exit(1);
+        }
+    }
+}
+
+if (mode === null) {
+    console.log("ERROR: no mode specified");
+    console.log("");
+    usage();
+    process.exit(1);
+}
+
+write_mode({mode: mode});

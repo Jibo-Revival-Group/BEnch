@@ -1,0 +1,3 @@
+#!/bin/sh
+sleep $(expr $RANDOM \% 300)
+/usr/bin/jibo-log-asr $(find /var/log/jetstream/hj_logs /var/log/jetstream/namelearning_logs /var/log/jetstream/enroller_logs -type f)

@@ -1,0 +1,59 @@
+	    SUMMARY OF THE HDF5 CONFIGURATION
+	    =================================
+
+General Information:
+-------------------
+		   HDF5 Version: 1.8.17
+		  Configured on: Sun Feb 24 15:03:26 EST 2019
+		  Configured by: jon@highst-buildroot
+		 Configure mode: production
+		    Host system: arm-buildroot-linux-gnueabihf
+	      Uname information: Linux highst-buildroot 4.4.0-135-generic #161~14.04.1-Ubuntu SMP Tue Aug 28 11:17:49 UTC 2018 x86_64 x86_64 x86_64 GNU/Linux
+		       Byte sex: little-endian
+		      Libraries: shared
+	     Installation point: /usr
+
+Compiling Options:
+------------------
+               Compilation Mode: production
+                     C Compiler: /home/jon/buildroot.jibo.lastdance.prod/output/host/usr/bin/arm-buildroot-linux-gnueabihf-gcc
+                         CFLAGS: -D_GNU_SOURCE 
+                      H5_CFLAGS:  
+                      AM_CFLAGS: 
+                       CPPFLAGS: -D_GNU_SOURCE 
+                    H5_CPPFLAGS: -D_GNU_SOURCE -D_POSIX_C_SOURCE=200112L   -DNDEBUG -UH5_DEBUG_API
+                    AM_CPPFLAGS: -D_FILE_OFFSET_BITS=64 
+               Shared C Library: yes
+               Static C Library: no
+  Statically Linked Executables: no
+                        LDFLAGS: 
+                     H5_LDFLAGS: 
+                     AM_LDFLAGS: 
+ 	 	Extra libraries: -lz -ldl -lm 
+ 		       Archiver: /home/jon/buildroot.jibo.lastdance.prod/output/host/usr/bin/arm-buildroot-linux-gnueabihf-ar
+ 		 	 Ranlib: /home/jon/buildroot.jibo.lastdance.prod/output/host/usr/bin/arm-buildroot-linux-gnueabihf-ranlib
+ 	      Debugged Packages: 
+		    API Tracing: no
+
+Languages:
+----------
+                        Fortran: no
+
+                            C++: no
+
+Features:
+---------
+                  Parallel HDF5: no
+             High Level library: yes
+                   Threadsafety: no
+            Default API Mapping: v18
+ With Deprecated Public Symbols: yes
+         I/O filters (external): deflate(zlib)
+                            MPE: no
+                     Direct VFD: no
+                        dmalloc: no
+Clear file buffers before write: yes
+           Using memory checker: no
+         Function Stack Tracing: no
+      Strict File Format Checks: no
+   Optimization Instrumentation: no

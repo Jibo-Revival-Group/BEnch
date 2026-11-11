@@ -1,0 +1,9 @@
+# Attempt logrotate every 30 minutes and write everything to tmpfs
+*/10 * * * * /usr/bin/random_logrotate
+*/20 * * * * /usr/bin/jibo-system-monitor --p --c --m --s --n
+
+# Upload any captured speech analytics audio once an hour
+# (If there's nothing to upload this takes ~300ms CPU time)
+*/60 * * * * /usr/bin/random_log_asr
+
+

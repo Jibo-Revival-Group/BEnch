@@ -1,0 +1,2 @@
+# This IP is also hard coded in /etc/network/interfaces
+SUBSYSTEM=="net", ACTION=="add", DRIVERS=="?*", KERNEL=="eth*", NAME="eth0", RUN="/bin/sh -c 'ifconfig eth0 172.24.84.101'"

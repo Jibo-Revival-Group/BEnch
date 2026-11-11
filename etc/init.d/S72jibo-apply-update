@@ -1,0 +1,50 @@
+#!/bin/sh
+#
+# Jibo OTA update init script
+#
+
+PROCESS=jibo-apply-update
+BIN_DIR=/usr/bin
+CFG_DIR=/var/jibo
+
+check_mode() {
+    my_mode=$(/usr/bin/jibo-getmode)
+    if [ $? -ne 0 ]; then
+        echo "Unspecified mode. SKIP"
+        exit 0;
+    fi
+    if [ "$my_mode" != "ota" -a ! -f /var/jibo/ota.json ]; then
+        echo "Mode is $my_mode. SKIP"
+        exit 0;
+    fi
+}
+
+start() {
+    echo -n "Starting $PROCESS: "
+    check_mode
+    DISPLAY=:0 XAUTHORITY=/tmp/.Xauthority $BIN_DIR/$PROCESS --continue
+    test $? -eq 0 && echo "OK" || echo "ERROR"
+}
+
+stop() {
+    echo -n "Stopping $PROCESS: "
+    killall $PROCESS
+    test $? -eq 0 && echo "OK" || echo "ERROR"
+}
+
+case "$1" in
+    start)
+        start
+        ;;
+    stop)
+        stop
+        ;;
+    restart)
+        stop
+        start
+        ;;
+    *)
+        echo "Usage: $0 {start|stop|restart}" >&2
+        exit 1
+        ;;
+esac

@@ -1,0 +1,18 @@
+#!/bin/sh
+set -e
+
+echo "done."
+case "$1" in
+    start)
+        # Set the audio mixer levels
+        echo -n "Setting default ALSA mixer levels... "
+        /bin/sh /root/InAudioSetup.sh > /dev/null
+        /bin/sh /root/OutAudioSetup.sh > /dev/null
+        ;;
+    stop)
+        ;;
+    *)
+        echo "Usage: $0 {start|stop}" >&2
+        exit 1
+        ;;
+esac

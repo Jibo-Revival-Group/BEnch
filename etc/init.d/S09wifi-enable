@@ -1,0 +1,20 @@
+#!/bin/sh
+set -e
+
+case "$1" in
+    start)
+        echo "Enabling wireless..."
+        if ! [ -d /sys/class/gpio/gpio191 ] ; then
+                echo 191 > /sys/class/gpio/export
+                echo out > /sys/class/gpio/gpio191/direction
+        fi
+        echo 0 > /sys/class/gpio/gpio191/value
+        sleep 5
+        ;;
+    stop)
+        ;;
+    *)
+        echo "Usage: $0 {start|stop}" >&2
+        exit 1
+        ;;
+esac

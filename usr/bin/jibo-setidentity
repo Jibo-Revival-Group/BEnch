@@ -1,0 +1,227 @@
+#!/usr/bin/env node
+
+"use strict";
+
+// Jibo factory serialization script
+//
+// Prompts the user for the CSV identity information for this robot.
+// Does some basic input validation, then writes out the necessary 
+// configuration files for the robot's identity.
+
+let fs = require("fs");
+let readline = require("readline");
+let cp = require("child_process");
+
+// location to write identity.json
+let identity_dir = "/var/jibo";
+let identity_file = identity_dir + "/identity.json";
+
+// location where wifi MAC can be read
+let wifi_mac_file = "/sys/class/net/wlan0/address";
+let cpuid_file = "/sys/devices/platform/tegra-fuse/cpu_id";
+
+// write the provided id struct to identity.json
+function write_identity(id) {
+    try {
+        fs.statSync(identity_dir);
+    } catch (err) {
+        fs.mkdirSync(identity_dir);
+    } finally {
+        fs.writeFileSync(identity_file, JSON.stringify(id));
+    }
+}
+
+function test_name(input) {
+    let elements = input.split("-");
+    // XXX Allowing badly printed 3-element EVT labels
+    if (elements.length != 4 && elements.length != 3) {
+        return false;
+    }
+
+    let regex = /^[a-zA-Z]+$/;
+    for (let i=0; i<elements.length; ++i) {
+        if (!regex.test(elements[i])) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+//validate Jibo-specific serial number
+function test_serialNumber(input) {
+    let elements = input.split("-");
+    if (elements.length != 5) {
+        return false;
+    }
+
+    for (let i=0; i<elements.length; ++i) {
+        let val = parseInt("0x"+elements[i]);
+        if (val == NaN) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+// parse identity struct from CSV input string
+function parse_identity(input) {
+    let elements = input.split(",");
+    if (elements.length != 3 && elements.length != 2) {
+        // not a valid CSV
+        return null;
+    }
+    if (elements.length == 3) {
+        // remove the IP address
+        elements.splice(1,1);
+    }
+    let name = elements[0].trim();
+    let serial_number = elements[1].trim();
+    if (!(test_name(name) && test_serialNumber(serial_number))) {
+        return null;
+    }
+    let id = {
+        serial_number: serial_number,
+        name: name
+    };
+    return id;
+}
+
+// read cpuid
+function read_cpuid() {
+    var txt
+    try {
+        txt = fs.readFileSync(cpuid_file, "utf8");
+    } catch(e) {
+        if(e.code === 'ENOENT') {
+            console.log('cpuid not found');
+            txt = '000000';
+        } else {
+            console.log('ERROR: cpuid not found');
+            throw e;
+        }
+    }
+    return txt.trim();
+}
+
+// read wifi mac
+function read_wifi_mac() {
+    let txt = fs.readFileSync(wifi_mac_file, "utf8");
+    return txt.trim();
+}
+
+let default_hosts = [
+    '127.0.0.1	localhost',
+    '127.0.1.1	%%HOSTNAME%%'
+];
+
+// write the hostname of the robot
+function write_hostname(name) {
+    fs.writeFileSync("/etc/hostname", name + "\n");
+    let hosts = default_hosts.join("\n").replace("%%HOSTNAME%%", name + "\n");
+    fs.writeFileSync("/etc/hosts", hosts);
+}
+
+// check whether a mode is already set
+function has_mode() {
+    try {
+        cp.execSync("/usr/bin/jibo-getmode");
+    } catch (err) {
+        return false;
+    }
+    return true;
+}
+
+// set to "identified" mode
+function set_identified() {
+    try {
+        cp.execSync("/usr/bin/jibo-setmode identified");
+    } catch (err) {
+        return false;
+    }
+    return true;
+}
+
+// process commmand-line arguments
+let args = process.argv.slice(2);
+
+function usage() {
+    console.log("Usage:", process.argv[1], "[options]");
+    console.log("");
+    console.log("OPTIONS:");
+    console.log("  -h,--help                           print this message");
+    console.log("  -i,--input <NAME>,<SERIAL_NUMBER>   takes input");
+}
+
+// Will contain input from commandline if any is provided
+let cmdLineAnswer = null;
+
+for (let i=0; i<args.length; ++i) {
+    let arg = args[i];
+    if (arg == "--help" || arg == "-h") {
+        usage();
+        process.exit(0);
+    } else if ((arg == "--input" || arg == "-i") && i+1 < args.length) {
+        i++;
+        cmdLineAnswer = args[i];
+    } else {
+        console.log("ERROR: Unexpected argument '" + arg + "'!\n");
+        usage();
+        process.exit(1);
+    }
+}
+
+/**
+ * Handles input and performs main function of this script
+ * @param {string} answer Input in the format of '<NAME>,<SERIAL_NUMBER>'
+ * @param {function} [doneCallback] Optional callback
+ */
+function handleInput(answer, doneCallback) {
+    let id = parse_identity(answer);
+    if (id) {
+        let cpuid = read_cpuid();
+        if (cpuid) {
+            id.cpuid = cpuid;
+            let wifi_mac = read_wifi_mac();
+            if (wifi_mac) {
+                id.wifi_mac = wifi_mac;
+                write_identity(id);
+                write_hostname(id.name);
+                if (has_mode() || set_identified()) {
+                    console.log("SUCCESS: identity set to", JSON.stringify(id));
+                } else {
+                    console.log("ERROR: could not set mode");
+                }
+            } else {
+                console.log("ERROR: could not read wifi MAC");
+            }
+        } else {
+            console.log("ERROR: could not read CPUID");
+        }
+    } else {
+        console.log("ERROR: invalid identity");
+    }
+
+    if (doneCallback) {
+        doneCallback();
+    }
+}
+
+// If we were provided inputs on the command line
+if (cmdLineAnswer) {
+    handleInput(cmdLineAnswer);
+}
+// Otherwise we prompt user to input
+else {
+    let rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout
+    });
+
+    rl.question("Identity <NAME>,<SERIAL_NUMBER>: ", function(answer) {
+        handleInput(answer, function() {
+            rl.close();
+        });
+    });
+}

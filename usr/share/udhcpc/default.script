@@ -1,0 +1,95 @@
+#!/bin/sh
+
+# udhcpc script edited by Tim Riker <Tim@Rikers.org>
+
+DHCP_EVENT=$1
+[ -z "$1" ] && echo "Error: should be called from udhcpc" && exit 1
+
+RESOLV_CONF="/run/resolv.conf"
+[ -e $RESOLV_CONF ] || touch $RESOLV_CONF
+[ -n "$broadcast" ] && BROADCAST="broadcast $broadcast"
+[ -n "$subnet" ] && NETMASK="netmask $subnet"
+
+PROC_NAME="udhcpc.$(basename $0)"
+PROC_PID=$$
+log_info(){
+    logger \
+        --priority info     \
+        --id=$PROC_PID      \
+        --tag $PROC_NAME    \
+        $@
+}
+
+case "$1" in
+	deconfig)
+		/sbin/ifconfig $interface up
+		/sbin/ifconfig $interface 0.0.0.0
+
+		# drop info from this interface
+		# resolv.conf may be a symlink to /tmp/, so take care
+		TMPFILE=$(mktemp)
+		log_info "$DHCP_EVENT: removing $interface from $RESOLV_CONF" 
+		grep -vE "# $interface\$" $RESOLV_CONF > $TMPFILE
+		log_info "$DHCP_EVENT: saving default dns to tmp: $(tr '\n' ',' < $TMPFILE)"
+		mv -f $TMPFILE $RESOLV_CONF
+		# rm -f $TMPFILE
+
+		if [ -x /usr/sbin/avahi-autoipd ]; then
+			/usr/sbin/avahi-autoipd -k $interface
+		fi
+		;;
+
+	leasefail|nak)
+		if [ -x /usr/sbin/avahi-autoipd ]; then
+			/usr/sbin/avahi-autoipd -wD $interface --no-chroot
+		fi
+		;;
+
+	renew|bound)
+		if [ -x /usr/sbin/avahi-autoipd ]; then
+			/usr/sbin/avahi-autoipd -k $interface
+		fi
+		/sbin/ifconfig $interface $ip $BROADCAST $NETMASK
+
+		if [ -n "$router" ] ; then
+			log_info "$DHCP_EVENT: deleting router gateways"
+			while route del default gw 0.0.0.0 dev $interface 2> /dev/null; do
+				:
+			done
+
+			log_info "$DHCP_EVENT: adding router gateways: $router"
+			for i in $router ; do
+				route add default gw $i dev $interface
+			done
+		fi
+
+		# drop info from this interface
+		# resolv.conf may be a symlink to /tmp/, so take care
+		TMPFILE=$(mktemp)
+
+		[ -n "$domain" ] && echo "search $domain # $interface" >> $TMPFILE
+
+		log_info "$DHCP_EVENT: setting DNS resolvers: $dns for interface $interface"
+		for i in $dns ; do
+			echo "nameserver $i # $interface" >> $TMPFILE
+		done
+
+		log_info "$DHCP_EVENT: removing $interface from $RESOLV_CONF" 
+		grep -vE "# $interface\$" $RESOLV_CONF >> $TMPFILE
+
+		log_info "$DHCP_EVENT: writing tmp back to $RESOLV_CONF: $(tr '\n' ',' < $TMPFILE)"
+		chmod 644 $TMPFILE
+		mv -f $TMPFILE $RESOLV_CONF
+		
+		# rm -f "$TMPFILE"
+		;;
+esac
+
+HOOK_DIR="$0.d"
+for hook in "${HOOK_DIR}/"*; do
+    [ -f "${hook}" -a -x "${hook}" ] || continue
+	log_info "$DHCP_EVENT: Running hook: ${hook}"
+    "${hook}" "${@}"
+done
+
+exit 0

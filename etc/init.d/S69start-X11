@@ -1,0 +1,65 @@
+#!/bin/sh
+set -e
+
+check_mode() {
+    my_mode=$(/usr/bin/jibo-getmode)
+    if [ $? -ne 0 ]; then
+        echo "Unspecified mode. SKIP"
+        exit 0;
+    fi
+    if [ "$my_mode" != "oobe" \
+        -a "$my_mode" != "int-developer" \
+        -a "$my_mode" != "developer" \
+        -a "$my_mode" != "normal" \
+        -a "$my_mode" != "ota" \
+        -a "$my_mode" != "service" ]; then
+        echo "Mode is $my_mode. SKIP"
+        exit 0;
+    fi
+}
+
+check_x() {
+    pgrep -x X
+    return $?
+}
+
+wait_for_x() {
+    while ! check_x; do
+        echo -n "waiting... "
+        sleep 0.25
+    done
+}
+
+start() {
+    echo -n "Starting X11: "
+    check_mode
+    /usr/bin/startx &
+    wait_for_x
+    test $? -eq 0 && echo "OK" || echo "ERROR"
+    # change mode to allow non-root skill to have 
+    # read access for X11 connections
+    chmod 644 /tmp/.Xauthority
+}
+
+stop() {
+    echo -n "Stopping X11: "
+    killall xinit
+    test $? -eq 0 && echo "OK" || echo "ERROR"
+}
+
+case "$1" in
+    start)
+        start
+        ;;
+    stop)
+        stop
+        ;;
+    restart)
+        stop
+        start
+        ;;
+    *)
+        echo "Usage: $0 {start|stop|restart}" >&2
+        exit 1
+        ;;
+esac

@@ -1,0 +1,20 @@
+#!/bin/sh
+# This is a hack for now. FIXME.
+
+case "$1" in
+    start)
+        # Touchscreen Drivers
+        modprobe synaptics_dsx_rmi_dev
+        # V4L2 camera drivers
+        modprobe ov4689_v4l2
+        modprobe tegra_camera
+        # Raw SPI devices for IMU(s)
+        modprobe spidev
+        ;;
+    stop)
+        ;;
+    *)
+        echo "Usage: $0 {start|stop}" >&2
+        exit 1
+        ;;
+esac

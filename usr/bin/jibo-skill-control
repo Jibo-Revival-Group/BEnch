@@ -1,0 +1,137 @@
+#!/usr/bin/env node
+
+"use strict";
+
+// Jibo factory (de)serialization script
+//
+// Script to launch and terminate a skill via system manager
+
+var fs = require("fs");
+var http = require('http');
+
+//make sure correct number of arguments passed
+if (process.argv.length != 4) {
+    console.log("ERROR: Wrong number of arguments");
+    process.exit(1);
+}
+
+//capture inputs
+var skillName = process.argv[2];
+var skillAction = process.argv[3];
+
+
+function getRegistry(callback) {
+    var options = {
+        host: 'localhost',
+        port: 8181,
+        path: '/registry',
+        method: 'GET',
+    };
+
+    var request = http.request(options, function(response) {
+        response.setEncoding('utf8');
+        var data = '';
+        response.on('data', function(chunk) {
+            data += chunk.toString();
+        });
+        response.on('end', function() {
+            if(data.length === 0) {
+                callback(null);
+            } else {
+                callback(null, JSON.parse(data));
+            }
+        });
+    });
+
+    request.on('error', function(e) {
+        callback(new Error('problem with request: ' + e.message));
+    });
+
+    request.end();
+}
+
+//function to start or stop a skill
+function controlSkill(host, port, skill_name, skill_action) {
+  
+  // Build the post string from an object
+  var post_data = JSON.stringify({
+      'command': skill_name
+  });
+
+  //build path to API based on desired action
+  var path = "";
+  if(skill_action === "launch"){
+        path = "/launch-dev";
+  }
+  if(skill_action === "terminate"){
+        path = "/terminate";
+  }
+
+  // An object of options to indicate where to post to
+  var post_options = {
+      host: host,
+      port: port,
+      path: path,
+      method: 'POST',
+      headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+      }
+  };
+
+  // Set up the request
+  var post_req = http.request(post_options, function(res) {
+    res.on('data', function (body) {
+    });
+  });
+  post_req.on('error', function(e) {
+    console.log('ERROR: ' + e.message);
+  });
+
+  // post the data
+  post_req.write(post_data);
+
+  //end post
+  post_req.end();
+
+  //add slight delay and then exit
+  setTimeout(function(){ 
+      process.exit(0); 
+  }, 3000);
+}
+
+getRegistry( function(err, registry) {
+    if (err) {
+        console.error(err);
+    } else {
+        var services = registry.records;
+        var ssm_found = false;
+        for(var i = 0; i < services.length; i++){
+          if (services[i].name === 'skills-service') {
+            //call to start or stop skill
+            ssm_found = true;
+            controlSkill("localhost", services[i].port, skillName, skillAction);
+          }
+        }
+        if(!ssm_found){
+          console.log("SSM not running");
+        }
+    }
+});
+
+
+//launch skill
+if(skillAction === "launch"){
+    console.log("launch the skill");
+}
+
+//terminate skill
+else if(skillAction === "terminate"){
+    console.log("terminate the skill");
+}
+
+//all other cases fail
+else{
+    console.log("ERROR: Unknown action");
+    process.exit(1);
+}
+

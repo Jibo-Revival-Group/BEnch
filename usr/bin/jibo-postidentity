@@ -1,0 +1,60 @@
+#!/usr/bin/env node
+
+"use strict";
+
+// Jibo post robot identity script
+// Posts the system identity int othe syslog for the robot so that when syslog
+// blocks are sent to the server they will carry the marker for each 
+// robot within them.
+
+// Additionally, this needs to be re-triggered on each logrotate of the system 
+// logs so that newly rotated log entries have a "banner" of robot identity
+
+const fs = require("fs");
+const syslog = require("modern-syslog");
+
+// location to read identity.json
+let identity_file = "/var/jibo/identity.json";
+
+//read from identity file and parse JSON
+function read_identity(filename) {
+    try {
+        return JSON.parse(fs.readFileSync(filename));
+    } catch (err) {
+        return null;
+    }
+}
+
+//parse object identifiers
+function get_valid_args(identity) {
+    let args = [];
+    for (let name in identity) {
+        args.push(name);
+    }
+    return args;
+}
+
+//make sure appropriate number of inputs to call
+if (process.argv.length != 2) {
+    console.log("ERROR: Wrong number of arguments");
+    process.exit(1);
+}
+
+//get values
+let id = read_identity(identity_file);
+
+//make sure valid
+if (!id) {
+    console.log("ERROR: failed to parse", identity_file);
+    process.exit(1);
+}
+
+//get arguments
+let args = get_valid_args(id);
+
+
+syslog.init("post-identity", syslog.LOG_PID | syslog.LOG_ODELAY, syslog.LOG_LOCAL0);
+
+for (var i = 0; i < args.length; i++) {
+    syslog.info("P.PostIdentity: " + args[i] + ": " + id[args[i]])
+}

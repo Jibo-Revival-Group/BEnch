@@ -1,0 +1,6 @@
+#!/bin/sh
+# Turn off power save mode for the TI wifi chip
+# Don't let the TI wifi chip go to sleep
+iw wlan0 set power_save off
+echo 0 > /sys/kernel/debug/ieee80211/phy0/wlcore/sleep_auth
+wpa_supplicant -B -i wlan0 -c /var/etc/wpa_supplicant.conf

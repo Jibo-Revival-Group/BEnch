@@ -1,0 +1,81 @@
+#!/usr/bin/env node
+
+"use strict";
+
+// Jibo factory (de)serialization script
+//
+// Script to launch and terminate a skill via system manager
+
+var fs = require("fs");
+var http = require('http');
+
+//make sure correct number of arguments passed
+if (process.argv.length != 3) {
+    console.log("ERROR: Wrong number of arguments");
+    process.exit(1);
+}
+
+//capture inputs
+var skillName = process.argv[2];
+
+//function to start or stop a skill
+function getSkillList(host, path, port, cb){
+
+    //build up path to API
+    var options = {
+        host: host,
+        port: port,
+        path: path
+    };
+
+    //build up body to return settings data
+    var body = "";
+    http.get(options, function(resp){
+        resp.on('data', function(chunk){
+            //building up data
+            body += chunk.toString();
+        });
+
+        //close of connection
+        resp.on('end', function(chunk){
+            //do something with chunk
+            cb(null, resp, body);
+        });
+    }).on("error", function(e){
+        //callback
+        cb(e);
+    });
+}
+
+function isSkillRunning(skillList){
+  var JSONSkillList = JSON.parse(skillList);
+  var skillFound = false;
+
+  for (var i = 0; i < JSONSkillList.skills.length; i++) {
+    // console.log(JSONSkillList.skills[i].name);
+    if(JSONSkillList.skills[i].name == skillName){
+      console.log(JSONSkillList.skills[i].running);
+      skillFound = true;
+    }
+  }
+  if(!skillFound){
+    console.log("ERROR: skill not found");
+  }
+}
+
+//capture this
+var _this = this;
+getSkillList("localhost", "/skill/list", 8585, function(error, response, body){
+    if(error){
+        // console.error(error);
+        console.log('ERROR:' + error);
+        process.exit(1);
+    }
+    if(body){
+
+        isSkillRunning(body);
+    }else{
+        console.log('ERROR: invalid data');
+        console.log("status code: " + response.statusCode);
+    }
+});

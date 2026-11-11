@@ -3,6 +3,30 @@ The entire non-Skill JiboOS
 
 Version is saved in Jibo-Service-Version and CANNOT change the byte size or else big bad. DO NOT USE VSCODE OR ANY OTHER CODE EDITOR OR ELSE ALL 5,000 JIBOS IN THE WORLD WILL DIE!!! THIS IS BAD BAD BAD AND WE DON'T WANT THAT OR ELSE IT WILL BE VERY BAD AND IRREVERSABLE!!!!!!!!!!!!!!!
 
+## os (the root filesystem)
+
+Everything outside `/usr/local` here (`bin`, `etc`, `lib`, `usr/bin`, `usr/lib`, ...) is Jibo's os,
+unpacked like the services. It is stock 13.0.0 with 5x1's changes, released as os 13.0.1:
+
+- no firewall (`etc/init.d/S21firewall` removed)
+- Let's Encrypt's root (`etc/ssl/certs/isrgrootx1.pem`, also in `ca-certificates.crt`) for api.5x1.com
+- the os's `jibo-server-client` accepts that certificate and uses api.5x1.com
+- `etc/init.d/S04jibo-bootstrap` runs `jibo-runtime-bootstrap --knowledge` before services start
+- `usr/bin/jibo-version` says 13.0.1
+
+Git can't keep owners, setuid, device nodes or empty folders, so `os-files.tsv` lists every os entry
+with its type, mode, owner and sha256. After editing os files:
+
+```sh
+python3 tools/pack-os.py --refresh        # update os-files.tsv (new files get root and 644/755)
+python3 tools/pack-os.py --check          # tree and os-files.tsv agree
+python3 tools/pack-os.py bench-os.tar     # the os OTA package (./filesystem.tar.bz2 in a tar)
+python3 tests/os-files.test.py
+```
+
+An os update reformats the root partition, so anything edited by hand on a robot outside
+`/usr/local` and `/opt` is replaced by these files.
+
 ## Local runtime initialization
 
 `jibo-runtime-bootstrap` creates missing runtime directories and defaults without

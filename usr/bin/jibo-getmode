@@ -1,0 +1,29 @@
+#!/usr/bin/env node
+
+"use strict";
+
+// Jibo mode query script
+//
+// Gets Jibo's operating mode.
+
+let fs = require("fs");
+
+// location to read mode.json
+let mode_file = "/var/jibo/mode.json";
+
+function read_mode(filename) {
+    try {
+        let txt = fs.readFileSync(filename);
+        return JSON.parse(txt);
+    } catch (err) {
+        return null;
+    }
+}
+
+let mode = read_mode(mode_file);
+if (!mode) {
+    console.log("ERROR: failed to parse", mode_file);
+    process.exit(1);
+}
+
+console.log(mode.mode);
