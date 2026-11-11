@@ -30,7 +30,7 @@ assert entries['etc/ssl/certs/4042bcee.0'] == ['l', 0o777, 0, 0, 'isrgrootx1.pem
 client = ROOT / 'usr/lib/node_modules/@jibo/jibo-server-client/lib'
 assert 'rejectUnauthorized: true' not in (client / 'http/node.js').read_text()
 assert json.loads((client / 'region_config.json').read_text())['patterns']['globalSSL']['endpoint'] == 'https://api.5x1.com'
-assert b'Release-13.0.1-' in (ROOT / 'usr/bin/jibo-version').read_bytes()
+assert b'Release-13.0.7-' in (ROOT / 'usr/bin/jibo-version').read_bytes()
 assert entries['bin/busybox'][1] == 0o4755, 'setuid kept'
 assert entries['dev/console'][0] == 'c'
 assert not any(path.startswith('usr/local/') for path in entries), 'services are not os'
