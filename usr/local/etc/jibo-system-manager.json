@@ -535,6 +535,22 @@
                     "crash_code": "SERVICE_CRASH_RESOLV_WATCHER"
                 },
                 {
+                    "name": "jibo-bluetooth",
+                    "order": 0,
+                    "executable": "/usr/local/bin/jibo-bluetooth",
+                    "modes": {
+                        "default": {
+                            "arguments": [],
+                            "environment": {},
+                            "directory": "",
+                            "enabled": true
+                        }
+                    },
+                    "startup_timeout": 10000,
+                    "shutdown_timeout": 10000,
+                    "crash_code": "SERVICE_CRASH_JIBO_BLUETOOTH"
+                },
+                {
                     "name": "jibo-sync-helper",
                     "order": 0,
                     "executable": "/usr/local/bin/jibo-service-start",
