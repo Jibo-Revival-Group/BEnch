@@ -1,0 +1,32 @@
+#!/bin/sh
+#
+# Starts alsa
+#
+
+start() {
+	printf "Starting alsa loopback: "
+	modprobe snd-aloop
+	modprobe snd-dummy
+	/usr/local/bin/jibo-audio-pump-device p TTSOut MediaOut SDKOut
+	/usr/local/bin/jibo-audio-pump-device c ASRIn MediaIn
+	echo "OK"
+}
+
+stop() {
+	printf "Stopping alsa loopback: "
+	echo "OK"
+}
+
+case "$1" in
+  start)
+	start
+	;;
+  stop)
+	stop
+	;;
+  *)
+	echo "Usage: $0 {start|stop}"
+	exit 1
+esac
+
+exit $?

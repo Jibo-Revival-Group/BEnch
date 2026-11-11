@@ -1,0 +1,6 @@
+#define black_width 1
+#define black_height 1
+#define black_x_hot 0
+#define black_y_hot 0
+static char black_bits[] = {
+  0x00, };

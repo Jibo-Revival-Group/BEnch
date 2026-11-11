@@ -1,0 +1,20 @@
+#!/bin/sh
+
+check_mode() {
+    my_mode=$(/usr/bin/jibo-getmode)
+    if [ $? -ne 0 ]; then
+        return
+    fi
+    if [ "$my_mode" == "oobe" \
+        -o "$my_mode" == "developer" \
+        -o "$my_mode" == "normal" \
+        -o "$my_mode" == "certification" \
+        -o "$my_mode" == "service" ]; then
+        echo "Mode is $my_mode. DENY"
+        sleep 1
+        exit 1
+    fi
+}
+
+check_mode
+/bin/login $@

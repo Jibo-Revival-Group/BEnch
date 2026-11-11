@@ -1,0 +1,68 @@
+#!/usr/bin/env node
+
+"use strict";
+
+// Jibo factory (de)serialization script
+//
+// Accepts a command line argument string, and returns that field of the 
+// identity, so mere mortals don't need to parse JSON.
+
+let fs = require("fs");
+
+// location to read identity.json
+let identity_file = "/var/jibo/identity.json";
+
+function read_identity(filename) {
+    try {
+        let txt = fs.readFileSync(filename);
+        return JSON.parse(txt);
+    } catch (err) {
+        return null;
+    }
+}
+
+function get_valid_args(identity) {
+    let args = [];
+    for (let name in identity) {
+        args.push(name);
+    }
+    return args;
+}
+
+let id = read_identity(identity_file);
+if (!id) {
+    console.log("ERROR: failed to parse", identity_file);
+    process.exit(1);
+}
+
+let args = get_valid_args(id);
+
+function usage() {
+    let argsstr = "";
+    for (let i=0; i<args.length-1; ++i) {
+        argsstr += args[i] + "|";
+    }
+    argsstr += args[args.length-1];
+    console.log("Usage:", process.argv[1], "<" + argsstr + ">");
+}
+
+if (process.argv.length != 3) {
+    console.log("ERROR: Wrong number of arguments");
+    usage();
+    process.exit(1);
+}
+
+let cmd = null;
+for (let i=0; i<args.length; ++i) {
+    if (process.argv[2] == args[i]) {
+        cmd = process.argv[2];
+    }
+}
+if (cmd === null) {
+    console.log("ERROR: unknown command", process.argv[2]);
+    usage();
+    process.exit(1);
+}
+
+console.log(id[cmd]);
+

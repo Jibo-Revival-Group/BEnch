@@ -1,0 +1,4 @@
+# udev rules for setting nvidia devices to the correct groups and permissions
+
+SUBSYSTEM=="nv*", MODE="0660", GROUP="video"
+KERNEL=="nvmap", SUBSYSTEM=="misc", MODE="0660", GROUP="video"

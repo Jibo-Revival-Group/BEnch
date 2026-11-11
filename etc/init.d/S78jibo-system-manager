@@ -1,0 +1,73 @@
+#!/bin/sh
+#
+# Jibo System Manager init script
+#
+
+set -e
+
+PROCESS=jibo-system-manager
+BIN_DIR=/usr/local/bin
+CFG_DIR=/usr/local/etc
+
+check_mode() {
+    my_mode=$(/usr/bin/jibo-getmode)
+    if [ $? -ne 0 ]; then
+        echo "Unspecified mode. SKIP"
+        exit 0;
+    fi
+    if [ "$my_mode" != "oobe" \
+        -a "$my_mode" != "int-developer" \
+        -a "$my_mode" != "developer" \
+        -a "$my_mode" != "normal" \
+        -a "$my_mode" != "certification" \
+        -a "$my_mode" != "service" ]; then
+        echo "Mode is $my_mode. SKIP"
+        exit 0;
+    fi
+    # only configure coredump generation for internal development modes
+    # for all other modes, don't configure as they cannot be used
+    if [ "$my_mode" == "int-developer" ]; then 
+        echo "Configuring coredumps"
+        # all subprocesses should generate core dumps
+        ulimit -c unlimited
+    fi
+}
+
+check_running() {
+    pgrep -x jibo-system-man >& /dev/null
+    return $?
+}
+
+wait_for_stopped() {
+    while check_running; do
+        echo -n "waiting... "
+        sleep 2
+    done
+}
+
+start() {
+    echo -n "Starting $PROCESS: "
+    check_mode
+    $BIN_DIR/$PROCESS -c $CFG_DIR/$PROCESS.json --daemon
+    test $? -eq 0 && echo "OK" || echo "ERROR"
+}
+
+stop() {
+    echo -n "Stopping $PROCESS: "
+    killall $PROCESS
+    wait_for_stopped
+    test $? -eq 0 && echo "OK" || echo "ERROR"
+}
+
+case "$1" in
+    start)
+        start
+        ;;
+    stop)
+        stop
+        ;;
+    *)
+        echo "Usage: $0 {start|stop}" >&2
+        exit 1
+        ;;
+esac

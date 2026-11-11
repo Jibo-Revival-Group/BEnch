@@ -1,0 +1,56 @@
+#!/bin/sh
+#
+# Initialize power to the Jibo body boards
+#
+
+GPIO_PK1=81     # Body board recovery pin
+GPIO_PK2=82     # GPIO_PK2 Torso & pelvis power
+GPIO_PR4=140    # GPIO_PR4 Head power
+
+export_gpios() {
+    for gpio in $GPIO_PK1 $GPIO_PK2 $GPIO_PR4; do
+        if [ ! -d /sys/class/gpio/gpio$gpio ]; then
+            echo "$gpio" > /sys/class/gpio/export
+            echo "out" > /sys/class/gpio/gpio$gpio/direction
+        fi
+    done
+}
+
+power_on_boards() {
+    echo "0" > /sys/class/gpio/gpio$GPIO_PK1/value
+    echo "1" > /sys/class/gpio/gpio$GPIO_PK2/value
+    echo "1" > /sys/class/gpio/gpio$GPIO_PR4/value
+}
+
+power_off_boards() {
+    echo "0" > /sys/class/gpio/gpio$GPIO_PK2/value
+    echo "0" > /sys/class/gpio/gpio$GPIO_PR4/value
+}
+
+start() {
+    echo -n "Enabling body boards... "
+    export_gpios
+    power_on_boards
+    echo "Done."
+}
+
+stop() {
+    echo -n "Disabling body boards... "
+    export_gpios
+    power_off_boards
+    echo "Done."
+}
+
+
+case "$1" in
+    start)
+        start
+        ;;
+    stop)
+        stop
+        ;;
+    *)
+        echo "Usage: $0 {start|stop}" >&2
+        exit 1
+        ;;
+esac

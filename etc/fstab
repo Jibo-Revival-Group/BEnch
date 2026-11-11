@@ -1,0 +1,13 @@
+# <file system> <mount pt>      <type>  <options>       <dump>  <pass>
+/dev/root       /               ext4    rw		0       1
+proc            /proc           proc    defaults        0       0
+devpts          /dev/pts        devpts  defaults,gid=5,mode=620 0       0
+tmpfs           /dev/shm        tmpfs   mode=0777       0       0
+tmpfs           /tmp            tmpfs   mode=1777,size=64M,rw,noexec,nodev,nosuid       0       0
+/dev/mmcblk0p4	/usr/local	ext4	ro		0	0
+/dev/mmcblk0p5	/var		ext4	rw		0	0
+tmpfs           /var/log	tmpfs   mode=1777,size=64M,rw,noexec,nodev,nosuid       0       0
+/dev/mmcblk0p6	/opt		ext4	rw		0	0
+tmpfs           /run            tmpfs   mode=0755,nosuid,nodev  0       0
+sysfs           /sys            sysfs   defaults        0       0
+nodev           /sys/kernel/debug       debugfs defaults        0       0

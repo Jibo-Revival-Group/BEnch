@@ -1,0 +1,30 @@
+#!/bin/sh
+#
+# Configure the system for collecting core dumps
+#
+
+set -e
+
+CORE_DUMP_DIR="/opt/coredumps"
+CORE_DUMP_FMT="$CORE_DUMP_DIR/%e.%p.core"
+CORE_PATTERN_LOC="/proc/sys/kernel/core_pattern"
+
+start() {
+    echo -n "Configuring core dumps: "
+    test -d $CORE_DUMP_DIR || mkdir $CORE_DUMP_DIR
+    rm -f $CORE_DUMP_DIR/*.core
+    echo "$CORE_DUMP_FMT" > $CORE_PATTERN_LOC
+    echo "Done."
+}
+
+case "$1" in
+    start)
+        start
+        ;;
+    stop)
+        ;;
+    *)
+        echo "Usage: $0 {start|stop}" >&2
+        exit 1
+        ;;
+esac

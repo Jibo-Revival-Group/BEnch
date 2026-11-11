@@ -1,0 +1,279 @@
+#!/usr/bin/env node
+
+"use strict";
+
+// Jibo script to move jibo to a certain configuration
+// And hold him there
+
+var WS = require('ws');
+var fs = require("fs");
+var http = require('http');
+var hostname = "localhost";
+var BREAK = 2;
+var POS_VEL = 7;
+var VEL = 4;
+
+//make sure correct number of arguments passed
+if (process.argv.length != 5) {
+    console.log("ERROR: Wrong number of arguments");
+    usage();
+    process.exit(1);
+}
+
+//Display usage of this script to console if 
+//called incorrectly
+function usage() {
+    console.log("Usage:", "jibo-pose-body", "0.0f 0.0f 0.0f");
+    console.log("");
+    console.log("NOTES:");
+    console.log("Pass 3 floating point numbers, ");
+    console.log("in degrees, to position Jibo");
+}
+
+//convert pose in degrees to radians
+function degToRad(poseArray){
+    for(let i = 0; i < poseArray.length; ++i){
+        poseArray[i] = (poseArray[i] * (Math.PI / 180.0)).toFixed(5);
+    }
+    return poseArray;
+}
+
+//process command-line arguments
+let neckPos = process.argv[2];
+let torsoPos = process.argv[3];
+let pelvisPos = process.argv[4];
+
+//pose array, in degrees
+let poseArray_deg = [neckPos, torsoPos, pelvisPos];
+
+//pose array, converted to radian
+let poseArray = degToRad(poseArray_deg);
+
+var positionRobot = {
+
+    start: function(ip, cb) {
+        this.state = null;
+
+        this.positioned = false;
+        this.pelvisPositioned = false;
+        this.torsoPositioned = false;
+        this.neckPositioned = false;
+
+        this.finished = true;
+
+        this._start(ip, cb);
+    },
+
+
+    _start: function(ip, cb) {
+        //debugger;
+        var self = this;
+        var host = ip + ':8282';
+        try {
+            self.finished = false;
+            self.stateSocket = self._setupStateSocket(host);
+
+            self.stateSocket.on('close', function () {
+                delete self.stateSocket;
+            });
+            self.stateSocket.on('error', function() {
+                console.log('Couldn\'t connect to body service\'s state websocket');
+                return self._shutdown(cb);
+            });
+
+            self.commandSocket = self._setupCommandSocket(host);
+
+            self.commandSocket.on('close', function() {
+                delete self.commandSocket;
+            });
+            self.commandSocket.on('error', function() {
+                console.log('Couldn\'t connect to body service\'s command websocket', err);
+                return self._shutdown(cb);
+            });
+        } catch(err) {
+            console.log('Error while positioning robot:', err);
+            return self._shutdown(cb);
+        }
+
+        
+        self.kickoffTimeout =
+            setTimeout( function() { self._kickoff(cb); }, 500);
+        return null;
+    },
+
+
+    _kickoff: function(cb) {
+        var self = this;
+
+        if (self.finished) {
+            console.log('Jibo was already positioned.');
+            self._shutdown(cb);
+        } else {
+            console.log('Positioning robot...');
+            self._startSpinningJibo(self.commandSocket);
+
+            self.indexCheckInterval =
+            setInterval( function () {
+                if (self.finished) {
+                    console.log('Finished positioning robot.');
+                    self._shutdown(cb);
+                }
+            }, 50);
+        }
+    },
+
+
+   /**
+   * Called internally to cleanup any resources that were allocated in indexRobot.start()
+   */
+    _shutdown: function(cb) {
+        var self = this;
+        if (self.stateSocket) {
+            self.stateSocket.close();
+            delete self.stateSocket;
+        }
+        if (self.commandSocket) {
+            self.commandSocket.close();
+            delete self.commandSocket;
+        }
+        if (self.kickoffTimeout) {
+            clearTimeout(self.kickoffTimeout);
+            delete self.kickoffTimeout;
+        }
+        if (self.spinInterval) {
+            clearInterval(self.spinInterval);
+            delete self.spinInterval;
+        }
+        if (self.indexCheckInterval) {
+            clearInterval(self.indexCheckInterval);
+            delete self.indexCheckInterval;
+        }
+
+        cb();
+    },
+
+
+    _setupStateSocket: function(host) {
+        var self = this;
+        var socket = new WS('ws://'+host+'/axis_state');
+
+        socket.on('open', function() {
+        });
+
+        socket.on('message', function(message) {
+            var data = JSON.parse(message);
+            self.state = data;
+            if (!self.stateSocket) {
+            }
+            self._updateStatus();
+        });
+
+        return socket;
+    },
+
+
+    _updateStatus: function() {
+        var self = this;
+        var pelvis = self.state.pelvis;
+        var torso = self.state.torso;
+        var neck = self.state.neck;
+
+        var tolerance = 0.1;
+        //console.log('pelvis', pelvis.pos, 'torso', torso.pos, 'neck', neck.pos);
+        self.pelvisPositioned = (Math.abs(Math.abs(pelvis.pos) - 
+            Math.abs(poseArray[2])) < tolerance);
+        self.torsoPositioned  = (Math.abs(Math.abs(torso.pos) - 
+            Math.abs(poseArray[1])) < tolerance);
+        self.neckPositioned   = (Math.abs(Math.abs(neck.pos) - 
+            Math.abs(poseArray[0])) < tolerance);
+
+        self.finished = 0;
+    },
+
+
+    _setupCommandSocket: function(host) {
+        var socket = new WS('ws://'+host+'/axis_command');
+        socket.on('open', function() {
+            //console.log('Axis command socket open!');
+        });
+        socket.on('message', function(msg) {
+            console.log('Got command message: ', msg.data);
+        });
+        return socket;
+    },
+
+
+    _startSpinningJibo: function(socket) {
+        var self = this;
+        self.spinInterval =
+        setInterval( function() {
+            if (socket.readyState != WS.OPEN) {
+                console.log('socket.readyState', socket.readyState);
+            }
+            var cmd = self._buildCmds();
+            if (cmd) {
+                socket.send(cmd);
+            }
+        }, 50);
+    },
+
+
+    _buildCmds: function() {
+        var self = this;
+        if (self.state === null) {
+            return null;
+        }
+
+        var vpelvis;
+        var vtorso;
+        var vneck;
+
+        var val = 0;
+        var mode;
+        
+        if (!self.pelvisPositioned) {
+            mode = POS_VEL;
+        } else {
+            mode = BREAK;
+        }
+        vpelvis = self._cmd(mode, val, parseFloat(poseArray[2]), self.state.pelvis.pos, self.state.pelvis);
+
+        if (!self.torsoPositioned) {
+            mode = POS_VEL;
+        } else {
+            mode = BREAK;
+        }
+        vtorso = self._cmd(mode, val, parseFloat(poseArray[1]), self.state.torso.pos, self.state.torso);
+
+        if (!self.neckPositioned) {
+            mode = POS_VEL;
+        } else {
+            mode = BREAK;
+        }
+        vneck = self._cmd(mode, val, parseFloat(poseArray[0]), self.state.neck.pos, self.state.neck);
+
+        var data = {
+            ts : [self.state.ts[0], self.state.ts[1]],
+            pelvis : vpelvis,
+            torso : vtorso,
+            neck : vneck
+        };
+        return JSON.stringify(data);
+    },
+
+
+    _cmd: function(mode, vel, desPos, actPos, state) {
+        return {
+            mode : mode,
+            value : [vel, desPos],
+            vel_limit : state.vel_limit,  //10
+            acc_limit : 2,
+            cur_limit : state.cur_limit   //2.3499999046325684
+        };
+    }
+}
+
+
+positionRobot.start(hostname, function() {} );
+
+

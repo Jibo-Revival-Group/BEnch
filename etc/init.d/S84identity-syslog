@@ -1,0 +1,19 @@
+#!/bin/sh
+#
+# Post identity to syslog, build version dependent
+# Author: Russell Kirmayer
+# Jibo Inc.
+
+case "$1" in
+    start)
+        if  [ -e /usr/bin/jibo-postidentity ]; then
+            jibo-postidentity
+        fi
+        ;;
+    stop)
+        ;;
+    *)
+        echo "Usage: $0 {start|stop}" >&2
+        exit 1
+        ;;
+esac

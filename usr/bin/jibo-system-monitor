@@ -1,0 +1,338 @@
+#!/usr/bin/env node
+
+"use strict";
+
+// Jibo System Monitoring script
+
+const execSync = require("child_process").execSync;
+const syslog = require("modern-syslog");
+const fs = require('fs');
+
+//process command line argument
+const args = process.argv.slice(2);
+
+// Calcualte difference in time between a timestamp and current time
+function timeDiffCalc(startTime)
+{
+    // timestamp in milliseconds
+    return Math.abs(new Date() - new Date(startTime));
+}
+
+// Take the system start time (in ms), and calculate how long a process 
+// has been running in dd:hh:mm:ss format
+function calcUptime(startTime){
+    let s_to_h = 1000 /* ms to s */ * 60 /* s to min */ * 60 /* min to hr */;
+
+    let timeDiff = timeDiffCalc(startTime);
+    let days = Math.floor(timeDiff / s_to_h / 24);
+    let hours = Math.floor(timeDiff / s_to_h) % 24;
+    let minutes = Math.floor(60*((timeDiff / s_to_h) % 1).toFixed(3));
+    let seconds = Math.floor((timeDiff/1000) % 60);
+    let formattedTime = days + "d:" +
+                        hours + "h:" +
+                        minutes + "m:" +
+                        seconds + "s";
+    return formattedTime;
+}
+
+//function to check the memory usage of each partition
+function partitionSizeTest(){
+    try {
+        let dfh_string = "df -h | grep -v \"Used\" | awk \'{ print";
+
+        let filesystem = execSync(dfh_string + " $1}\'").toString('utf8').split('\n');
+        let usage = execSync(dfh_string + " $5}\'").toString('utf8').split('\n');
+        let mount = execSync(dfh_string + " $6}\'").toString('utf8').split('\n');
+
+        for(let i = 0; i < filesystem.length - 1; i++){
+            let message = "Filesystem: Mount point " + i + ". " + filesystem[i] +
+                            " (mounted on " + mount[i]+") is "+ usage[i]+ " full";
+            console.log(message);
+            syslog.info("P.SystemMonitor: " + message);
+        }
+
+    } catch (error) {
+        console.log("Error trying to check filesystem: ", error.message);
+        syslog.info("P.SystemMonitor: Error trying to check filesystem: ", error.message);
+        process.exit(1);
+    }
+}
+
+//function to check CPU usage
+function CPUUsage(){
+    try{
+        let mpstat_str = "mpstat -P ALL | awk \'{ print";
+
+        let CPUs = execSync(mpstat_str + " $2}\'").toString('utf8').split('\n');
+        let usrUse = execSync(mpstat_str + " $3}\'").toString('utf8').split('\n');
+        let sysUse = execSync(mpstat_str + " $5}\'").toString('utf8').split('\n');
+        let idleUse = execSync(mpstat_str + " $12}\'").toString('utf8').split('\n');
+
+        for(let i = 3; i < CPUs.length - 1; i++){
+            let message = "CPU: Core " + CPUs[i] + ": " + usrUse[i] + "% usr,  " +
+                sysUse[i] + "% sys, " + idleUse[i] + "% idle ";
+            console.log(message);
+            syslog.info("P.SystemMonitor: " + message);
+        }
+    } catch (error) {
+        console.log("Error trying to examine CPU usage: ", error.message);
+        syslog.info("P.SystemMonitor: Error trying to examine CPU usage: ", error.message);
+        process.exit(1);
+    }
+}
+
+// get uptime and other information
+function systemUptime(){
+    try {
+        let u_str = "uptime | grep -ohe ";
+        let uptime_time = execSync("uptime -p | awk \'{print $2\" \"$3\" \"$4\" \"$5\" \"$6\" \"$7}\'");
+        let uptime_numUsers = execSync(u_str+"\'[0-9.*] user[s,]\'");
+        let uptime_loadAvg = execSync(u_str+"\'load average[s:][: ].*\' | awk \'{ print $3\" \"$4\" \"$5}\'");
+
+        let system_date = new Date();
+
+        uptime_time = uptime_time.toString('utf8').trim();
+        uptime_numUsers = uptime_numUsers.toString('utf8').trim();
+        uptime_loadAvg = uptime_loadAvg.toString('utf8').trim();
+        system_date = system_date.toString('utf8').trim();
+
+        console.log("CPU: Uptime: " + uptime_time);
+        console.log("CPU: Number of users logged in: " + uptime_numUsers);
+        console.log("CPU: Current load average: " + uptime_loadAvg);
+        console.log("CPU: Current date: " + system_date);
+        syslog.info("P.SystemMonitor: CPU: Uptime: " + uptime_time);
+        syslog.info("P.SystemMonitor: CPU: Number of users logged in: " + uptime_numUsers);
+        syslog.info("P.SystemMonitor: CPU: Current load average: " + uptime_loadAvg);
+        syslog.info("P.SystemMonitor: CPU: Current date: " + system_date);
+
+    } catch (error) {
+        console.log("Error trying to examine uptime: ", error.message);
+        syslog.info("P.SystemMonitor: Error trying to examine uptime: ", error.message);
+        process.exit(1);
+    }
+}
+
+function electronRSSHelper(jibo_process){
+    let ps_list = execSync("ps -o pid,rss,args | grep [^]]" +
+        jibo_process).toString('utf8').trim().split('\n');
+
+    for(let i = 0; i < ps_list.length; i++){
+        try{
+            // Different formatting cases to handle electron updates
+            if(ps_list[i].split('/usr/local/electron/electron')[1]){
+                let temp = ps_list[i].trim().split(/\ +/);
+                // get timestamp from creation of /proc/PID, which
+                // is the start time of the associated process
+                let stats = fs.statSync("/proc/"+temp[0]);
+                let formatted_uptime = calcUptime(new Date(stats.ctime));
+
+                let message = "Electron process: \"" + 
+                    ps_list[i].split('/usr/local/electron/electron')[1].substring(0,75) +
+                    "\" | Mem: " + temp[1] + " (RSS), Uptime: " +
+                    formatted_uptime + " ("+timeDiffCalc(stats.ctime)+")";
+
+                console.log(message);
+                syslog.info("P.SystemMonitor: " + message);
+            }
+        } catch(error){
+            console.log("Error examining memory: " + error.message);
+            syslog.info("P.SystemMonitor: Error examining memory: " + error.message);
+        }
+    }
+}
+
+function nodeRSSHelper(jibo_process){
+    let ps_list = execSync("ps -o pid,rss,args | grep [^]]" +
+        jibo_process).toString('utf8').trim().split('\n');
+
+    for(let i = 0; i < ps_list.length; i++){
+        try{
+            // Different formatting cases to handle electron updates
+            if(ps_list[i].split('/usr/bin/node')[1]){
+                let temp = ps_list[i].trim().split(/\ +/);
+                // get timestamp from creation of /proc/PID, which
+                // is the start time of the associated process
+                let stats = fs.statSync("/proc/"+temp[0]);
+                let formatted_uptime = calcUptime(new Date(stats.ctime));
+
+                let message = "Node process    : \"" + 
+                    ps_list[i].split('/usr/bin/node')[1].substring(0,75) +
+                    "\" | Mem: " + temp[1] + " (RSS), Uptime: " +
+                    formatted_uptime + " ("+timeDiffCalc(stats.ctime)+")";
+
+                console.log(message);
+                syslog.info("P.SystemMonitor: " + message);
+            }
+        } catch(error){
+            console.log("Error examining process memory: " + error.message);
+            syslog.info("P.SystemMonitor: Error examining process memory: " + error.message);
+            process.exit(1);
+        }
+    }
+}
+
+function rssHelper(jibo_process){
+    let ps_list = execSync("ps -o pid,rss,args | grep [^]]" +
+        jibo_process).toString('utf8').trim().split(/\ +/);
+    // get timestamp from creation of /proc/PID, which
+    // is the start time of the associated process
+    var stats = fs.statSync("/proc/"+ps_list[0]);
+    let formatted_uptime = calcUptime(new Date(stats.ctime));
+
+    let message = "Platform process: " + jibo_process + " |  Mem: " + ps_list[1] +
+        " (RSS), Uptime: " + formatted_uptime + " ("+timeDiffCalc(stats.ctime)+")";
+
+    console.log(message);
+    syslog.info("P.SystemMonitor: " + message);
+}
+
+function RSSUsage() {
+    try{
+        let processList = ["jibo-service-registry",
+                            "jibo-system-manager",
+                            "jibo-body-service",
+                            "jibo-audio-service",
+                            "jibo-identity-service",
+                            "jibo-nlu-service",
+                            "jibo-asr-service",
+                            "jibo-tts-service",
+                            "jibo-server-service",
+                            "jibo-lps-service",
+                            "jibo-system-monitoring-service"]
+
+        for(let i = 0; i < processList.length; i++){
+            rssHelper(processList[i]);
+        }
+        electronRSSHelper("electron");
+        nodeRSSHelper("node");
+
+    } catch (error) {
+        console.log("Error trying to examine memory usage: ", error.message);
+        syslog.info("P.SystemMonitor: Error trying to examine memory usage: ", error.message);
+        process.exit(1);
+    }
+}
+
+//function to check storage capacity
+function sysMemUsage(){
+    try {
+        let vmstat = execSync("vmstat -sSM");
+        let vmstat_list = vmstat.toString('utf8').split('\n');
+        for (let i = 0; i < 4; i++){
+            let val = vmstat_list[i].trim();
+            console.log("System memory: " + val);
+            syslog.info("P.SystemMonitor: System memory: " + val);
+        }
+    } catch (error) {
+        console.log("Error trying to examine system memory usage: ", error.message);
+        syslog.info("P.SystemMonitor: Error trying to examine system memory usage: ", error.message);
+        process.exit(1);
+    }
+}
+// Various network usage stats
+function networkUsage(){
+
+    try {
+        let iwwlan0 = "iw wlan0 link | awk \'{print ";
+        
+        let wlan0_address = execSync("ifconfig wlan0 | grep \'inet addr:\' | "+
+            "cut -d: -f2 | awk \'{ print $1}\'").toString('utf8').trim();
+
+        let wlan0_connections = execSync("ifconfig wlan0 | awk \'BEGIN {ORS=\"\t\"} /RX packet/ { rxerrors=$3 } \
+            /TX packet/ { txerrors=$3 } /bytes/ { rxbytes=$2; txbytes=$6 } END \
+            { print \"RX \"rxerrors\" \"rxbytes\", TX \"txerrors\" \"txbytes }\'").toString('utf8').trim();
+
+        let wlan0_freq = execSync(iwwlan0 + "$1\" \"$2}\' | grep freq").toString('utf8').trim();
+        let wlan0_signal = execSync(iwwlan0 + "$1\" \"$2\" \"$3}\' | grep signal").toString('utf8').trim();
+        let network_SSID = execSync(iwwlan0 + "$1\" \"$2}\' | grep SSID").toString('utf8').trim();
+
+        console.log("Network: wlan0 IP address: " + wlan0_address);
+        syslog.info("P.SystemMonitor: Network: wlan0 IP address: " + wlan0_address);
+
+        console.log("Network: wlan0 speeds: " + wlan0_connections);
+        syslog.info("P.SystemMonitor: Network: wlan0 speeds: " + wlan0_connections);
+
+        console.log("Network: wlan0 freq: " + wlan0_freq);
+        syslog.info("P.SystemMonitor: Network: wlan0 freq: " + wlan0_freq);
+
+        console.log("Network: wlan0 signal: " + wlan0_signal);
+        syslog.info("P.SystemMonitor: Network: wlan0 signal: " + wlan0_signal);  
+
+        console.log("Network: Network SSID: " + network_SSID);
+        syslog.info("P.SystemMonitor: Network: Network SSID: " + network_SSID);
+
+    } catch (error) {
+        console.log("Error trying to examine network usage: ", error.message);
+        syslog.info("P.SystemMonitor: Error trying to examine network usage: ", error.message);
+        process.exit(1);
+    }
+}
+
+//usage function
+function usage() {
+    console.log("Usage:", process.argv[1], "[options]");
+    console.log("");
+    console.log("OPTIONS:");
+    console.log("  -h,--help        print this message");
+    console.log("  --p              display partition usage");
+    console.log("  --m              display memory usage");
+    console.log("  --c              display cpu usage");
+    console.log("  --s              display system memory usage");
+    console.log("  --n              display network usage")
+    console.log("");
+}
+
+//parse input and determine which tests to run
+let partition = false;
+let CPU = false;
+let memory = false;
+let sysMem = false;
+let network = false;
+
+for (let i=0; i<args.length; ++i) {
+    let arg = args[i];
+    if (arg == "--help" || arg == "-h") {
+        usage();
+        process.exit(0);
+    } else if (arg == "--p") {
+        partition = true;
+    } else if (arg == "--c") {
+        CPU = true;
+    } else if (arg == "--s") {
+        sysMem = true;
+    } else if (arg == "--m") {
+        memory = true;
+    } else if (arg == "--n") {
+        network = true;
+    } else {
+        console.log("ERROR: unexpected argument", arg);
+
+        usage();
+        process.exit(1);
+    }
+}
+
+//initialize system logging
+syslog.init("system-monitor", syslog.LOG_PID | syslog.LOG_ODELAY, syslog.LOG_LOCAL0);
+
+if(partition){
+    partitionSizeTest();
+    console.log("Successfully checked filesystem\n");
+}
+if(CPU){
+    CPUUsage();
+    systemUptime();
+    console.log("Successfully checked CPU usage\n");
+}
+if(memory){
+    RSSUsage();
+    console.log("Successfully checked process memory usage\n");
+}
+if(sysMem){
+    sysMemUsage();
+    console.log("Successfully check system memory usage\n");
+}
+if(network){
+    networkUsage();
+    console.log("Successfully checked network usage\n");
+}

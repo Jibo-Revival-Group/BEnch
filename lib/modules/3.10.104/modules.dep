@@ -1,0 +1,71 @@
+kernel/fs/configfs/configfs.ko:
+kernel/fs/cifs/cifs.ko:
+kernel/crypto/md4.ko:
+kernel/crypto/sha256_generic.ko:
+kernel/crypto/gcm.ko:
+kernel/crypto/twofish_generic.ko: kernel/crypto/twofish_common.ko
+kernel/crypto/twofish_common.ko:
+kernel/crypto/tcrypt.ko:
+kernel/drivers/gpu/host1x/host1x.ko:
+kernel/drivers/spi/spidev.ko:
+kernel/drivers/net/ppp/ppp_generic.ko: kernel/drivers/net/slip/slhc.ko
+kernel/drivers/net/ppp/ppp_async.ko: kernel/drivers/net/ppp/ppp_generic.ko kernel/drivers/net/slip/slhc.ko
+kernel/drivers/net/ppp/bsd_comp.ko: kernel/drivers/net/ppp/ppp_generic.ko kernel/drivers/net/slip/slhc.ko
+kernel/drivers/net/ppp/ppp_deflate.ko: kernel/drivers/net/ppp/ppp_generic.ko kernel/drivers/net/slip/slhc.ko
+kernel/drivers/net/ppp/ppp_mppe.ko: kernel/drivers/net/ppp/ppp_generic.ko kernel/drivers/net/slip/slhc.ko
+kernel/drivers/net/ppp/ppp_synctty.ko: kernel/drivers/net/ppp/ppp_generic.ko kernel/drivers/net/slip/slhc.ko
+kernel/drivers/net/ppp/pppox.ko: kernel/drivers/net/ppp/ppp_generic.ko kernel/drivers/net/slip/slhc.ko
+kernel/drivers/net/ppp/pppolac.ko: kernel/drivers/net/ppp/pppox.ko kernel/drivers/net/ppp/ppp_generic.ko kernel/drivers/net/slip/slhc.ko
+kernel/drivers/net/ppp/pppopns.ko: kernel/drivers/net/ppp/pppox.ko kernel/drivers/net/ppp/ppp_generic.ko kernel/drivers/net/slip/slhc.ko
+kernel/drivers/net/slip/slhc.ko:
+kernel/drivers/net/usb/rtl8150.ko:
+kernel/drivers/net/usb/asix.ko: kernel/drivers/net/usb/usbnet.ko
+kernel/drivers/net/usb/ax88179_178a.ko: kernel/drivers/net/usb/usbnet.ko
+kernel/drivers/net/usb/cdc_ether.ko: kernel/drivers/net/usb/usbnet.ko
+kernel/drivers/net/usb/smsc95xx.ko: kernel/drivers/net/usb/usbnet.ko
+kernel/drivers/net/usb/cdc_subset.ko: kernel/drivers/net/usb/usbnet.ko
+kernel/drivers/net/usb/usbnet.ko:
+kernel/drivers/net/usb/cdc_ncm.ko: kernel/drivers/net/usb/usbnet.ko
+kernel/drivers/net/usb/raw_ip_net.ko:
+kernel/drivers/usb/serial/baseband_usb_chr.ko:
+kernel/drivers/usb/misc/usbtest.ko:
+kernel/drivers/usb/gadget/libcomposite.ko: kernel/fs/configfs/configfs.ko
+kernel/drivers/usb/gadget/usb_f_ss_lb.ko: kernel/drivers/usb/gadget/libcomposite.ko kernel/fs/configfs/configfs.ko
+kernel/drivers/usb/gadget/g_zero.ko: kernel/drivers/usb/gadget/libcomposite.ko kernel/fs/configfs/configfs.ko
+kernel/drivers/usb/gadget/g_ether.ko: kernel/drivers/usb/gadget/libcomposite.ko kernel/fs/configfs/configfs.ko
+kernel/drivers/usb/gadget/g_mass_storage.ko: kernel/drivers/usb/gadget/libcomposite.ko kernel/fs/configfs/configfs.ko
+kernel/drivers/usb/class/cdc-acm.ko:
+kernel/drivers/usb/class/cdc-wdm.ko:
+kernel/drivers/input/touchscreen/synaptics_dsx/synaptics_dsx_core.ko:
+kernel/drivers/input/touchscreen/synaptics_dsx/synaptics_dsx_rmi_dev.ko: kernel/drivers/input/touchscreen/synaptics_dsx/synaptics_dsx_core.ko
+kernel/drivers/input/touchscreen/synaptics_dsx/synaptics_dsx_fw_update.ko: kernel/drivers/input/touchscreen/synaptics_dsx/synaptics_dsx_core.ko
+kernel/drivers/input/touchscreen/synaptics_dsx/synaptics_dsx_test_reporting.ko: kernel/drivers/input/touchscreen/synaptics_dsx/synaptics_dsx_core.ko
+kernel/drivers/input/touchscreen/synaptics_dsx/synaptics_dsx_proximity.ko: kernel/drivers/input/touchscreen/synaptics_dsx/synaptics_dsx_core.ko
+kernel/drivers/rtc/rtc-tegra.ko:
+kernel/drivers/media/i2c/soc_camera/ov4689_v4l2.ko:
+kernel/drivers/media/platform/soc_camera/soc_camera_platform.ko:
+kernel/drivers/media/usb/gspca/gspca_main.ko:
+kernel/drivers/hwmon/iio_hwmon.ko:
+kernel/drivers/md/dm-mod.ko:
+kernel/drivers/md/dm-crypt.ko: kernel/drivers/md/dm-mod.ko
+kernel/drivers/bluetooth/btusb.ko: kernel/net/bluetooth/bluetooth.ko kernel/net/rfkill/rfkill.ko
+kernel/sound/drivers/snd-dummy.ko:
+kernel/sound/drivers/snd-aloop.ko:
+kernel/sound/soc/codecs/snd-soc-cs53l30.ko:
+kernel/sound/soc/codecs/snd-soc-tlv320dac3100.ko:
+kernel/sound/soc/tegra/snd-soc-tegra-tlv320dac3100.ko:
+kernel/sound/soc/tegra/snd-soc-tegra-tobor-adc.ko:
+kernel/net/bluetooth/bluetooth.ko: kernel/net/rfkill/rfkill.ko
+kernel/net/bluetooth/rfcomm/rfcomm.ko: kernel/net/bluetooth/bluetooth.ko kernel/net/rfkill/rfkill.ko
+kernel/net/bluetooth/bnep/bnep.ko: kernel/net/bluetooth/bluetooth.ko kernel/net/rfkill/rfkill.ko
+kernel/net/bluetooth/hidp/hidp.ko: kernel/net/bluetooth/bluetooth.ko kernel/net/rfkill/rfkill.ko
+kernel/net/rfkill/rfkill.ko:
+kernel/net/rfkill/rfkill-gpio.ko: kernel/net/rfkill/rfkill.ko
+backports/drivers/net/wireless/ti/wlcore/wlcore_sdio.ko: backports/compat/compat.ko
+backports/drivers/net/wireless/iwlwifi/mvm/iwlmvm.ko: backports/drivers/net/wireless/iwlwifi/iwlwifi.ko backports/net/mac80211/mac80211.ko backports/net/wireless/cfg80211.ko backports/compat/compat.ko kernel/net/rfkill/rfkill.ko
+backports/drivers/net/wireless/ti/wl18xx/wl18xx.ko: backports/drivers/net/wireless/ti/wlcore/wlcore.ko backports/net/mac80211/mac80211.ko backports/net/wireless/cfg80211.ko backports/compat/compat.ko kernel/net/rfkill/rfkill.ko
+backports/drivers/net/wireless/ti/wlcore/wlcore.ko: backports/net/mac80211/mac80211.ko backports/net/wireless/cfg80211.ko backports/compat/compat.ko kernel/net/rfkill/rfkill.ko
+backports/net/wireless/cfg80211.ko: backports/compat/compat.ko kernel/net/rfkill/rfkill.ko
+backports/drivers/net/wireless/iwlwifi/iwlwifi.ko: backports/net/wireless/cfg80211.ko backports/compat/compat.ko kernel/net/rfkill/rfkill.ko
+backports/net/mac80211/mac80211.ko: backports/net/wireless/cfg80211.ko backports/compat/compat.ko kernel/net/rfkill/rfkill.ko
+backports/compat/compat.ko:

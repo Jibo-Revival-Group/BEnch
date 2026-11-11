@@ -1,0 +1,194 @@
+#!/usr/bin/env node
+
+"use strict";
+
+// Jibo Provisioning Script. In which we break all the things.
+
+const execSync = require("child_process").execSync;
+const fs = require("fs");
+
+function setMode(mode) {
+    try {
+        execSync("/usr/bin/jibo-setmode " + mode);
+    } catch (error) {
+        console.log("ERROR: failed to set mode:", error.message);
+        process.exit(1);
+    }
+}
+
+//copy an empty wpa_supplicant file
+//to prevent unnecessary scanning
+function clearWpaConf() {
+    const conf_location = "/var/etc/";
+    const empty_conf_name = "empty_wpa_supplicant.empty";
+    const replace_me_name = "wpa_supplicant.conf";
+
+    try{
+        const data = fs.readFileSync(conf_location+empty_conf_name);
+        fs.writeFileSync(String(conf_location+replace_me_name), data);
+    }
+    catch (error) {
+        console.log("ERROR: failed to clear wpa supplicant file:", error.message);
+        process.exit(1);
+    }
+}
+
+const sysfs_location = "/sys/devices/platform/tegra-fuse";
+const public_key_file = "/etc/public_key";
+const public_key_location = sysfs_location + "/public_key";
+const production_mode_value = "0x00000001\n";
+const production_mode_location = sysfs_location + "/odm_production_mode";
+const jtag_location = sysfs_location + "/jtag_disable";
+const jtag_lockdown_value = "0x00000001\n";
+
+function checkJTAGSet() {
+    try {
+        const jtag = fs.readFileSync(jtag_location, 'utf8');
+        if (jtag != jtag_lockdown_value) {
+            //console.log("jtag: " + jtag + " != " + jtag_lockdown_value);
+            return false;
+        }
+    } catch (error) {
+        console.log("ERROR: failed to read JTAG: ", error.message);
+        process.exit(1);
+    }
+    return true;
+}
+
+function checkKeySet() {
+    try {
+        const data = fs.readFileSync(public_key_file, 'utf8');
+        const fuse_data = fs.readFileSync(public_key_location, 'utf8');
+        if (data != fuse_data) {
+            //console.log("public key: " + data + " != " + fuse_data);
+            return false;
+        }
+    } catch (error) {
+        console.log("ERROR: failed to read public key:", error.message);
+        process.exit(1);
+    }
+    return true;
+}
+
+function checkODMSet() {
+    try {
+        const mode = fs.readFileSync(production_mode_location, 'utf8');
+        if (mode != production_mode_value) {
+            //console.log("odm: " + mode + " != " + production_mode_value);
+            return false;
+        }
+    } catch (error) {
+        console.log("ERROR: failed to read production mode:", error.message);
+        process.exit(1);
+    }
+    return true;
+}
+
+function blowFuses() {
+    // if everything is already set, we're good to go
+    let jtag_set = checkJTAGSet();
+    let key_set = checkKeySet();
+    let odm_set = checkODMSet();
+    if (jtag_set && key_set && odm_set) {
+        console.log("CPU already locked.");
+        return;
+    }
+
+    // if the odm is set, we can't fix any other problems, so error out
+    if (odm_set) {
+        if (!jtag_set) {
+            console.log("ERROR: CPU locked with wrong jtag!");
+            process.exit(1);
+        }
+        if (!key_set) {
+            console.log("ERROR: CPU locked with wrong public key!");
+            process.exit(1);
+        }
+    }
+
+    // set jtag
+    try {
+        fs.writeFileSync(jtag_location, jtag_lockdown_value);
+    } catch (error) {
+        console.log("ERROR: failed to lock JTAG: ", error.message);
+        process.exit(1);
+    }
+    if (!checkJTAGSet()) {
+        console.log("ERROR: failed to lock JTAG (better call andrewb!)");
+        process.exit(1);
+    }
+
+    // set public key
+    try {
+        const data = fs.readFileSync(public_key_file);
+        fs.writeFileSync(public_key_location, data);
+    } catch (error) {
+        console.log("ERROR: failed to set public key:", error.message);
+        process.exit(1);
+    }
+    if (!checkKeySet()) {
+        console.log("ERROR: failed to set public key (better call andrewb!)");
+        process.exit(1);
+    }
+
+    // set odm mode
+    try {
+        fs.writeFileSync(production_mode_location, production_mode_value);
+    } catch (error) {
+        console.log("ERROR: failed to set production mode:", error.message);
+        process.exit(1);
+    }
+    if (!checkODMSet()) {
+        console.log("ERROR: failed to set production mode (better call andrewb!)");
+        process.exit(1);
+    }
+}
+
+// process commmand-line arguments
+const args = process.argv.slice(2);
+
+function usage() {
+    console.log("Usage:", process.argv[1], "[options]");
+    console.log("");
+    console.log("OPTIONS:");
+    console.log("  -h,--help        print this message");
+    console.log("  --dev            enable developer mode");
+    console.log("  --wpa            test clearing wpa_supplicant file");
+    console.log("");
+}
+
+let dev = false;
+let wpa = false;
+for (let i=0; i<args.length; ++i) {
+    let arg = args[i];
+    if (arg == "--help" || arg == "-h") {
+        usage();
+        process.exit(0);
+    } else if (arg == "--dev") {
+        dev = true;
+    } else if (arg == "--wpa") {
+        wpa = true;
+    } else {
+        console.log("ERROR: unexpected argument", arg);
+        usage();
+        process.exit(1);
+    }
+}
+
+if (dev) {
+    setMode("int-developer");
+    console.log("Successfully provisioned for development.");
+} else if (wpa) {
+    clearWpaConf();
+    console.log("Successfully cleared wpa supplicant.");
+} else {
+    // make sure we can actually do the fuses before we lockdown the OS
+    blowFuses();
+
+    clearWpaConf();
+
+    // do this last to facilitate debugging if anything above fails
+    setMode("oobe");
+
+    console.log("Successfully provisioned for production.");
+}

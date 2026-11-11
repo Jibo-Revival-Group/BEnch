@@ -1,0 +1,3 @@
+#!/bin/sh
+sleep $(expr $RANDOM \% 300)
+/usr/sbin/logrotate -v -s /var/run/logrotate.status /etc/logrotate.conf

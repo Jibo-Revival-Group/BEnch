@@ -1,0 +1,8 @@
+#!/bin/sh
+# Local filesystems are mounted before rcS; run after S03fs-resize.
+set -e
+# Services without the bootstrap (factory /usr/local, mid-PM) have nothing to prepare.
+[ -x /usr/local/bin/jibo-runtime-bootstrap ] || exit 0
+case "${1:-start}" in
+    start|restart) /usr/local/bin/jibo-runtime-bootstrap --knowledge ;;
+esac

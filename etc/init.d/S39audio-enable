@@ -1,0 +1,19 @@
+#!/bin/sh
+set -e
+
+case "$1" in
+    start)
+        echo "Enabling audio..."
+        if ! [ -d /sys/class/gpio/gpio144 ] ; then
+                echo 144 > /sys/class/gpio/export
+                echo out > /sys/class/gpio/gpio144/direction
+        fi
+        echo 1 > /sys/class/gpio/gpio144/value
+        ;;
+    stop)
+        ;;
+    *)
+        echo "Usage: $0 {start|stop}" >&2
+        exit 1
+        ;;
+esac

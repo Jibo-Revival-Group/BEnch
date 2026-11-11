@@ -1,0 +1,141 @@
+#!/usr/bin/env node
+
+"use strict";
+
+// Jibo Fuse-only Script. Used when we want to fuse but not firewall
+// Version 1.0  Rich Sadowsky   2017-04-25  checked in 2017-06-16 
+// to jibo-system-config=tools in feature/richsad/fuse-script branch
+// identical to provision.js except for removes the clearing of wpa_supplicant.conf,
+// and does not setmode to OOBE. Leaves mode alone. To be used when we fuse
+// at Jibo flashing station. The clearing of wpa_supplicant.conf and firewalling via
+// setmode OOBE will occur in BuiltInTest. Resulting robot will be identical
+// to robots built previously with provision.js but will fuse earlier for security reasons
+
+const execSync = require("child_process").execSync;
+const fs = require("fs");
+
+function setMode(mode) {
+    try {
+        execSync("/usr/bin/jibo-setmode " + mode);
+    } catch (error) {
+        console.log("ERROR: failed to set mode:", error.message);
+        process.exit(1);
+    }
+}
+
+
+const sysfs_location = "/sys/devices/platform/tegra-fuse";
+const public_key_file = "/etc/public_key";
+const public_key_location = sysfs_location + "/public_key";
+const production_mode_value = "0x00000001\n";
+const production_mode_location = sysfs_location + "/odm_production_mode";
+const jtag_location = sysfs_location + "/jtag_disable";
+const jtag_lockdown_value = "0x00000001\n";
+
+function checkJTAGSet() {
+    try {
+        const jtag = fs.readFileSync(jtag_location, 'utf8');
+        if (jtag != jtag_lockdown_value) {
+            //console.log("jtag: " + jtag + " != " + jtag_lockdown_value);
+            return false;
+        }
+    } catch (error) {
+        console.log("ERROR: failed to read JTAG: ", error.message);
+        process.exit(1);
+    }
+    return true;
+}
+
+function checkKeySet() {
+    try {
+        const data = fs.readFileSync(public_key_file, 'utf8');
+        const fuse_data = fs.readFileSync(public_key_location, 'utf8');
+        if (data != fuse_data) {
+            //console.log("public key: " + data + " != " + fuse_data);
+            return false;
+        }
+    } catch (error) {
+        console.log("ERROR: failed to read public key:", error.message);
+        process.exit(1);
+    }
+    return true;
+}
+
+function checkODMSet() {
+    try {
+        const mode = fs.readFileSync(production_mode_location, 'utf8');
+        if (mode != production_mode_value) {
+            //console.log("odm: " + mode + " != " + production_mode_value);
+            return false;
+        }
+    } catch (error) {
+        console.log("ERROR: failed to read production mode:", error.message);
+        process.exit(1);
+    }
+    return true;
+}
+
+function blowFuses() {
+    // if everything is already set, we're good to go
+    let jtag_set = checkJTAGSet();
+    let key_set = checkKeySet();
+    let odm_set = checkODMSet();
+    if (jtag_set && key_set && odm_set) {
+        console.log("CPU already locked.");
+        return;
+    }
+
+    // if the odm is set, we can't fix any other problems, so error out
+    if (odm_set) {
+        if (!jtag_set) {
+            console.log("ERROR: CPU locked with wrong jtag!");
+            process.exit(1);
+        }
+        if (!key_set) {
+            console.log("ERROR: CPU locked with wrong public key!");
+            process.exit(1);
+        }
+    }
+
+    // set jtag
+    try {
+        fs.writeFileSync(jtag_location, jtag_lockdown_value);
+    } catch (error) {
+        console.log("ERROR: failed to lock JTAG: ", error.message);
+        process.exit(1);
+    }
+    if (!checkJTAGSet()) {
+        console.log("ERROR: failed to lock JTAG (better call andrewb!)");
+        process.exit(1);
+    }
+
+    // set public key
+    try {
+        const data = fs.readFileSync(public_key_file);
+        fs.writeFileSync(public_key_location, data);
+    } catch (error) {
+        console.log("ERROR: failed to set public key:", error.message);
+        process.exit(1);
+    }
+    if (!checkKeySet()) {
+        console.log("ERROR: failed to set public key (better call andrewb!)");
+        process.exit(1);
+    }
+
+    // set odm mode
+    try {
+        fs.writeFileSync(production_mode_location, production_mode_value);
+    } catch (error) {
+        console.log("ERROR: failed to set production mode:", error.message);
+        process.exit(1);
+    }
+    if (!checkODMSet()) {
+        console.log("ERROR: failed to set production mode (better call andrewb!)");
+        process.exit(1);
+    }
+}
+
+//command line options and other overloaded functionality removed. Just does what it needs to
+blowFuses();
+
+console.log("Successfully fused (mode not changed).");
