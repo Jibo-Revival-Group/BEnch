@@ -1,9 +1,14 @@
 /*
  * jibo-bluetooth (BEnch): Jibo as a Bluetooth speaker, on BTstack, talking straight to the WiLink 8's Bluetooth core.
  *
- * Always discoverable as "Jibo" (an audio device, so iPhones list it too) and pairs without a PIN, like any speaker.
- * When a phone connects, Jibo says "The Bluetooth device is connected successfully" (connected.wav), then plays
- * its A2DP (SBC) audio through Jibo's media output: decoded PCM is piped into `aplay -D MediaOut`.
+ * Off by default. When on (/var/jibo/bluetooth/enabled exists) Jibo is discoverable as "Jibo (<robot name>)", shown
+ * as a speaker so iPhones list him too, and pairs without a PIN like any speaker. When a phone connects he says "The
+ * Bluetooth device is connected successfully" (connected.wav), then plays its A2DP (SBC) audio through Jibo's media
+ * output: decoded PCM is piped into `aplay -D MediaOut`. The phone's volume is AVRCP absolute volume, which BEam keeps
+ * in step with Jibo's own volume (BEam's Bluetooth mode, beacon/lib/bluetooth.js).
+ *
+ * Control socket /tmp/jibo-bluetooth.sock, one line in, one JSON line out:
+ *   status | on | off | disconnect | volume 0-127
  *
  * Hardware (device tree "tibt"): /dev/ttyTHS2, RTS/CTS, enable on GPIO 80; TI's init script is compiled in
  * (bluetooth_init_wl18xx_11.8.32.c, converted from the robot's /lib/firmware/TIInit_11.8.32.bts).
@@ -16,7 +21,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/socket.h>
 #include <sys/stat.h>
+#include <sys/time.h>
+#include <sys/un.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
@@ -35,6 +43,8 @@
 #define STATE_DIR  "/var/jibo/bluetooth"
 #define TLV_PATH   STATE_DIR "/btstack.tlv"
 #define CHIME      "/usr/local/share/jibo-bluetooth/connected.wav"
+#define ENABLED    STATE_DIR "/enabled"
+#define SOCKET_PATH "/tmp/jibo-bluetooth.sock"
 #define GPIO       "80"
 
 static hci_transport_config_uart_t uart_config = {
@@ -44,7 +54,10 @@ static btstack_packet_callback_registration_t hci_cb;
 static btstack_tlv_posix_t tlv_context;
 static bool shutting_down;
 
-static uint8_t sdp_a2dp_sink[150];
+static uint8_t sdp_a2dp_sink[150], sdp_avrcp_target[200], sdp_avrcp_controller[200];
+static char device_name[96];
+static bool enabled, playing;
+static struct { bool active; bd_addr_t addr; char name[64]; uint16_t avrcp_cid; int volume; unsigned volume_seq; } phone;
 /* any SBC configuration; bitpool 2-53 as in BTstack's a2dp_sink_demo */
 static const uint8_t sbc_capabilities[] = { 0xFF, 0xFF, 2, 53 };
 static uint8_t sbc_configuration[4];
@@ -116,24 +129,135 @@ static void a2dp_handler(uint8_t type, uint16_t channel, uint8_t * packet, uint1
             if (a2dp_subevent_signaling_connection_established_get_status(packet) != ERROR_CODE_SUCCESS) break;
             a2dp_subevent_signaling_connection_established_get_bd_addr(packet, addr);
             printf("Phone connected: %s\n", bd_addr_to_str(addr));
+            phone.active = true; memcpy(phone.addr, addr, 6); strcpy(phone.name, "Phone"); phone.volume = -1;
+            gap_remote_name_request(addr, 0, 0);
             play_chime();
             break;
         case A2DP_SUBEVENT_STREAM_STARTED:
             sbc->configure(&sbc_context, SBC_MODE_STANDARD, &handle_pcm, NULL);
+            playing = true;
             printf("Playing\n");
             break;
         case A2DP_SUBEVENT_STREAM_SUSPENDED:
         case A2DP_SUBEVENT_STREAM_RELEASED:
-            aplay_stop();
+            aplay_stop(); playing = false;
             printf("Stopped\n");
             break;
         case A2DP_SUBEVENT_SIGNALING_CONNECTION_RELEASED:
-            aplay_stop();
+            aplay_stop(); playing = false; phone.active = false;
             printf("Phone disconnected\n");
             break;
         default:
             break;
     }
+}
+
+/* ---------- AVRCP: the phone's volume slider ---------- */
+
+static void avrcp_handler(uint8_t type, uint16_t channel, uint8_t * packet, uint16_t size){
+    UNUSED(channel); UNUSED(size);
+    if (type != HCI_EVENT_PACKET || hci_event_packet_get_type(packet) != HCI_EVENT_AVRCP_META) return;
+    switch (packet[2]){
+        case AVRCP_SUBEVENT_CONNECTION_ESTABLISHED:
+            if (avrcp_subevent_connection_established_get_status(packet) != ERROR_CODE_SUCCESS) break;
+            phone.avrcp_cid = avrcp_subevent_connection_established_get_avrcp_cid(packet);
+            avrcp_target_support_event(phone.avrcp_cid, AVRCP_NOTIFICATION_EVENT_VOLUME_CHANGED);
+            break;
+        case AVRCP_SUBEVENT_CONNECTION_RELEASED:
+            phone.avrcp_cid = 0;
+            break;
+        default:
+            break;
+    }
+}
+
+/* The phone set its volume (absolute volume, 0-127): BEam picks it up from status by volumeSeq. */
+static void avrcp_target_handler(uint8_t type, uint16_t channel, uint8_t * packet, uint16_t size){
+    UNUSED(channel); UNUSED(size);
+    if (type != HCI_EVENT_PACKET || hci_event_packet_get_type(packet) != HCI_EVENT_AVRCP_META) return;
+    if (packet[2] != AVRCP_SUBEVENT_NOTIFICATION_VOLUME_CHANGED) return;
+    phone.volume = avrcp_subevent_notification_volume_changed_get_absolute_volume(packet);
+    phone.volume_seq++;
+}
+
+static void avrcp_controller_handler(uint8_t type, uint16_t channel, uint8_t * packet, uint16_t size){
+    UNUSED(type); UNUSED(channel); UNUSED(packet); UNUSED(size); /* registered only so the phone sees a full speaker */
+}
+
+/* ---------- control socket ---------- */
+
+static void clean_name(char * out, size_t size, const uint8_t * name, size_t len){
+    size_t j = 0; /* names go into JSON as-is, so drop quotes, backslashes and control characters */
+    for (size_t i = 0; i < len && name[i] && j < size - 1; i++) if (name[i] != '"' && name[i] != '\\' && name[i] >= 0x20) out[j++] = (char) name[i];
+    out[j] = 0;
+}
+
+static void power_cycle(void);
+
+static void disconnect_phone(void){
+    if (!phone.active) return;
+    hci_connection_t * c = hci_connection_for_bd_addr_and_type(phone.addr, BD_ADDR_TYPE_ACL);
+    if (c) gap_disconnect(c->con_handle);
+}
+
+static void set_enabled(bool on){
+    if (on == enabled) return;
+    enabled = on;
+    if (on){ close(open(ENABLED, O_WRONLY | O_CREAT, 0600)); power_cycle(); hci_power_control(HCI_POWER_ON); }
+    else { unlink(ENABLED); disconnect_phone(); aplay_stop(); hci_power_control(HCI_POWER_OFF); }
+    printf("Bluetooth %s\n", on ? "on" : "off");
+}
+
+static void handle_command(const char * cmd, char * reply, size_t size){
+    int volume;
+    if (strcmp(cmd, "status") == 0){
+        snprintf(reply, size, "{\"enabled\":%s,\"powered\":%s,\"name\":\"%s\",\"connected\":%s,\"address\":\"%s\",\"device\":\"%s\","
+            "\"playing\":%s,\"volume\":%d,\"volumeSeq\":%u,\"absoluteVolume\":%s}",
+            enabled ? "true" : "false", hci_get_state() == HCI_STATE_WORKING ? "true" : "false", device_name,
+            phone.active ? "true" : "false", phone.active ? bd_addr_to_str(phone.addr) : "", phone.active ? phone.name : "",
+            playing ? "true" : "false", phone.volume, phone.volume_seq, phone.avrcp_cid ? "true" : "false");
+    } else if (strcmp(cmd, "on") == 0 || strcmp(cmd, "off") == 0){
+        set_enabled(cmd[1] == 'n');
+        snprintf(reply, size, "{\"ok\":true}");
+    } else if (strcmp(cmd, "disconnect") == 0){
+        disconnect_phone();
+        snprintf(reply, size, "{\"ok\":true}");
+    } else if (sscanf(cmd, "volume %d", &volume) == 1 && volume >= 0 && volume <= 127){
+        phone.volume = volume; /* Jibo's volume changed: show it on the phone's slider */
+        if (phone.avrcp_cid) avrcp_target_volume_changed(phone.avrcp_cid, (uint8_t) volume);
+        snprintf(reply, size, "{\"ok\":true}");
+    } else snprintf(reply, size, "{\"error\":\"status | on | off | disconnect | volume 0-127\"}");
+}
+
+static btstack_data_source_t control_ds;
+
+static void control_accept(btstack_data_source_t * ds, btstack_data_source_callback_type_t type){
+    UNUSED(type);
+    int fd = accept(ds->source.fd, NULL, NULL);
+    if (fd < 0) return;
+    struct timeval tv = { 2, 0 };
+    setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
+    char cmd[128]; ssize_t n = read(fd, cmd, sizeof(cmd) - 1);
+    if (n > 0){
+        cmd[n] = 0; cmd[strcspn(cmd, "\r\n")] = 0;
+        char reply[1024]; handle_command(cmd, reply, sizeof(reply) - 1);
+        strcat(reply, "\n");
+        if (write(fd, reply, strlen(reply)) < 0) {}
+    }
+    close(fd);
+}
+
+static void control_setup(void){
+    int fd = socket(AF_UNIX, SOCK_STREAM, 0);
+    struct sockaddr_un sa; memset(&sa, 0, sizeof(sa));
+    sa.sun_family = AF_UNIX; snprintf(sa.sun_path, sizeof(sa.sun_path), "%s", SOCKET_PATH);
+    unlink(SOCKET_PATH);
+    if (fd < 0 || bind(fd, (struct sockaddr *) &sa, sizeof(sa)) || listen(fd, 4)){ perror("control socket"); return; }
+    chmod(SOCKET_PATH, 0666); /* BEam runs as jibo-skill */
+    btstack_run_loop_set_data_source_fd(&control_ds, fd);
+    btstack_run_loop_set_data_source_handler(&control_ds, &control_accept);
+    btstack_run_loop_enable_data_source_callbacks(&control_ds, DATA_SOURCE_CALLBACK_READ);
+    btstack_run_loop_add_data_source(&control_ds);
 }
 
 /* ---------- radio ---------- */
@@ -167,9 +291,10 @@ static void hci_handler(uint8_t type, uint16_t channel, uint8_t * packet, uint16
             if (btstack_event_state_get_state(packet) == HCI_STATE_WORKING){
                 bd_addr_t local; gap_local_bd_addr(local);
                 printf("Bluetooth speaker on: %s\n", bd_addr_to_str(local));
-            } else if (btstack_event_state_get_state(packet) == HCI_STATE_OFF && shutting_down){
-                btstack_tlv_posix_deinit(&tlv_context);
-                exit(0);
+            } else if (btstack_event_state_get_state(packet) == HCI_STATE_OFF){
+                if (shutting_down){ btstack_tlv_posix_deinit(&tlv_context); exit(0); }
+                gpio_write("value", "0"); /* turned off in Settings: radio fully off */
+                phone.active = false; playing = false;
             }
             break;
         case HCI_EVENT_COMMAND_COMPLETE:
@@ -184,6 +309,11 @@ static void hci_handler(uint8_t type, uint16_t channel, uint8_t * packet, uint16
                 hci_set_chipset(btstack_chipset_cc256x_instance());
             }
             break;
+        case HCI_EVENT_REMOTE_NAME_REQUEST_COMPLETE: {
+            bd_addr_t addr; reverse_bd_addr(&packet[3], addr);
+            if (packet[2] == 0 && phone.active && bd_addr_cmp(addr, phone.addr) == 0) clean_name(phone.name, sizeof(phone.name), &packet[9], 248);
+            break;
+        }
         case HCI_EVENT_PIN_CODE_REQUEST: { /* only very old phones ask; speakers use 0000 */
             bd_addr_t addr; hci_event_pin_code_request_get_bd_addr(packet, addr);
             gap_pin_code_response(addr, "0000");
@@ -208,7 +338,11 @@ int main(int argc, const char * argv[]){
     signal(SIGPIPE, SIG_IGN);
     mkdir(STATE_DIR, 0700);
 
-    power_cycle();
+    char host[64] = "";
+    gethostname(host, sizeof(host) - 1);
+    snprintf(device_name, sizeof(device_name), "Jibo (%s)", host);
+    enabled = access(ENABLED, F_OK) == 0;
+    if (enabled) power_cycle();
     if (access(STATE_DIR "/log", F_OK) == 0){ /* debugging: touch it for a packet log readable by Wireshark */
         hci_dump_posix_fs_open("/tmp/jibo-bluetooth.pklg", HCI_DUMP_PACKETLOGGER);
         hci_dump_init(hci_dump_posix_fs_get_instance());
@@ -236,7 +370,21 @@ int main(int argc, const char * argv[]){
     sdp_register_service(sdp_a2dp_sink);
     sbc = btstack_sbc_decoder_bluedroid_init_instance(&sbc_context);
 
-    gap_set_local_name("Jibo");
+    avrcp_init();
+    avrcp_register_packet_handler(&avrcp_handler);
+    avrcp_target_init();
+    avrcp_target_register_packet_handler(&avrcp_target_handler);
+    avrcp_controller_init();
+    avrcp_controller_register_packet_handler(&avrcp_controller_handler);
+    avrcp_target_create_sdp_record(sdp_avrcp_target, sdp_create_service_record_handle(),
+                                   1 << AVRCP_TARGET_SUPPORTED_FEATURE_CATEGORY_MONITOR_OR_AMPLIFIER, NULL, NULL);
+    sdp_register_service(sdp_avrcp_target);
+    avrcp_controller_create_sdp_record(sdp_avrcp_controller, sdp_create_service_record_handle(),
+                                       1 << AVRCP_CONTROLLER_SUPPORTED_FEATURE_CATEGORY_PLAYER_OR_RECORDER, NULL, NULL);
+    sdp_register_service(sdp_avrcp_controller);
+    phone.volume = -1;
+
+    gap_set_local_name(device_name);
     gap_set_class_of_device(0x240414); /* Audio/Rendering service, Audio/Video: loudspeaker */
     gap_ssp_set_io_capability(SSP_IO_CAPABILITY_NO_INPUT_NO_OUTPUT);
     gap_ssp_set_auto_accept(1); /* Just Works, like any speaker */
@@ -244,7 +392,8 @@ int main(int argc, const char * argv[]){
     gap_discoverable_control(1);
     gap_connectable_control(1);
 
-    hci_power_control(HCI_POWER_ON);
+    control_setup();
+    if (enabled) hci_power_control(HCI_POWER_ON); else gpio_write("value", "0");
     btstack_run_loop_execute();
     return 0;
 }

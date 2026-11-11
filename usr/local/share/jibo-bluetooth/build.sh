@@ -21,7 +21,7 @@ sed -i 's#^include ${BTSTACK_ROOT}/chipset/cc256x/Makefile.inc##; s#^include ${B
 cat >> Makefile <<'EOF'
 
 JIBO_DROP = main.o btstack_main_config.o btstack_stdin_posix.o wav_util.o btstack_audio.o
-JIBO_OBJ = $(filter-out ${JIBO_DROP},${CORE_OBJ}) ${COMMON_OBJ} ${CLASSIC_OBJ} ${SDP_CLIENT} ${SBC_CODEC_OBJ} ${AVDTP_OBJ}
+JIBO_OBJ = $(filter-out ${JIBO_DROP},${CORE_OBJ}) ${COMMON_OBJ} ${CLASSIC_OBJ} ${SDP_CLIENT} ${SBC_CODEC_OBJ} ${AVDTP_OBJ} avrcp.o avrcp_controller.o avrcp_target.o
 jibo_bluetooth: ${JIBO_OBJ} jibo_bluetooth.o
 	${CC} $^ ${CFLAGS} ${LDFLAGS} -o $@
 selftest: ${JIBO_OBJ} selftest.o
