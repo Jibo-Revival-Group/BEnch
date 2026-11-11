@@ -5,7 +5,8 @@ set -e
 service=$1
 shift
 case "$service" in
-    ssm) /usr/local/bin/jibo-runtime-bootstrap --service ssm --knowledge ;;
+    ssm) /usr/local/bin/jibo-runtime-bootstrap --service ssm --knowledge
+         /usr/local/bin/jibo-mic-access || true ;;  # skills' getUserMedia: the live mic, not the Dummy card
     *) /usr/local/bin/jibo-runtime-bootstrap --service "$service" ;;
 esac
 # TTS: route speech through the 5x1 voice effects (vibrato/volume) when the plugin is installed.

@@ -1,0 +1,90 @@
+#!/usr/bin/python
+"""Gives skills (Electron, user jibo-skill) Jibo's live microphone. Run as root before SSM starts Electron.
+
+/etc/asound.conf (os) points ALSA's default input at the Dummy card, so getUserMedia({audio}) recorded silence. The
+live mic, after the audio service's echo cancellation, is MediaIn: a dsnoop (pcm.as_sink) that the ASR service
+creates as root with mode 600. This lets the audio group (jibo-skill is in it) share that dsnoop, and makes MediaIn
+the default input for jibo-skill only (~/.asoundrc), without changing the os.
+Python 2.7 (robot) and 3. Options for tests: --home DIR, --wait SECONDS."""
+import ctypes
+import ctypes.util
+import grp
+import os
+import sys
+import time
+
+ASOUNDRC = """# Written by BEnch jibo-mic-access: skills record from the live mic (MediaIn), not the Dummy card.
+pcm.!default {
+    type asym
+    playback.pcm {
+        type plug
+        slave.pcm "sdk_faders"
+    }
+    capture.pcm {
+        type plug
+        slave.pcm "MediaIn"
+    }
+}
+"""
+AS_SINK_KEY = 567890  # pcm.as_sink ipc_key in /etc/asound.conf; ALSA's dsnoop adds a small offset to it
+IPC_SET, IPC_STAT = 1, 2
+
+
+def write_asoundrc(home):
+    path = os.path.join(home, '.asoundrc')
+    try:
+        if open(path).read() == ASOUNDRC: return False
+    except IOError: pass
+    tmp = path + '.tmp'
+    with open(tmp, 'w') as f: f.write(ASOUNDRC)
+    st = os.stat(home)
+    os.chown(tmp, st.st_uid, st.st_gid)
+    os.chmod(tmp, 0o644)
+    os.rename(tmp, path)
+    return True
+
+
+def as_sink_ids(table):
+    """[(key, id)] of the as_sink dsnoop's shared memory or semaphore from /proc/sysvipc/{shm,sem}."""
+    out = []
+    for line in open('/proc/sysvipc/' + table).read().splitlines()[1:]:
+        cols = line.split()
+        key = int(cols[0])
+        if 0 <= key - AS_SINK_KEY < 0x4000: out.append((key, int(cols[1])))
+    return out
+
+
+def share(table, ident, gid, libc):
+    buf = ctypes.create_string_buffer(256)  # struct shmid_ds/semid_ds; ipc_perm first: key, uid, gid, cuid, cgid, mode
+    ctl = (lambda cmd: libc.shmctl(ident, cmd, buf)) if table == 'shm' else (lambda cmd: libc.semctl(ident, 0, cmd, buf))
+    if ctl(IPC_STAT) != 0: raise OSError(ctypes.get_errno(), 'IPC_STAT %s %d' % (table, ident))
+    mode = ctypes.c_uint16.from_buffer(buf, 20)
+    if mode.value & 0o777 not in (0o600, 0o660): raise ValueError('unexpected %s %d mode %o' % (table, ident, mode.value))
+    ctypes.c_uint32.from_buffer(buf, 8).value = gid
+    mode.value = (mode.value & ~0o777) | 0o660
+    if ctl(IPC_SET) != 0: raise OSError(ctypes.get_errno(), 'IPC_SET %s %d' % (table, ident))
+
+
+def main(argv):
+    home, wait = '/opt/home/jibo-skill', 10.0
+    while argv:
+        name = argv.pop(0)
+        if name == '--home': home = argv.pop(0)
+        elif name == '--wait': wait = float(argv.pop(0))
+    if os.path.isdir(home) and write_asoundrc(home): print('jibo-mic-access: wrote %s/.asoundrc' % home)
+    # ASR (order 2) opens the dsnoop before SSM (order 5) starts; wait a little in case it is still starting.
+    deadline = time.time() + wait
+    while not (as_sink_ids('shm') and as_sink_ids('sem')) and time.time() < deadline: time.sleep(0.5)
+    found = [('shm', i) for _, i in as_sink_ids('shm')] + [('sem', i) for _, i in as_sink_ids('sem')]
+    if not found:
+        print('jibo-mic-access: the mic dsnoop is not open yet; skills get no mic until SSM restarts')
+        return 1
+    libc = ctypes.CDLL(ctypes.util.find_library('c') or None, use_errno=True)
+    gid = grp.getgrnam('audio').gr_gid
+    for table, ident in found: share(table, ident, gid, libc)
+    print('jibo-mic-access: mic shared with group audio (%s)' % ', '.join('%s %d' % f for f in found))
+    return 0
+
+
+if __name__ == '__main__':
+    sys.exit(main(sys.argv[1:]))
