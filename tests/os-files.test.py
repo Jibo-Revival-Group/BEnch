@@ -77,6 +77,10 @@ try:
     assert (got['./run/dbus'].uid, got['./run/dbus'].gid) == (1002, 1002)
     assert got['./bin/new-tool'].mode == 0o755 and got['./bin/new-tool'].uid == 0
     assert not any(name.startswith(('./usr/local/', './tests', './os-files')) for name in got)
+    import time
+    assert all(m.mtime < time.time() - 365 * 86400 for m in got.values()), 'future/recent times flood Jibo\'s tar with warnings'
+    with tarfile.open(out) as package:
+        assert all(m.mtime < time.time() - 365 * 86400 for m in package)
 finally:
     shutil.rmtree(work)
 print('os-files ok')

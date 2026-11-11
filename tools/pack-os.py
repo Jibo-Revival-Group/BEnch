@@ -19,6 +19,9 @@ import tarfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TSV = 'os-files.tsv'
+# Stock os build day. Never a time in the future: Jibo's tar warns once per file and the updater's
+# exec() output limit (200 KB) then kills the extraction halfway, leaving an os that can't boot.
+STOCK_TIME = 1551052800  # 2019-02-25
 NOT_OS = ('.git', '.gitattributes', '.github', 'README.md', 'tests', 'tools', TSV)
 
 
@@ -122,7 +125,7 @@ def pack(root, out):
         for path in sorted(entries):
             kind, mode, uid, gid, extra = entries[path]
             info = tarfile.TarInfo('./' + path)
-            info.mode, info.uid, info.gid, info.mtime = mode, uid, gid, 1794441600  # fixed time: same tree, same package
+            info.mode, info.uid, info.gid, info.mtime = mode, uid, gid, STOCK_TIME  # same tree, same package
             full = os.path.join(root, path)
             if kind == 'f':
                 info.size = os.path.getsize(full)
@@ -140,10 +143,10 @@ def pack(root, out):
     data = fs.getvalue()
     with tarfile.open(out, 'w', format=tarfile.GNU_FORMAT) as package:
         top = tarfile.TarInfo('./')
-        top.type, top.mode, top.mtime = tarfile.DIRTYPE, 0o755, 1794441600
+        top.type, top.mode, top.mtime = tarfile.DIRTYPE, 0o755, STOCK_TIME
         package.addfile(top)
         info = tarfile.TarInfo('./filesystem.tar.bz2')
-        info.size, info.mode, info.mtime = len(data), 0o644, 1794441600
+        info.size, info.mode, info.mtime = len(data), 0o644, STOCK_TIME
         package.addfile(info, io.BytesIO(data))
     print('%s: %d entries, %d bytes' % (out, len(entries), os.path.getsize(out)))
 
