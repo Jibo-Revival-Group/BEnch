@@ -7,7 +7,10 @@ import importlib.machinery
 import importlib.util
 import os
 import pathlib
+import sys
 import tempfile
+
+sys.dont_write_bytecode = True  # importing the script must not leave __pycache__ in usr/local/bin
 
 SCRIPT = str(pathlib.Path(__file__).resolve().parent.parent / 'usr/local/bin/jibo-mic-access')
 spec = importlib.util.spec_from_loader('mic', importlib.machinery.SourceFileLoader('mic', SCRIPT))
