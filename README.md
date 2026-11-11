@@ -6,13 +6,13 @@ Version is saved in Jibo-Service-Version and CANNOT change the byte size or else
 ## os (the root filesystem)
 
 Everything outside `/usr/local` here (`bin`, `etc`, `lib`, `usr/bin`, `usr/lib`, ...) is Jibo's os,
-unpacked like the services. It is stock 13.0.0 with 5x1's changes, released as os 13.0.1:
+unpacked like the services. It is stock 13.0.0 with 5x1's changes, released as os 13.0.7:
 
 - no firewall (`etc/init.d/S21firewall` removed)
 - Let's Encrypt's root (`etc/ssl/certs/isrgrootx1.pem`, also in `ca-certificates.crt`) for api.5x1.com
 - the os's `jibo-server-client` accepts that certificate and uses api.5x1.com
 - `etc/init.d/S04jibo-bootstrap` runs `jibo-runtime-bootstrap --knowledge` before services start
-- `usr/bin/jibo-version` says 13.0.1
+- `usr/bin/jibo-version` says 13.0.7 (the same version as the services)
 
 Git can't keep owners, setuid, device nodes or empty folders, so `os-files.tsv` lists every os entry
 with its type, mode, owner and sha256. After editing os files:
