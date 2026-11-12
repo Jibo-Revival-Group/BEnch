@@ -104,6 +104,12 @@ try {
     assert.strictEqual(run(['--service', 'ssm']).status, 0, 'A damaged units.json is read as Fahrenheit, not fatal');
     assert.strictEqual(fs.readFileSync(unitsPath, 'utf8'), 'malformed');
     fs.unlinkSync(unitsPath);
+    var cameraPath = file('/opt/jibo/Knowledge/beacon/camera-stream-settings.json');
+    fs.writeFileSync(cameraPath, '');
+    assert.strictEqual(run(['--service', 'ssm']).status, 0, 'An empty camera-stream-settings.json is not fatal');
+    assert.strictEqual(run(['--knowledge']).status, 0, 'PM\'s --knowledge run survives it too');
+    assert.strictEqual(fs.readFileSync(cameraPath, 'utf8'), '', 'and the file is left for BEacon (read as off)');
+    fs.unlinkSync(cameraPath);
     fs.chmodSync(file('/opt/jibo/Knowledge'), 320);
     assert.strictEqual(run().status, 1);
     fs.chmodSync(file('/opt/jibo/Knowledge'), 511);

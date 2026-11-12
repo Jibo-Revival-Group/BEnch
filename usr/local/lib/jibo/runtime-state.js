@@ -68,9 +68,14 @@ function beamData(dir) {
         // units.js already reads a damaged file as Fahrenheit; a unit preference must not stop Be booting.
         if (!/JSON|Invalid settings/.test(err.message)) { throw err; }
     }
-    defaultObject(path.join(dir, 'camera-stream-settings.json'), { enabled: true }, function (v) {
-        return typeof v.enabled === 'boolean';
-    });
+    try {
+        defaultObject(path.join(dir, 'camera-stream-settings.json'), { enabled: true }, function (v) {
+            return typeof v.enabled === 'boolean';
+        });
+    } catch (err) {
+        // camera-stream-settings.js reads a damaged file as streaming off; it must not stop PM or SSM starting.
+        if (!/JSON|Invalid settings/.test(err.message)) { throw err; }
+    }
     return dir;
 }
 
