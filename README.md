@@ -27,6 +27,13 @@ python3 tests/os-files.test.py
 An os update reformats the root partition, so anything edited by hand on a robot outside
 `/usr/local` and `/opt` is replaced by these files.
 
+## Command-line tools
+
+`usr/local/bin/nano` (GNU nano 8.6, GPLv3, source: https://www.nano-editor.org/dist/v8/nano-8.6.tar.xz) and
+`usr/local/bin/fastfetch` (2.71.0, MIT) are static ARM builds, because Jibo's glibc is too old for current
+ones. nano has xterm-256color, screen/tmux-256color, alacritty and vt100 built in, since Jibo only ships
+xterm/linux terminfo. Rebuild with `tools/build-nano-fastfetch.sh`.
+
 ## Local runtime initialization
 
 `jibo-runtime-bootstrap` creates missing runtime directories and defaults without
