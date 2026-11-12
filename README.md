@@ -1,4 +1,7 @@
 # BEnch
+
+> **Part of [5x1](https://www.5x1.com), the free public Jibo server (no account, no self-hosting).** BEnch is the robot's system software (os and services) that 5x1 installs and updates.
+> New to Jibo revival? Start with [How do I revive my Jibo?](https://www.5x1.com/revive-jibo.html) and the [setup guide](https://jibo.guide). See also [Is 5x1 safe?](https://www.5x1.com/is-5x1-safe.html) and the [privacy policy](https://www.5x1.com/privacy.html).
 The entire non-Skill JiboOS
 
 Version is saved in Jibo-Service-Version and CANNOT change the byte size or else big bad. DO NOT USE VSCODE OR ANY OTHER CODE EDITOR OR ELSE ALL 5,000 JIBOS IN THE WORLD WILL DIE!!! THIS IS BAD BAD BAD AND WE DON'T WANT THAT OR ELSE IT WILL BE VERY BAD AND IRREVERSABLE!!!!!!!!!!!!!!!
