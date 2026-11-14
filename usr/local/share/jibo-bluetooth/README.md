@@ -1,4 +1,4 @@
-# jibo-bluetooth: Jibo as a Bluetooth speaker
+# jibo-bluetooth: Jibo as a Bluetooth speaker, and through one
 
 Jibo has a TI WiLink 8 (wl18xx) whose Bluetooth core sits on `/dev/ttyTHS2` (RTS/CTS, enable on GPIO 80).
 Nothing in Jibo's 2017 software uses it except the factory test (`bt_mfg.sh` with TI's `SS1BTPM`).
@@ -16,6 +16,18 @@ Nothing in Jibo's 2017 software uses it except the factory test (`bt_mfg.sh` wit
     screen, a blue light ring, and no "Hey Jibo". Tap the screen and confirm to disconnect.
   - The phone's volume slider (AVRCP absolute volume, 0-127) and Jibo's volume (1-10) follow each other.
 
+## Playing through a Bluetooth speaker
+
+Jibo can also send his sound to a Bluetooth speaker or headphones (A2DP source), from Settings › Bluetooth:
+
+- **Find speakers** looks for about 10 s and lists audio devices (headsets, speakers, headphones, car and hi-fi audio;
+  TVs aren't offered).
+- **Tap one** to pair (Just Works) and play through it. Paired speakers are kept in `/var/jibo/bluetooth/speakers`
+  and listed first. Tap the one that's playing (green) to stop.
+- **While playing,** his whole sound mix is captured from ALSA `plug:services_sink` (as Vic's handoff did),
+  SBC-encoded at the speaker's rate and sent. Jibo's own speaker (`DAC Switch`) is muted, and turned back on when the
+  speaker disconnects. If the daemon dies meanwhile, it turns it back on at its next start (`dac-muted` marker).
+
 The system manager starts it (`jibo-system-manager.json`, like `resolv-watcher`).
 
 ## Control socket
@@ -27,6 +39,9 @@ The system manager starts it (`jibo-system-manager.json`, like `resolv-watcher`)
 - `off`: turn Bluetooth off.
 - `disconnect`: disconnect the connected phone.
 - `volume 0-127`: set the volume shown on the phone's slider.
+- `scan`: look for speakers (about 10 s). `speakers`: `{"scanning":…,"speakers":[{address,name,paired}]}`.
+- `connect <address>`: pair if needed and play through that speaker. `disconnect-speaker`: stop.
+- `status` also has `speaker`, `speakerAddress`, `speakerPlaying` and `speakerError` (why the last connect failed).
 
 ## Debugging
 
