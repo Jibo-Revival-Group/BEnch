@@ -108,6 +108,20 @@ try {
         });
     });
     assert.strictEqual(fs.statSync(credentialPath).mode & 511, 384, 'repaired credentials stay private');
+    // An endpoint left by another server is moved to BEaker; keys and other fields are kept.
+    fs.writeFileSync(credentialPath, JSON.stringify({ accessKeyId: 'kept-id', secretAccessKey: 'kept-secret-value',
+        region: 'other', endpoint: 'https://api.jibo.com', extra: 'preserve' }));
+    var moved = run();
+    assert.strictEqual(moved.status, 0, moved.stderr);
+    assert(!moved.stderr.includes('kept-secret-value'));
+    var movedCreds = json('/var/jibo/credentials.json');
+    assert.strictEqual(movedCreds.endpoint, 'http://joap.5x1.com:80');
+    assert.strictEqual(movedCreds.region, 'api');
+    assert.strictEqual(movedCreds.accessKeyId, 'kept-id');
+    assert.strictEqual(movedCreds.secretAccessKey, 'kept-secret-value');
+    assert.strictEqual(movedCreds.extra, 'preserve');
+    assert.strictEqual(fs.statSync(credentialPath).mode & 511, 384, 'moved credentials stay private');
+    assert.strictEqual(damagedCopies('/var/jibo/credentials.json').length, 0, 'a valid file is not treated as damaged');
     fs.writeFileSync(credentialPath, originals['/var/jibo/credentials.json']);
     var launcher = fs.readFileSync(path.resolve(__dirname, '../usr/local/bin/jibo-service-start'), 'utf8')
         .replace(/\/usr\/local\/bin\/jibo-runtime-bootstrap/g, process.execPath + ' ' + bootstrap + ' --root ' + root);

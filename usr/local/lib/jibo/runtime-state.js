@@ -95,16 +95,30 @@ var groups = {
     });
 });
 
+var JOAP = 'http://joap.5x1.com:80';
+
 function credentials(root) {
     directory(root + '/var/jibo', 0o755);
-    return defaultObject(root + '/var/jibo/credentials.json', {
+    var file = root + '/var/jibo/credentials.json';
+    var creds = defaultObject(file, {
         accessKeyId: 'local-' + crypto.randomBytes(16).toString('hex'),
         secretAccessKey: crypto.randomBytes(32).toString('hex'),
-        region: 'api', endpoint: 'http://joap.5x1.com:80'
+        region: 'api', endpoint: JOAP
     }, function (v) {
         return typeof v.accessKeyId === 'string' && !!v.accessKeyId.trim() &&
             typeof v.secretAccessKey === 'string' && !!v.secretAccessKey.trim();
     }, 0o600);
+    // The stock updater asks credentials.json's endpoint for updates: keep it on BEaker, keys untouched.
+    if (creds.endpoint !== JOAP || creds.region !== 'api') {
+        creds.region = 'api';
+        creds.endpoint = JOAP;
+        var tmp = file + '.bootstrap-' + process.pid + '-' + crypto.randomBytes(8).toString('hex');
+        fs.writeFileSync(tmp, JSON.stringify(creds, null, 2) + '\n', { flag: 'wx', mode: 0o600 });
+        fs.chmodSync(tmp, 0o600);
+        fs.renameSync(tmp, file);
+        console.error('[bootstrap] pointed updates at ' + JOAP);
+    }
+    return creds;
 }
 
 function ensure(options) {
