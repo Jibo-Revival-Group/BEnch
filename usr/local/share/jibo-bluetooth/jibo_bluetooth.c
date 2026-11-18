@@ -7,12 +7,8 @@
  * output: decoded PCM is piped into `aplay -D MediaOut`. The phone's volume is AVRCP absolute volume, which BEam keeps
  * in step with Jibo's own volume (BEam's Bluetooth mode, beacon/lib/bluetooth.js).
  *
- * Jibo can also play through a Bluetooth speaker or headphones (A2DP source): `scan` finds them, `connect <address>`
- * pairs (Just Works) and streams Jibo's whole sound mix (captured from ALSA's services_sink, SBC-encoded); his own
- * speaker is muted meanwhile and comes back when the speaker disconnects.
- *
  * Control socket /tmp/jibo-bluetooth.sock, one line in, one JSON line out:
- *   status | on | off | disconnect | volume 0-127 | scan | speakers | connect <address> | disconnect-speaker
+ *   status | on | off | disconnect | volume 0-127
  *
  * Hardware (device tree "tibt"): /dev/ttyTHS2, RTS/CTS, enable on GPIO 80; TI's init script is compiled in
  * (bluetooth_init_wl18xx_11.8.32.c, converted from the robot's /lib/firmware/TIInit_11.8.32.bts).
@@ -50,9 +46,6 @@
 #define ENABLED    STATE_DIR "/enabled"
 #define SOCKET_PATH "/tmp/jibo-bluetooth.sock"
 #define GPIO       "80"
-#define SPEAKERS   STATE_DIR "/speakers"   /* paired speakers, "AA:BB:CC:DD:EE:FF name" per line */
-#define DAC_MUTED  STATE_DIR "/dac-muted"  /* we muted Jibo's speaker; restored at start if we died meanwhile */
-#define MAX_SPEAKERS 16
 
 static hci_transport_config_uart_t uart_config = {
     HCI_TRANSPORT_CONFIG_UART, 115200, 0, BTSTACK_UART_FLOWCONTROL_ON, "/dev/ttyTHS2", BTSTACK_UART_PARITY_OFF
@@ -64,26 +57,13 @@ static bool shutting_down;
 static uint8_t sdp_a2dp_sink[150], sdp_avrcp_target[200], sdp_avrcp_controller[200];
 static char device_name[96];
 static bool enabled, playing;
-static struct { bool active; bd_addr_t addr; char name[64]; uint16_t cid, avrcp_cid; int volume; unsigned volume_seq; } phone;
+static struct { bool active; bd_addr_t addr; char name[64]; uint16_t avrcp_cid; int volume; unsigned volume_seq; } phone;
 /* any SBC configuration; bitpool 2-53 as in BTstack's a2dp_sink_demo */
 static const uint8_t sbc_capabilities[] = { 0xFF, 0xFF, 2, 53 };
 static uint8_t sbc_configuration[4];
 
 static btstack_sbc_decoder_bluedroid_t sbc_context;
 static const btstack_sbc_decoder_t * sbc;
-
-/* ---------- speakers Jibo plays through (A2DP source) ---------- */
-typedef struct { bd_addr_t addr; char name[64]; bool paired, named; uint8_t psrm; uint16_t clock_offset; } speaker_t;
-static speaker_t speakers[MAX_SPEAKERS];
-static int speaker_count, naming = -1;
-static bool scanning;
-/* the speaker in use: index into speakers, or -1 */
-static struct { int index; uint16_t cid; uint8_t seid; bool streaming; int rate, channels; const char * error; } out = { -1 };
-static uint8_t sdp_a2dp_source[150];
-static const uint8_t sbc_source_capabilities[] = { 0x3F, 0xFF, 2, 53 }; /* 44.1 or 48 kHz, any mode; ALSA resamples */
-static uint8_t sbc_source_configuration[4];
-static btstack_sbc_encoder_bluedroid_t sbc_enc_context;
-static const btstack_sbc_encoder_t * sbc_enc;
 
 static pid_t aplay_pid;
 static int aplay_fd = -1, aplay_rate;
@@ -148,8 +128,6 @@ static void a2dp_handler(uint8_t type, uint16_t channel, uint8_t * packet, uint1
         case A2DP_SUBEVENT_SIGNALING_CONNECTION_ESTABLISHED:
             if (a2dp_subevent_signaling_connection_established_get_status(packet) != ERROR_CODE_SUCCESS) break;
             a2dp_subevent_signaling_connection_established_get_bd_addr(packet, addr);
-            if (out.index >= 0 && bd_addr_cmp(addr, speakers[out.index].addr) == 0) break; /* that's our speaker */
-            phone.cid = a2dp_subevent_signaling_connection_established_get_a2dp_cid(packet);
             printf("Phone connected: %s\n", bd_addr_to_str(addr));
             phone.active = true; memcpy(phone.addr, addr, 6); strcpy(phone.name, "Phone"); phone.volume = -1;
             gap_remote_name_request(addr, 0, 0);
@@ -166,7 +144,6 @@ static void a2dp_handler(uint8_t type, uint16_t channel, uint8_t * packet, uint1
             printf("Stopped\n");
             break;
         case A2DP_SUBEVENT_SIGNALING_CONNECTION_RELEASED:
-            if (!phone.active || a2dp_subevent_signaling_connection_released_get_a2dp_cid(packet) != phone.cid) break;
             aplay_stop(); playing = false; phone.active = false;
             printf("Phone disconnected\n");
             break;
@@ -207,253 +184,6 @@ static void avrcp_controller_handler(uint8_t type, uint16_t channel, uint8_t * p
     UNUSED(type); UNUSED(channel); UNUSED(packet); UNUSED(size); /* registered only so the phone sees a full speaker */
 }
 
-
-/* ---------- speaker out: capture Jibo's mix, SBC-encode, send ---------- */
-
-static pid_t arecord_pid;
-static btstack_data_source_t capture_ds;
-static int16_t pcm[8192];             /* mono samples waiting to be encoded */
-static int pcm_count;
-static uint8_t pcm_odd[1];            /* half a sample left over from the last read */
-static bool pcm_has_odd;
-static uint8_t media[1024];           /* SBC media header byte + SBC frames */
-static int media_len, media_frames, max_payload;
-static bool media_ready;
-static uint32_t rtp_timestamp;
-
-static void dac(const char * state){
-    if (fork() == 0){
-        execl("/usr/bin/amixer", "amixer", "-q", "-c", "TLV320DAC3100", "cset", "name=DAC Switch", state, (char *) NULL);
-        _exit(127);
-    }
-}
-
-static void encode_ready(void){
-    if (!sbc_enc || !out.streaming) return;
-    int n = sbc_enc->num_audio_frames(&sbc_enc_context), len = sbc_enc->sbc_buffer_length(&sbc_enc_context);
-    while (!media_ready && pcm_count >= n){
-        if (1 + media_len + len > max_payload || media_frames == 15){ /* 4-bit frame count in the media header */
-            media_ready = true;
-            a2dp_source_stream_endpoint_request_can_send_now(out.cid, out.seid);
-            return;
-        }
-        int16_t frame[256 * 2];
-        for (int i = 0; i < n; i++){
-            if (out.channels == 2){ frame[2 * i] = frame[2 * i + 1] = pcm[i]; } else frame[i] = pcm[i];
-        }
-        sbc_enc->encode_signed_16(&sbc_enc_context, frame, media + 1 + media_len);
-        media_len += len; media_frames++;
-        pcm_count -= n; memmove(pcm, pcm + n, (size_t) pcm_count * 2);
-    }
-}
-
-static void send_media(void){
-    if (!media_ready) return;
-    media[0] = (uint8_t) media_frames;
-    a2dp_source_stream_send_media_payload_rtp(out.cid, out.seid, 0, rtp_timestamp, media, (uint16_t) (media_len + 1));
-    rtp_timestamp += (uint32_t) (media_frames * sbc_enc->num_audio_frames(&sbc_enc_context));
-    media_len = media_frames = 0; media_ready = false;
-    encode_ready();
-}
-
-static void capture_read(btstack_data_source_t * ds, btstack_data_source_callback_type_t type){
-    UNUSED(type);
-    uint8_t buf[4096 + 1];
-    int have = 0;
-    if (pcm_has_odd){ buf[0] = pcm_odd[0]; have = 1; pcm_has_odd = false; }
-    ssize_t n = read(ds->source.fd, buf + have, 4096);
-    if (n <= 0) return;
-    have += (int) n;
-    if (have & 1){ pcm_odd[0] = buf[have - 1]; pcm_has_odd = true; have--; }
-    int samples = have / 2, room = (int) (sizeof(pcm) / 2) - pcm_count;
-    if (samples > room){ /* the speaker fell behind: drop the oldest audio */
-        int drop = samples - room; if (drop > pcm_count) drop = pcm_count;
-        pcm_count -= drop; memmove(pcm, pcm + drop, (size_t) pcm_count * 2);
-        room = (int) (sizeof(pcm) / 2) - pcm_count;
-        if (samples > room) samples = room;
-    }
-    memcpy(pcm + pcm_count, buf, (size_t) samples * 2);
-    pcm_count += samples;
-    encode_ready();
-}
-
-static void capture_stop(void){
-    if (arecord_pid > 0){
-        btstack_run_loop_remove_data_source(&capture_ds);
-        close(capture_ds.source.fd);
-        kill(arecord_pid, SIGTERM); arecord_pid = 0;
-    }
-    if (access(DAC_MUTED, F_OK) == 0){ dac("on,on"); unlink(DAC_MUTED); } /* Jibo's own speaker back */
-    out.streaming = false; pcm_count = 0; pcm_has_odd = false; media_len = media_frames = 0; media_ready = false;
-}
-
-static void capture_start(void){
-    int fds[2];
-    char rate[16];
-    capture_stop();
-    if (pipe(fds)) return;
-    snprintf(rate, sizeof(rate), "%d", out.rate);
-    pid_t pid = fork();
-    if (pid == 0){
-        dup2(fds[1], 1); close(fds[0]); close(fds[1]);
-        execl("/usr/bin/arecord", "arecord", "-q", "-D", "plug:services_sink", "-t", "raw", "-f", "S16_LE", "-c", "1",
-              "-r", rate, "--buffer-time=64000", "--period-time=8000", (char *) NULL);
-        _exit(127);
-    }
-    close(fds[1]);
-    if (pid < 0){ close(fds[0]); return; }
-    arecord_pid = pid;
-    fcntl(fds[0], F_SETFL, O_NONBLOCK);
-    btstack_run_loop_set_data_source_fd(&capture_ds, fds[0]);
-    btstack_run_loop_set_data_source_handler(&capture_ds, &capture_read);
-    btstack_run_loop_enable_data_source_callbacks(&capture_ds, DATA_SOURCE_CALLBACK_READ);
-    btstack_run_loop_add_data_source(&capture_ds);
-    max_payload = btstack_min(a2dp_max_media_payload_size(out.cid, out.seid), (int) sizeof(media));
-    out.streaming = true;
-    close(open(DAC_MUTED, O_WRONLY | O_CREAT, 0600));
-    dac("off,off"); /* the sound goes to the speaker instead */
-    printf("Playing on %s at %d Hz\n", speakers[out.index].name, out.rate);
-}
-
-/* ---------- the speaker list ---------- */
-
-static void clean_name(char * out, size_t size, const uint8_t * name, size_t len);
-
-static void save_speakers(void){
-    FILE * f = fopen(SPEAKERS ".tmp", "w");
-    if (!f) return;
-    for (int i = 0; i < speaker_count; i++) if (speakers[i].paired) fprintf(f, "%s %s\n", bd_addr_to_str(speakers[i].addr), speakers[i].name);
-    fclose(f);
-    rename(SPEAKERS ".tmp", SPEAKERS);
-}
-
-static int find_speaker(const bd_addr_t addr){
-    for (int i = 0; i < speaker_count; i++) if (bd_addr_cmp(addr, speakers[i].addr) == 0) return i;
-    return -1;
-}
-
-static int add_speaker(const bd_addr_t addr){
-    int i = find_speaker(addr);
-    if (i >= 0 || speaker_count == MAX_SPEAKERS) return i;
-    i = speaker_count++;
-    memset(&speakers[i], 0, sizeof(speakers[i]));
-    memcpy(speakers[i].addr, addr, 6);
-    snprintf(speakers[i].name, sizeof(speakers[i].name), "%s", bd_addr_to_str(addr));
-    return i;
-}
-
-static void load_speakers(void){
-    FILE * f = fopen(SPEAKERS, "r");
-    char line[128], name[64];
-    bd_addr_t addr;
-    if (!f) return;
-    while (fgets(line, sizeof(line), f)){
-        line[strcspn(line, "\r\n")] = 0;
-        if (strlen(line) < 19 || !sscanf_bd_addr(line, addr)) continue;
-        int i = add_speaker(addr);
-        if (i < 0) break;
-        clean_name(name, sizeof(name), (const uint8_t *) line + 18, strlen(line + 18));
-        if (name[0]) snprintf(speakers[i].name, sizeof(speakers[i].name), "%s", name);
-        speakers[i].paired = speakers[i].named = true;
-    }
-    fclose(f);
-}
-
-/* after a scan, ask each new speaker for its name, one at a time */
-static void name_next(void){
-    naming = -1;
-    for (int i = 0; i < speaker_count; i++){
-        if (speakers[i].named) continue;
-        naming = i;
-        gap_remote_name_request(speakers[i].addr, speakers[i].psrm, speakers[i].clock_offset | 0x8000);
-        return;
-    }
-    scanning = false;
-}
-
-static void speaker_failed(const char * why){
-    printf("Speaker: %s\n", why);
-    capture_stop();
-    out.index = -1; out.error = why;
-}
-
-static void a2dp_source_handler(uint8_t type, uint16_t channel, uint8_t * packet, uint16_t size){
-    UNUSED(channel); UNUSED(size);
-    if (type != HCI_EVENT_PACKET || hci_event_packet_get_type(packet) != HCI_EVENT_A2DP_META || out.index < 0) return;
-    bd_addr_t addr;
-    switch (hci_event_a2dp_meta_get_subevent_code(packet)){
-        case A2DP_SUBEVENT_SIGNALING_CONNECTION_ESTABLISHED:
-            a2dp_subevent_signaling_connection_established_get_bd_addr(packet, addr);
-            if (bd_addr_cmp(addr, speakers[out.index].addr) != 0) break; /* a phone connecting to us */
-            if (a2dp_subevent_signaling_connection_established_get_status(packet) != ERROR_CODE_SUCCESS) speaker_failed("Couldn’t connect to the speaker.");
-            break;
-        case A2DP_SUBEVENT_SIGNALING_MEDIA_CODEC_SBC_CONFIGURATION: {
-            if (a2dp_subevent_signaling_media_codec_sbc_configuration_get_a2dp_cid(packet) != out.cid) break;
-            btstack_sbc_channel_mode_t mode;
-            switch (a2dp_subevent_signaling_media_codec_sbc_configuration_get_channel_mode(packet)){
-                case AVDTP_CHANNEL_MODE_JOINT_STEREO: mode = SBC_CHANNEL_MODE_JOINT_STEREO; break;
-                case AVDTP_CHANNEL_MODE_STEREO:       mode = SBC_CHANNEL_MODE_STEREO; break;
-                case AVDTP_CHANNEL_MODE_DUAL_CHANNEL: mode = SBC_CHANNEL_MODE_DUAL_CHANNEL; break;
-                default:                              mode = SBC_CHANNEL_MODE_MONO; break;
-            }
-            out.rate = a2dp_subevent_signaling_media_codec_sbc_configuration_get_sampling_frequency(packet);
-            out.channels = a2dp_subevent_signaling_media_codec_sbc_configuration_get_num_channels(packet);
-            sbc_enc = btstack_sbc_encoder_bluedroid_init_instance(&sbc_enc_context);
-            sbc_enc->configure(&sbc_enc_context, SBC_MODE_STANDARD,
-                a2dp_subevent_signaling_media_codec_sbc_configuration_get_block_length(packet),
-                a2dp_subevent_signaling_media_codec_sbc_configuration_get_subbands(packet),
-                (btstack_sbc_allocation_method_t) (a2dp_subevent_signaling_media_codec_sbc_configuration_get_allocation_method(packet) - 1),
-                (uint16_t) out.rate, a2dp_subevent_signaling_media_codec_sbc_configuration_get_max_bitpool_value(packet), mode);
-            break;
-        }
-        case A2DP_SUBEVENT_STREAM_ESTABLISHED:
-            if (a2dp_subevent_stream_established_get_a2dp_cid(packet) != out.cid) break;
-            if (a2dp_subevent_stream_established_get_status(packet) != ERROR_CODE_SUCCESS){ speaker_failed("The speaker didn’t accept Jibo’s sound."); break; }
-            out.seid = a2dp_subevent_stream_established_get_local_seid(packet);
-            if (!speakers[out.index].named) gap_remote_name_request(speakers[out.index].addr, 0, 0); /* saved once named */
-            if (!speakers[out.index].paired){ speakers[out.index].paired = true; save_speakers(); }
-            a2dp_source_start_stream(out.cid, out.seid);
-            break;
-        case A2DP_SUBEVENT_STREAM_STARTED:
-            if (a2dp_subevent_stream_started_get_a2dp_cid(packet) == out.cid) capture_start();
-            break;
-        case A2DP_SUBEVENT_STREAM_SUSPENDED:
-            if (a2dp_subevent_stream_suspended_get_a2dp_cid(packet) == out.cid) capture_stop();
-            break;
-        case A2DP_SUBEVENT_STREAMING_CAN_SEND_MEDIA_PACKET_NOW:
-            send_media();
-            break;
-        case A2DP_SUBEVENT_SIGNALING_CONNECTION_RELEASED:
-            if (a2dp_subevent_signaling_connection_released_get_a2dp_cid(packet) != out.cid) break;
-            printf("Speaker disconnected\n");
-            capture_stop(); out.index = -1;
-            break;
-        default:
-            break;
-    }
-}
-
-static void connect_speaker(const char * address, char * reply, size_t size){
-    bd_addr_t addr;
-    if (!sscanf_bd_addr(address, addr)){ snprintf(reply, size, "{\"error\":\"Not a Bluetooth address.\"}"); return; }
-    if (out.index >= 0){ snprintf(reply, size, "{\"error\":\"Jibo is already using a speaker.\"}"); return; }
-    if (hci_get_state() != HCI_STATE_WORKING){ snprintf(reply, size, "{\"error\":\"Bluetooth is off.\"}"); return; }
-    int i = add_speaker(addr);
-    if (i < 0){ snprintf(reply, size, "{\"error\":\"Too many speakers.\"}"); return; }
-    if (scanning){ gap_inquiry_stop(); scanning = false; } /* paging works badly during an inquiry */
-    out.index = i; out.error = NULL; out.streaming = false;
-    if (a2dp_source_establish_stream(addr, &out.cid) != ERROR_CODE_SUCCESS){ speaker_failed("Couldn’t connect to the speaker."); }
-    snprintf(reply, size, out.index >= 0 ? "{\"ok\":true}" : "{\"error\":\"Couldn’t connect to the speaker.\"}");
-}
-
-static void list_speakers(char * reply, size_t size){
-    size_t n = (size_t) snprintf(reply, size, "{\"scanning\":%s,\"speakers\":[", scanning ? "true" : "false");
-    for (int i = 0; i < speaker_count && n < size; i++)
-        n += (size_t) snprintf(reply + n, size - n, "%s{\"address\":\"%s\",\"name\":\"%s\",\"paired\":%s}", i ? "," : "",
-                               bd_addr_to_str(speakers[i].addr), speakers[i].name, speakers[i].paired ? "true" : "false");
-    if (n < size) snprintf(reply + n, size - n, "]}");
-}
-
 /* ---------- control socket ---------- */
 
 static void clean_name(char * out, size_t size, const uint8_t * name, size_t len){
@@ -474,7 +204,7 @@ static void set_enabled(bool on){
     if (on == enabled) return;
     enabled = on;
     if (on){ close(open(ENABLED, O_WRONLY | O_CREAT, 0600)); power_cycle(); hci_power_control(HCI_POWER_ON); }
-    else { unlink(ENABLED); disconnect_phone(); aplay_stop(); capture_stop(); hci_power_control(HCI_POWER_OFF); }
+    else { unlink(ENABLED); disconnect_phone(); aplay_stop(); hci_power_control(HCI_POWER_OFF); }
     printf("Bluetooth %s\n", on ? "on" : "off");
 }
 
@@ -482,13 +212,10 @@ static void handle_command(const char * cmd, char * reply, size_t size){
     int volume;
     if (strcmp(cmd, "status") == 0){
         snprintf(reply, size, "{\"enabled\":%s,\"powered\":%s,\"name\":\"%s\",\"connected\":%s,\"address\":\"%s\",\"device\":\"%s\","
-            "\"playing\":%s,\"volume\":%d,\"volumeSeq\":%u,\"absoluteVolume\":%s,"
-            "\"speaker\":\"%s\",\"speakerAddress\":\"%s\",\"speakerPlaying\":%s,\"speakerError\":\"%s\"}",
+            "\"playing\":%s,\"volume\":%d,\"volumeSeq\":%u,\"absoluteVolume\":%s}",
             enabled ? "true" : "false", hci_get_state() == HCI_STATE_WORKING ? "true" : "false", device_name,
             phone.active ? "true" : "false", phone.active ? bd_addr_to_str(phone.addr) : "", phone.active ? phone.name : "",
-            playing ? "true" : "false", phone.volume, phone.volume_seq, phone.avrcp_cid ? "true" : "false",
-            out.index >= 0 ? speakers[out.index].name : "", out.index >= 0 ? bd_addr_to_str(speakers[out.index].addr) : "",
-            out.streaming ? "true" : "false", out.error ? out.error : "");
+            playing ? "true" : "false", phone.volume, phone.volume_seq, phone.avrcp_cid ? "true" : "false");
     } else if (strcmp(cmd, "on") == 0 || strcmp(cmd, "off") == 0){
         set_enabled(cmd[1] == 'n');
         snprintf(reply, size, "{\"ok\":true}");
@@ -499,26 +226,7 @@ static void handle_command(const char * cmd, char * reply, size_t size){
         phone.volume = volume; /* Jibo's volume changed: show it on the phone's slider */
         if (phone.avrcp_cid) avrcp_target_volume_changed(phone.avrcp_cid, (uint8_t) volume);
         snprintf(reply, size, "{\"ok\":true}");
-    } else if (strcmp(cmd, "scan") == 0){
-        if (hci_get_state() != HCI_STATE_WORKING){ snprintf(reply, size, "{\"error\":\"Bluetooth is off.\"}"); return; }
-        if (!scanning){ /* forget unpaired results from the last scan; out.index stays valid (it is never unpaired here) */
-            int kept = 0;
-            for (int i = 0; i < speaker_count; i++) if (speakers[i].paired || i == out.index){
-                if (i == out.index) out.index = kept;
-                speakers[kept++] = speakers[i];
-            }
-            speaker_count = kept;
-            scanning = gap_inquiry_start(8) == ERROR_CODE_SUCCESS; /* about 10 s */
-        }
-        snprintf(reply, size, scanning ? "{\"ok\":true}" : "{\"error\":\"Couldn’t look for speakers.\"}");
-    } else if (strcmp(cmd, "speakers") == 0){
-        list_speakers(reply, size);
-    } else if (strncmp(cmd, "connect ", 8) == 0){
-        connect_speaker(cmd + 8, reply, size);
-    } else if (strcmp(cmd, "disconnect-speaker") == 0){
-        if (out.index >= 0){ capture_stop(); a2dp_source_disconnect(out.cid); }
-        snprintf(reply, size, "{\"ok\":true}");
-    } else snprintf(reply, size, "{\"error\":\"status | on | off | disconnect | volume 0-127 | scan | speakers | connect <address> | disconnect-speaker\"}");
+    } else snprintf(reply, size, "{\"error\":\"status | on | off | disconnect | volume 0-127\"}");
 }
 
 static btstack_data_source_t control_ds;
@@ -532,7 +240,7 @@ static void control_accept(btstack_data_source_t * ds, btstack_data_source_callb
     char cmd[128]; ssize_t n = read(fd, cmd, sizeof(cmd) - 1);
     if (n > 0){
         cmd[n] = 0; cmd[strcspn(cmd, "\r\n")] = 0;
-        char reply[4096]; handle_command(cmd, reply, sizeof(reply) - 1);
+        char reply[1024]; handle_command(cmd, reply, sizeof(reply) - 1);
         strcat(reply, "\n");
         if (write(fd, reply, strlen(reply)) < 0) {}
     }
@@ -587,7 +295,6 @@ static void hci_handler(uint8_t type, uint16_t channel, uint8_t * packet, uint16
                 if (shutting_down){ btstack_tlv_posix_deinit(&tlv_context); exit(0); }
                 gpio_write("value", "0"); /* turned off in Settings: radio fully off */
                 phone.active = false; playing = false;
-                capture_stop(); out.index = -1; scanning = false;
             }
             break;
         case HCI_EVENT_COMMAND_COMPLETE:
@@ -605,34 +312,8 @@ static void hci_handler(uint8_t type, uint16_t channel, uint8_t * packet, uint16
         case HCI_EVENT_REMOTE_NAME_REQUEST_COMPLETE: {
             bd_addr_t addr; reverse_bd_addr(&packet[3], addr);
             if (packet[2] == 0 && phone.active && bd_addr_cmp(addr, phone.addr) == 0) clean_name(phone.name, sizeof(phone.name), &packet[9], 248);
-            int i = find_speaker(addr);
-            if (i >= 0 && !speakers[i].named){
-                if (packet[2] == 0) clean_name(speakers[i].name, sizeof(speakers[i].name), &packet[9], 248);
-                speakers[i].named = true;
-                if (speakers[i].paired) save_speakers();
-            }
-            if (scanning && i == naming) name_next();
             break;
         }
-        case GAP_EVENT_INQUIRY_RESULT: {
-            bd_addr_t addr; gap_event_inquiry_result_get_bd_addr(packet, addr);
-            uint32_t cod = gap_event_inquiry_result_get_class_of_device(packet), minor = (cod >> 2) & 0x3f;
-            /* audio/video devices that play sound: uncategorized, headsets, hands-free, loudspeakers, headphones,
-               portable, car and hi-fi audio (TVs and other video devices aren't offered) */
-            if (((cod >> 8) & 0x1f) != 0x04 || minor > 10 || !((1u << minor) & 0x5E7u)) break;
-            int i = add_speaker(addr);
-            if (i < 0 || speakers[i].paired) break;
-            speakers[i].psrm = gap_event_inquiry_result_get_page_scan_repetition_mode(packet);
-            speakers[i].clock_offset = gap_event_inquiry_result_get_clock_offset(packet);
-            if (gap_event_inquiry_result_get_name_available(packet)){
-                clean_name(speakers[i].name, sizeof(speakers[i].name), gap_event_inquiry_result_get_name(packet), gap_event_inquiry_result_get_name_len(packet));
-                speakers[i].named = true;
-            }
-            break;
-        }
-        case GAP_EVENT_INQUIRY_COMPLETE:
-            if (scanning) name_next();
-            break;
         case HCI_EVENT_PIN_CODE_REQUEST: { /* only very old phones ask; speakers use 0000 */
             bd_addr_t addr; hci_event_pin_code_request_get_bd_addr(packet, addr);
             gap_pin_code_response(addr, "0000");
@@ -647,7 +328,6 @@ static void trigger_shutdown(void){
     shutting_down = true;
     alarm(3); /* if the controller never confirms power-off, SIGALRM ends us anyway */
     aplay_stop();
-    capture_stop();
     hci_power_control(HCI_POWER_OFF);
 }
 
@@ -657,8 +337,6 @@ int main(int argc, const char * argv[]){
     signal(SIGCHLD, SIG_IGN); /* aplay children reap themselves */
     signal(SIGPIPE, SIG_IGN);
     mkdir(STATE_DIR, 0700);
-    if (access(DAC_MUTED, F_OK) == 0){ dac("on,on"); unlink(DAC_MUTED); } /* we died while a speaker played */
-    load_speakers();
 
     char host[64] = "";
     gethostname(host, sizeof(host) - 1);
@@ -691,13 +369,6 @@ int main(int argc, const char * argv[]){
     a2dp_sink_create_sdp_record(sdp_a2dp_sink, sdp_create_service_record_handle(), AVDTP_SINK_FEATURE_MASK_SPEAKER, NULL, NULL);
     sdp_register_service(sdp_a2dp_sink);
     sbc = btstack_sbc_decoder_bluedroid_init_instance(&sbc_context);
-
-    a2dp_source_init();
-    a2dp_source_register_packet_handler(&a2dp_source_handler);
-    if (!a2dp_source_create_stream_endpoint(AVDTP_AUDIO, AVDTP_CODEC_SBC, sbc_source_capabilities, sizeof(sbc_source_capabilities),
-                                            sbc_source_configuration, sizeof(sbc_source_configuration))) return 1;
-    a2dp_source_create_sdp_record(sdp_a2dp_source, sdp_create_service_record_handle(), AVDTP_SOURCE_FEATURE_MASK_PLAYER, NULL, NULL);
-    sdp_register_service(sdp_a2dp_source);
 
     avrcp_init();
     avrcp_register_packet_handler(&avrcp_handler);
