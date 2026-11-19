@@ -18,7 +18,6 @@
                 {
                     "name" : "FaceDetectAction",
                     "type" : "face_detection_action",
-                    "sensitivity" : -0.2,
                     "enable" : true,
                     "policy_detector" : {
                         "criteria" : {
