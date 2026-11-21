@@ -1,5 +1,7 @@
 <!DOCTYPE html>
 <head>
+<!-- 5x1: BEacon's Services console hooks (recording, replay, safety prompts); first, before the page's own scripts -->
+<script>if (window.top !== window) document.write('<script src="//' + location.hostname + ':8123/service-pages.js"><\/script>');</script>
 <script src="../js/jquery-2.1.3.js"></script>
 <link href="css/indexReport.css" rel="stylesheet" type="text/css" />
 <script src="src/report.js"></script>
@@ -13,8 +15,8 @@
 
 <textarea id="reportTable"></textarea>
 
-<!-- 5x1: shared dark look (and, inside BEacon's Services console, safety prompts) for Jibo's service pages, served by
-     BEacon; last in the page so it wins over the page's own styles, and the original look stays if BEacon is down -->
-<script>document.write('<link rel="stylesheet" href="//' + location.hostname + ':8123/service-pages.css"><script src="//' + location.hostname + ':8123/service-pages.js"><\/script>');</script>
+<!-- 5x1: shared dark look for Jibo's service pages, served by BEacon; last so it wins over the page's own styles,
+     and the original look stays if BEacon is down -->
+<script>document.write('<link rel="stylesheet" href="//' + location.hostname + ':8123/service-pages.css">');</script>
 </body>
 </html>
