@@ -9,7 +9,7 @@
                 "enable" : true,
                 "start" : 0,
                 "skip_with_tracks" : 150,
-                "skip_without_tracks" : 5,
+                "skip_without_tracks" : 10,
                 "criteria" : {
                     "cameraIds" : [0]
                 }
@@ -35,7 +35,7 @@
                         },
                         "policies" : [
                             {
-                                "weight": 0.5,
+                                "weight": 0.75,
                                 "kind": "skincolor",
                                 "sub_image_width" : 200,
                                 "sub_image_height" : 200,
@@ -43,7 +43,7 @@
                                 "extra_vertical" : 20
                             },
                             {
-                                "weight": 0.5,
+                                "weight": 0.25,
                                 "kind": "gaussian",
                                 "sub_image_width" : 200,
                                 "sub_image_height" : 200,
