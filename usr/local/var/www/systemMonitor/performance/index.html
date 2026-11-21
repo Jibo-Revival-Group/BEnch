@@ -3,8 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <title>Performance</title>
-<!-- 5x1: shared dark look for Jibo's service pages, served by BEacon (falls back to the original look) -->
-<script>document.write('<link rel="stylesheet" href="//' + location.hostname + ':8123/service-pages.css">');</script>
 </head>
 <!-- Latest compiled and minified CSS -->
 <link rel="stylesheet" href="css/bootstrap.min.css">
@@ -21,5 +19,8 @@
 <body>
     <div id="grid">
     </div>
+<!-- 5x1: shared dark look (and, inside BEacon's Services console, safety prompts) for Jibo's service pages, served by
+     BEacon; last in the page so it wins over the page's own styles, and the original look stays if BEacon is down -->
+<script>document.write('<link rel="stylesheet" href="//' + location.hostname + ':8123/service-pages.css"><script src="//' + location.hostname + ':8123/service-pages.js"><\/script>');</script>
 </body>
 </html>
