@@ -11652,6 +11652,7 @@ class SkillsService extends jibo_service_framework_1.HTTPWSService {
                                 return callback(new Error(`Skill ${this.options.startSkill} not found`));
                             }
                             this.launch(this.options.startSkill, {}, callback);
+                            setInterval(() => this.relaunchIfDead(), 10000);
                         });
                     }
                 });
@@ -11810,6 +11811,26 @@ class SkillsService extends jibo_service_framework_1.HTTPWSService {
             else {
                 launch(skill);
             }
+        });
+    }
+    // Be can die under us (an alsa-lib assert aborts Electron when a skill keeps reopening the mic) and nothing restarted
+    // it, so the screen stayed black until a reboot. Relaunch the skill we launched if it stopped; at most 3 times in 10 min.
+    relaunchIfDead() {
+        const skill = this.currentSkill;
+        if (!skill || this.relaunching) return;
+        jibo_client_framework_1.SystemManagerClient.instance.list((error, skills) => {
+            const record = !error && (skills || []).filter(s => s.name === skill.name)[0];
+            if (!record || record.running || this.currentSkill !== skill || this.relaunching) return;
+            const now = Date.now();
+            this.relaunches = (this.relaunches || []).filter(time => now - time < 600000);
+            if (this.relaunches.length >= 3) return;
+            this.relaunches.push(now); this.relaunching = true;
+            log.warn(`${skill.name} is not running; relaunching it`);
+            this.currentSkill = null; // it already exited, so launch() must not terminate it first
+            this.launch(skill.name, {}, error => {
+                this.relaunching = false;
+                if (error) log.error(`Could not relaunch ${skill.name}`, error);
+            });
         });
     }
     terminate(callback) {
