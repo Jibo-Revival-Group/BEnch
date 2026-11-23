@@ -9,6 +9,13 @@ case "$service" in
          /usr/local/bin/jibo-mic-access || true ;;  # skills' getUserMedia: the live mic, not the Dummy card
     *) /usr/local/bin/jibo-runtime-bootstrap --service "$service" ;;
 esac
+# Speaker path on the sound chip (what the OS's /root/OutAudioSetup.sh sets at boot): if that file is lost, Jibo is silent.
+if [ "$service" = audio ]; then
+    for c in "DACL Route=1" "DACR Route=1" "DAC Volume=127,127" "DAC Switch=on,on" "Headphone Driver Gain=0,0" \
+        "Headphone Driver Switch=on,on" "Headphone Volume=117,117" "Headphone Switch=on,on"; do
+        amixer -c TLV320DAC3100 -q cset name="${c%%=*}" "${c#*=}" || true
+    done
+fi
 # TTS: route speech through the 5x1 voice effects (vibrato/volume) when the plugin is installed.
 if [ "$service" = tts ] && [ -f /usr/local/lib/ladspa/jibo_voicefx.so ] && [ -f /usr/local/share/ttsservice/alsa/.asoundrc ] && [ -f /opt/jibo/Knowledge/beacon/voices/fx.txt ]; then
     export HOME=/usr/local/share/ttsservice/alsa

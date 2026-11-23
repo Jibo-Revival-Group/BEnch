@@ -23,6 +23,17 @@ try {
     assert.strictEqual(result.stdout, '');
     assert.strictEqual(fs.readFileSync(env.BOOTSTRAP_LOG, 'utf8'), '--service\nasr\n');
     fs.unlinkSync(env.BOOTSTRAP_LOG + '.mic');
+    // audio: the speaker path is set even when the OS's /root/OutAudioSetup.sh is missing (a robot went silent).
+    fs.writeFileSync(path.join(root, 'amixer'), '#!/bin/sh\nprintf "%s|" "$@" >> "$BOOTSTRAP_LOG.amixer"; echo >> "$BOOTSTRAP_LOG.amixer"\n', { mode: 493 });
+    env.BOOTSTRAP_STATUS = '0'; env.PATH = root + ':' + process.env.PATH;
+    result = child.spawnSync('sh', [wrapper, 'audio', '/bin/echo', 'started'], { env: env, encoding: 'utf8' });
+    assert.strictEqual(result.stdout, 'started\n');
+    var set = fs.readFileSync(env.BOOTSTRAP_LOG + '.amixer', 'utf8').trim().split('\n');
+    ['DACL Route|1', 'DAC Switch|on,on', 'Headphone Driver Switch|on,on', 'Headphone Volume|117,117', 'Headphone Switch|on,on'].forEach(function (want) {
+        assert(set.some(function (line) { return line === '-c|TLV320DAC3100|-q|cset|name=' + want + '|'; }), 'sets ' + want);
+    });
+    fs.unlinkSync(env.BOOTSTRAP_LOG + '.amixer');
+    env.PATH = process.env.PATH;
     var config = require('../usr/local/etc/jibo-system-manager.json');
     config.SystemManager.service.services.forEach(function (service) {
         if (service.name === 'resolv-watcher' || service.name === 'jibo-bluetooth') {
