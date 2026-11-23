@@ -25,8 +25,8 @@ try {
     fs.unlinkSync(env.BOOTSTRAP_LOG + '.mic');
     var config = require('../usr/local/etc/jibo-system-manager.json');
     config.SystemManager.service.services.forEach(function (service) {
-        if (service.name === 'resolv-watcher') {
-            assert.strictEqual(service.executable, '/usr/local/bin/resolv-watcher');
+        if (service.name === 'resolv-watcher' || service.name === 'jibo-bluetooth') {
+            assert.strictEqual(service.executable, '/usr/local/bin/' + service.name);
             assert.deepEqual(service.modes.default.arguments, []);
             return;
         }

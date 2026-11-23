@@ -92,12 +92,12 @@ function databases(dir, list) {
     return list;
 }
 
-function showScreen(opts) {
+function showScreen(opts, kind) {
     if (opts.root || opts.noScreen) { return null; }
     try {
         var screen = child.spawn('/usr/bin/electron/electron', [path.join(__dirname, 'kb-repair-screen')], {
             stdio: 'ignore',
-            env: { DISPLAY: ':0', XAUTHORITY: '/tmp/.Xauthority', XDG_CONFIG_HOME: '/run/kb-repair-screen', HOME: '/run', KB_REPAIR_PID: String(process.pid) }
+            env: { DISPLAY: ':0', XAUTHORITY: '/tmp/.Xauthority', XDG_CONFIG_HOME: '/run/kb-repair-screen', HOME: '/run', KB_REPAIR_PID: String(process.pid), KB_REPAIR_KIND: kind || '' }
         });
         screen.on('error', function () {});
         child.spawnSync('sleep', ['3']);   // let it paint before the disk-heavy work starts
@@ -124,6 +124,12 @@ function run(opts) {
     });
     if (screen && screen !== true) { try { screen.kill(); } catch (e) {} }
     if (!repaired) { bootstrap.report('deep Knowledge check found no damage', opts); }
+    // Then the software itself: damaged or missing system and skill files are fetched again from their release.
+    if (!opts.root && !opts.noFiles) {
+        var files = showScreen(opts, 'files');
+        try { require('./release-repair').run({ waitForNetwork: true }); }
+        finally { if (files) { try { files.kill(); } catch (e) {} } }
+    }
     return repaired;
 }
 

@@ -20,5 +20,12 @@
     <img class="icon" src="file:///opt/jibo/Jibo/Skills/@be/be/skills/settings/assets/errors/icons/error.png" onerror="this.style.display='none'">
     <div class="header">Something went wrong with KB,</div>
     <div class="message"><span class="dots">attempting to repair</span></div>
+    <script>
+        // Release repair (checking system and skill files) uses the same screen.
+        if (location.hash === '#files') {
+            document.querySelector('.code').textContent = 'Error 5x1';
+            document.querySelector('.header').textContent = 'Something went wrong with my files,';
+        }
+    </script>
 </body>
 </html>

@@ -8,7 +8,7 @@ directories, so os-files.tsv lists every os entry with those (and each file's sh
   tools/pack-os.py --refresh               after editing os files: update hashes, add new files, drop removed ones
   tools/pack-os.py OUT.tar                 stock-format package: ./filesystem.tar.bz2 inside a tar
 
-Not os: README.md, tests/, tools/, os-files.tsv, and /usr/local (services, packed separately).
+Not os: README.md, LICENSE, tests/, tools/, os-files.tsv, and /usr/local (services, packed separately).
 """
 import hashlib
 import io
@@ -22,7 +22,7 @@ TSV = 'os-files.tsv'
 # Stock os build day. Never a time in the future: Jibo's tar warns once per file and the updater's
 # exec() output limit (200 KB) then kills the extraction halfway, leaving an os that can't boot.
 STOCK_TIME = 1551052800  # 2019-02-25
-NOT_OS = ('.git', '.gitattributes', '.github', 'README.md', 'tests', 'tools', TSV)
+NOT_OS = ('.git', '.gitattributes', '.github', 'README.md', 'LICENSE', 'tests', 'tools', TSV)
 
 
 def is_os(path):

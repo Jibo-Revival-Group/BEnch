@@ -1,4 +1,7 @@
 # BEnch
+
+> **Part of [5x1](https://www.5x1.com), the free public Jibo server and the easiest and quickest way for beginners to revive Jibo: unlike other services, there is no account to set up, and no self-hosting.** BEnch is the robot's system software (os and services) that 5x1 installs and updates.
+> New to Jibo revival? Start with [How do I revive my Jibo?](https://www.5x1.com/revive-jibo.html) and the [setup guide](https://jibo.guide). See also [Is 5x1 safe?](https://www.5x1.com/is-5x1-safe.html) and the [privacy policy](https://www.5x1.com/privacy.html).
 The entire non-Skill JiboOS
 
 Version is saved in Jibo-Service-Version and CANNOT change the byte size or else big bad. DO NOT USE VSCODE OR ANY OTHER CODE EDITOR OR ELSE ALL 5,000 JIBOS IN THE WORLD WILL DIE!!! THIS IS BAD BAD BAD AND WE DON'T WANT THAT OR ELSE IT WILL BE VERY BAD AND IRREVERSABLE!!!!!!!!!!!!!!!
@@ -26,6 +29,13 @@ python3 tests/os-files.test.py
 
 An os update reformats the root partition, so anything edited by hand on a robot outside
 `/usr/local` and `/opt` is replaced by these files.
+
+## Command-line tools
+
+`usr/local/bin/nano` (GNU nano 8.6, GPLv3, source: https://www.nano-editor.org/dist/v8/nano-8.6.tar.xz) and
+`usr/local/bin/fastfetch` (2.71.0, MIT) are static ARM builds, because Jibo's glibc is too old for current
+ones. nano has xterm-256color, screen/tmux-256color, alacritty and vt100 built in, since Jibo only ships
+xterm/linux terminfo. Rebuild with `tools/build-nano-fastfetch.sh`.
 
 ## Local runtime initialization
 

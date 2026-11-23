@@ -4,7 +4,7 @@ var electron = require('electron'), path = require('path'), fs = require('fs');
 var app = electron.app;
 app.on('ready', function () {
     var win = new electron.BrowserWindow({ x: 0, y: 0, width: 1280, height: 720, frame: false, show: false, backgroundColor: '#000000' });
-    win.loadURL('file://' + path.join(__dirname, 'index.html'));
+    win.loadURL('file://' + path.join(__dirname, 'index.html') + (process.env.KB_REPAIR_KIND === 'files' ? '#files' : ''));
     win.webContents.on('did-finish-load', function () {
         win.show(); win.focus(); win.setPosition(0, 0);
         // Test hook: save a picture of the screen.

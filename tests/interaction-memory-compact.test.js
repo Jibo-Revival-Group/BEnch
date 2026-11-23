@@ -5,7 +5,7 @@ var assert = require('assert'), fs = require('fs'), os = require('os'), path = r
 var child = require('child_process');
 var bench = process.env.BENCH || path.resolve(__dirname, '..');
 var bootstrap = require(path.join(bench, 'usr/local/lib/jibo/knowledge-bootstrap'));
-var DAY = 86400000, now = Date.UTC(2026, 10, 7);
+var DAY = 86400000, now = Date.now(); // the compaction itself prunes against the real clock
 function ev(daysAgo, people, skill) {
     var d = { skillName: skill || '@be/greetings' };
     if (people) { d.personIDs = people; }
