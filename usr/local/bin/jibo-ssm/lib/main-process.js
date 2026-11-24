@@ -53,6 +53,9 @@ class MainProcess {
             log_1.default.info('No skill to shut down. Initializing SSM');
             this.makeSSM();
         });
+        // system-manager can take seconds to answer at boot; load SSM's code (~5 s) meanwhile. The timer lets the
+        // request go out first.
+        setTimeout(() => { try { require(path.join(findRoot(__dirname), 'lib/skills-service-manager')); } catch (e) { } }, 100);
     }
     makeSSM() {
         log_1.default.debug('makeSSM');
