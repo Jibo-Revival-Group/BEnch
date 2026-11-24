@@ -331,12 +331,13 @@ class Factory {
             });
         });
     }
-    // expression is up only ~3.5 s after lps (~11 s); launching Be doesn't wait for it (Be connects to it itself).
+    // lps takes ~11 s to start and expression waits for it: launching Be doesn't wait for these clients (Be connects
+    // to both services itself).
     _addExpressionClientTask() {
         this._orchestrator.add('ExpressionClient', FactoryDeps_1.LATE_CLIENTS_DEPS, (done) => {
-            ClientInitializer_1.default.getClientInits(['expression'], (err, tasks) => {
+            ClientInitializer_1.default.getClientInits(['expression', 'media'], (err, tasks) => {
                 if (err) {
-                    log.error('Critical error getting initializers for the expression client', err);
+                    log.error('Critical error getting initializers for the expression and media clients', err);
                     return done(err);
                 }
                 async.parallel(tasks, done);
@@ -458,7 +459,6 @@ exports.LATE_CLIENTS = [
     'audio',
     'media-manager',
     'wifi',
-    'media',
     'jetstream',
 ];
 exports.LATE_CLIENTS_DEPS = [

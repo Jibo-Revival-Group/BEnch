@@ -8,8 +8,8 @@ function list(name) {
     assert(m, name);
     return m[1];
 }
-assert(!/'expression'/.test(list('LATE_CLIENTS')), 'expression is not a late client (SkillsService waits for those)');
+assert(!/'expression'|'media'/.test(list('LATE_CLIENTS')), 'expression and lps\'s media are not late clients (SkillsService waits for those)');
 assert(/'ExpressionClient'/.test(list('ALL_CLIENTS_AND_SERVICES')), 'Analytics/BackgroundUtils still wait for it');
 assert(/this\._addExpressionClientTask\(\);/.test(src), 'task is added');
-assert(/_addExpressionClientTask\(\) \{[\s\S]*?getClientInits\(\['expression'\]/.test(src), 'and initializes the expression client');
+assert(/_addExpressionClientTask\(\) \{[\s\S]*?getClientInits\(\['expression', 'media'\]/.test(src), 'and initializes the expression client');
 console.log('SSM launches Be without waiting for the expression client');
