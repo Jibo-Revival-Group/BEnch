@@ -51,8 +51,18 @@ try {
     assert.deepStrictEqual(content(target), Buffer.from('nameserver 8.8.8.8\nnameserver 8.8.4.4\n'));
     var config = require('../usr/local/etc/jibo-system-manager.json');
     assert(config.SystemManager.service.services.some(function (s) {
-        return s.name === 'resolv-watcher' && s.order === 0 && s.executable === '/usr/local/bin/resolv-watcher' && s.modes.default.enabled === true;
+        return s.name === 'resolv-watcher' && s.order === 0 && s.executable === '/usr/local/bin/jibo-service-start' &&
+            s.modes.default.arguments[1] === '/usr/local/bin/resolv-watcher' && s.modes.default.enabled === true;
     }), 'resolver watchguard starts as a managed service');
+    // system-manager stops services with SIGINT, with SIGTERM blocked (as here). A foreground sleep, or a sleep left
+    // holding the output pipe, kept every shutdown waiting ~30 s.
+    var startedAt = Date.now();
+    var stopped = child.spawnSync('python3', ['-c', 'import subprocess,signal,sys,time; signal.pthread_sigmask(signal.SIG_BLOCK, [signal.SIGTERM]); ' +
+        'p = subprocess.Popen(["/bin/sh", sys.argv[1]]); ' +
+        'time.sleep(1); p.send_signal(signal.SIGINT); sys.exit(p.wait())', script],
+        { env: Object.assign({}, process.env, { RESOLV_FILE: file, RESOLV_WATCH_INTERVAL: '30' }), timeout: 20000 });
+    assert.strictEqual(stopped.status, 0, 'exits cleanly on SIGINT');
+    assert(Date.now() - startedAt < 6000, 'stops right away, not after its sleep');
     console.log('DNS watchguard byte, restore, preservation, symlink, and manager config tests passed');
 } finally {
     [file, target].forEach(function (p) { try { fs.unlinkSync(p); } catch (_) {} });

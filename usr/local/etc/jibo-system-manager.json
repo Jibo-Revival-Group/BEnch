@@ -522,10 +522,10 @@
                 {
                     "name": "resolv-watcher",
                     "order": 0,
-                    "executable": "/usr/local/bin/resolv-watcher",
+                    "executable": "/usr/local/bin/jibo-service-start",
                     "modes": {
                         "default": {
-                            "arguments": [],
+                            "arguments": ["resolv-watcher", "/usr/local/bin/resolv-watcher"],
                             "environment": {},
                             "directory": "",
                             "enabled": true
@@ -538,10 +538,10 @@
                 {
                     "name": "jibo-bluetooth",
                     "order": 0,
-                    "executable": "/usr/local/bin/jibo-bluetooth",
+                    "executable": "/usr/local/bin/jibo-service-start",
                     "modes": {
                         "default": {
-                            "arguments": [],
+                            "arguments": ["jibo-bluetooth", "/usr/local/bin/jibo-bluetooth"],
                             "environment": {},
                             "directory": "",
                             "enabled": true

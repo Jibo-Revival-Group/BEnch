@@ -7,7 +7,13 @@ shift
 case "$service" in
     ssm) /usr/local/bin/jibo-runtime-bootstrap --service ssm --knowledge
          /usr/local/bin/jibo-mic-access || true ;;  # skills' getUserMedia: the live mic, not the Dummy card
+    resolv-watcher|jibo-bluetooth) ;;  # 5x1 helpers with no runtime state to prepare
     *) /usr/local/bin/jibo-runtime-bootstrap --service "$service" ;;
+esac
+# 5x1 helpers never post Jibo's startup semaphore, so system-manager waited 10 s for each before starting the next
+# service. Post it for them: exec below keeps this PID.
+case "$service" in resolv-watcher|jibo-bluetooth|jibo-sync-helper)
+    NODE_PATH=/usr/lib/node_modules /usr/bin/node -e "require('node-semaphore').Semaphore('/jibo-startup-$$.event').post()" || true ;;
 esac
 # Speaker path on the sound chip (what the OS's /root/OutAudioSetup.sh sets at boot): if that file is lost, Jibo is silent.
 if [ "$service" = audio ]; then

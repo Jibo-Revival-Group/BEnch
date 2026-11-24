@@ -23,6 +23,17 @@ try {
     assert.strictEqual(result.stdout, '');
     assert.strictEqual(fs.readFileSync(env.BOOTSTRAP_LOG, 'utf8'), '--service\nasr\n');
     fs.unlinkSync(env.BOOTSTRAP_LOG + '.mic');
+    // 5x1 helpers get Jibo's startup semaphore posted for their PID (else system-manager waits 10 s on each).
+    fs.writeFileSync(path.join(root, 'node'), '#!/bin/sh\nprintf "%s\\n" "$*" > "$BOOTSTRAP_LOG.node"\n', { mode: 493 });
+    var launcher2 = path.join(root, 'launcher2');
+    fs.writeFileSync(launcher2, fs.readFileSync(wrapper, 'utf8').replace(/\/usr\/bin\/node/g, path.join(root, 'node')), { mode: 493 });
+    result = child.spawnSync('sh', [launcher2, 'jibo-bluetooth', '/bin/sh', '-c', 'echo $$'], { env: env, encoding: 'utf8' });
+    assert.strictEqual(result.status, 0);
+    assert(fs.readFileSync(env.BOOTSTRAP_LOG + '.node', 'utf8').indexOf("/jibo-startup-" + result.pid + ".event") >= 0, 'posts the startup event for the service PID');
+    assert.strictEqual(Number(result.stdout.trim()), result.pid);
+    fs.unlinkSync(env.BOOTSTRAP_LOG + '.node');
+    result = child.spawnSync('sh', [launcher2, 'asr', '/bin/true'], { env: env, encoding: 'utf8' });
+    assert(!fs.existsSync(env.BOOTSTRAP_LOG + '.node'), 'services that post it themselves are left alone');
     // audio: the speaker path is set even when the OS's /root/OutAudioSetup.sh is missing (a robot went silent).
     fs.writeFileSync(path.join(root, 'amixer'), '#!/bin/sh\nprintf "%s|" "$@" >> "$BOOTSTRAP_LOG.amixer"; echo >> "$BOOTSTRAP_LOG.amixer"\n', { mode: 493 });
     env.BOOTSTRAP_STATUS = '0'; env.PATH = root + ':' + process.env.PATH;
@@ -36,11 +47,6 @@ try {
     env.PATH = process.env.PATH;
     var config = require('../usr/local/etc/jibo-system-manager.json');
     config.SystemManager.service.services.forEach(function (service) {
-        if (service.name === 'resolv-watcher' || service.name === 'jibo-bluetooth') {
-            assert.strictEqual(service.executable, '/usr/local/bin/' + service.name);
-            assert.deepEqual(service.modes.default.arguments, []);
-            return;
-        }
         assert.strictEqual(service.executable, '/usr/local/bin/jibo-service-start');
         Object.keys(service.modes).forEach(function (mode) {
             var args = service.modes[mode].arguments;

@@ -109,8 +109,12 @@ check_resolver() {
     fi
 }
 
+# system-manager stops services with SIGINT, and sh only acts on it after a foreground sleep ends, which held up every
+# shutdown ~30 s. A background sleep plus wait is interrupted right away.
+trap 'kill -9 $sleeper 2>/dev/null; exit 0' INT TERM  # -9: the sleep inherits blocked TERM and holds the service's output pipe
 while :; do
     check_resolver
     [ "$RUN_ONCE" = 1 ] && exit 0
-    sleep "$INTERVAL"
+    sleep "$INTERVAL" & sleeper=$!
+    wait $sleeper
 done
