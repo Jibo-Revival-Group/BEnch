@@ -142,6 +142,7 @@ class Factory {
         this._addSyncManagersTask();
         this._addNotificationsDispatcherTask();
         this._addLateClientsTask();
+        this._addExpressionClientTask();
         this._addAnalyticsTask();
         this._addBackgroundUtilsTask(conf.services, mode);
         this._addAllTask();
@@ -330,6 +331,18 @@ class Factory {
             });
         });
     }
+    // expression is up only ~3.5 s after lps (~11 s); launching Be doesn't wait for it (Be connects to it itself).
+    _addExpressionClientTask() {
+        this._orchestrator.add('ExpressionClient', FactoryDeps_1.LATE_CLIENTS_DEPS, (done) => {
+            ClientInitializer_1.default.getClientInits(['expression'], (err, tasks) => {
+                if (err) {
+                    log.error('Critical error getting initializers for the expression client', err);
+                    return done(err);
+                }
+                async.parallel(tasks, done);
+            });
+        });
+    }
     _addAnalyticsTask() {
         log.info('Adding analytics task to orchestrator');
         this._orchestrator.add('Analytics', FactoryDeps_1.ALL_CLIENTS_AND_SERVICES, (done) => {
@@ -443,7 +456,6 @@ exports.PLATFORM_CLIENTS_DEPS = [
 ];
 exports.LATE_CLIENTS = [
     'audio',
-    'expression',
     'media-manager',
     'wifi',
     'media',
@@ -460,6 +472,7 @@ exports.ALL_CLIENTS_AND_SERVICES = [
     ...Object.keys(exports.REAL_SERVICES),
     ...Object.keys(exports.SIMULATED_SERVICES),
     'LateClients',
+    'ExpressionClient',
     'NotificationsDispatcher',
     'PlatformClients',
     'RegistryClient',
