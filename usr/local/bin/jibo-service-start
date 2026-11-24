@@ -14,11 +14,19 @@ case "$service" in
 esac
 # system-manager starts services one at a time, each after the last posts Jibo's startup semaphore. Post it now for
 # 5x1 helpers (they never do: 10 s wait each) and for services nothing waits on at boot, so they start side by side
-# on Jibo's 4 cores. Not lps: expression never comes up if it starts before lps is ready. Not body/audio/asr/jetstream.
-# exec below keeps this PID.
-case "$service" in resolv-watcher|jibo-bluetooth|jibo-sync-helper|tts|identity|server|monitor|media|security-controller-service|secure-transfer|expression)
+# on Jibo's 4 cores (not body/audio/asr/jetstream). exec below keeps this PID.
+case "$service" in resolv-watcher|jibo-bluetooth|jibo-sync-helper|tts|identity|lps|server|monitor|media|security-controller-service|secure-transfer|expression)
     NODE_PATH=/usr/lib/node_modules /usr/bin/node -e "require('node-semaphore').Semaphore('/jibo-startup-$$.event').post()" || true ;;
 esac
+# expression never comes up if it starts before lps is ready (lps takes ~11 s), so it waits for lps here instead of
+# system-manager holding every later service (SSM, Be) behind lps. lps registers ~1 s before it is ready.
+if [ "$service" = expression ]; then
+    i=0
+    while [ $i -lt 600 ] && ! curl -s -m 1 http://127.0.0.1:8181/registry 2>/dev/null | grep -q '"name":"lps"'; do
+        usleep 100000; i=$((i + 1))
+    done
+    sleep 1
+fi
 # Speaker path on the sound chip (what the OS's /root/OutAudioSetup.sh sets at boot): if that file is lost, Jibo is silent.
 if [ "$service" = audio ]; then
     for c in "DACL Route=1" "DACR Route=1" "DAC Volume=127,127" "DAC Switch=on,on" "Headphone Driver Gain=0,0" \

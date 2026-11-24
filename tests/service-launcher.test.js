@@ -47,8 +47,20 @@ try {
     result = child.spawnSync('sh', [launcher2, 'tts', '/bin/sh', '-c', 'echo $$'], { env: env, encoding: 'utf8' });
     assert(fs.readFileSync(env.BOOTSTRAP_LOG + '.node', 'utf8').indexOf('/jibo-startup-' + result.pid + '.event') >= 0, 'tts starts side by side');
     fs.unlinkSync(env.BOOTSTRAP_LOG + '.node');
-    result = child.spawnSync('sh', [launcher2, 'lps', '/bin/true'], { env: env, encoding: 'utf8' });
-    assert(!fs.existsSync(env.BOOTSTRAP_LOG + '.node'), 'lps is waited for (expression needs it)');
+    result = child.spawnSync('sh', [launcher2, 'asr', '/bin/true'], { env: env, encoding: 'utf8' });
+    assert(!fs.existsSync(env.BOOTSTRAP_LOG + '.node'), 'asr is waited for');
+    // expression starts only once lps is in the service registry (it never comes up without lps).
+    var stubs = path.join(root, 'stubs'); fs.mkdirSync(stubs);
+    fs.writeFileSync(path.join(stubs, 'curl'), '#!/bin/sh\nn=$(cat "$CURL_COUNT" 2>/dev/null || echo 0); n=$((n+1)); echo $n > "$CURL_COUNT"\n' +
+        '[ $n -ge 3 ] && echo \'{"records":[{"name":"lps","port":8484}]}\' || echo \'{"records":[{"name":"asr"}]}\'\n', { mode: 493 });
+    fs.writeFileSync(path.join(stubs, 'usleep'), '#!/bin/sh\n', { mode: 493 });
+    fs.writeFileSync(path.join(stubs, 'sleep'), '#!/bin/sh\necho slept >> "$CURL_COUNT.sleep"\n', { mode: 493 });
+    var env2 = Object.assign({}, env, { PATH: stubs + ':' + process.env.PATH, CURL_COUNT: path.join(root, 'curl-count') });
+    result = child.spawnSync('sh', [launcher2, 'expression', '/bin/sh', '-c', 'cat "$CURL_COUNT"'], { env: env2, encoding: 'utf8' });
+    assert.strictEqual(result.stdout.trim(), '3', 'expression waits until lps is registered');
+    assert.strictEqual(fs.readFileSync(env2.CURL_COUNT + '.sleep', 'utf8'), 'slept\n', 'plus a second');
+    remove(stubs);
+    fs.unlinkSync(env.BOOTSTRAP_LOG + '.node');
     result = child.spawnSync('sh', [launcher2, 'asr', '/bin/true'], { env: env, encoding: 'utf8' });
     assert(!fs.existsSync(env.BOOTSTRAP_LOG + '.node'), 'services that post it themselves are left alone');
     // audio: the speaker path is set even when the OS's /root/OutAudioSetup.sh is missing (a robot went silent).
@@ -85,4 +97,4 @@ try {
     result = child.spawnSync('sh', [launcher4, 'asr', fakeNode, 'x.js'], { env: env, encoding: 'utf8' });
     assert.strictEqual(result.stdout.trim(), 'x.js', 'no hook installed: started as before');
     console.log('Service preparation, exec/PID/arguments, failures and managed modes passed');
-} finally { remove(root); }
+} finally { child.spawnSync('rm', ['-rf', root]); }
