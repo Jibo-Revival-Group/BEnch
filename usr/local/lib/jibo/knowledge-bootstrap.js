@@ -208,6 +208,10 @@ function initialize(options, callback) {
         }
         try {
             repairTree(base, opts);
+            // Loading jibo-kb takes ~3 s on Jibo, twice a boot (S04 and SSM); only needed to create a missing database.
+            if (!opts.kb && namespaces.every(function (name) {
+                try { return fs.statSync(path.join(base, name, 'nodes')).size > 0; } catch (e) { return false; }
+            })) { finish(); return; }
             var kb = opts.kb || require('../../bin/jibo-ssm/node_modules/jibo-kb');
             Database = kb.KnowledgeDatabase;
             originalRoot = Database.getRootDirectory;
