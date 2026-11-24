@@ -13,6 +13,8 @@ while (args.length) {
 }
 try { runtime.ensure(options); }
 catch (err) { console.error('[bootstrap] ' + err.message); process.exit(1); }
+// Everything is prepared (boot's S04 run): services starting during this boot can skip their own run.
+if (!options.service && !options.root) { try { require('fs').writeFileSync('/run/jibo-runtime-ready', ''); } catch (e) {} }
 
 if (knowledge) {
     var path = require('path');

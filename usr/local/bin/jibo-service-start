@@ -6,13 +6,17 @@ service=$1
 shift
 case "$service" in
     ssm) /usr/local/bin/jibo-runtime-bootstrap --service ssm --knowledge
+         rm -f /run/jibo-runtime-ready  # SSM starts last: services restarted from now on prepare their own state again
          /usr/local/bin/jibo-mic-access || true ;;  # skills' getUserMedia: the live mic, not the Dummy card
     resolv-watcher|jibo-bluetooth) ;;  # 5x1 helpers with no runtime state to prepare
-    *) /usr/local/bin/jibo-runtime-bootstrap --service "$service" ;;
+    # At boot S04 already prepared every service (and left this marker); a node start per service cost ~0.75 s each.
+    *) [ -e /run/jibo-runtime-ready ] || /usr/local/bin/jibo-runtime-bootstrap --service "$service" ;;
 esac
-# 5x1 helpers never post Jibo's startup semaphore, so system-manager waited 10 s for each before starting the next
-# service. Post it for them: exec below keeps this PID.
-case "$service" in resolv-watcher|jibo-bluetooth|jibo-sync-helper)
+# system-manager starts services one at a time, each after the last posts Jibo's startup semaphore. Post it now for
+# 5x1 helpers (they never do: 10 s wait each) and for services nothing waits on at boot, so they start side by side
+# on Jibo's 4 cores. Not expression's lps (expression never comes up without it) or body/audio/asr/jetstream.
+# exec below keeps this PID.
+case "$service" in resolv-watcher|jibo-bluetooth|jibo-sync-helper|tts|identity|server|monitor|media|security-controller-service|secure-transfer)
     NODE_PATH=/usr/lib/node_modules /usr/bin/node -e "require('node-semaphore').Semaphore('/jibo-startup-$$.event').post()" || true ;;
 esac
 # Speaker path on the sound chip (what the OS's /root/OutAudioSetup.sh sets at boot): if that file is lost, Jibo is silent.

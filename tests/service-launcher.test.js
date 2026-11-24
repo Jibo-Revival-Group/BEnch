@@ -9,7 +9,8 @@ try {
     fs.writeFileSync(mic, '#!/bin/sh\necho mic >> "$BOOTSTRAP_LOG.mic"\nexit 1\n', { mode: 493 });
     var wrapper = path.join(root, 'launcher');
     fs.writeFileSync(wrapper, fs.readFileSync(path.join(__dirname, '../usr/local/bin/jibo-service-start'), 'utf8')
-        .replace(/\/usr\/local\/bin\/jibo-runtime-bootstrap/g, bootstrap).replace(/\/usr\/local\/bin\/jibo-mic-access/g, mic));
+        .replace(/\/usr\/local\/bin\/jibo-runtime-bootstrap/g, bootstrap).replace(/\/usr\/local\/bin\/jibo-mic-access/g, mic)
+        .replace(/\/run\/jibo-runtime-ready/g, path.join(root, 'ready')));
     var env = Object.assign({}, process.env, { BOOTSTRAP_LOG: path.join(root, 'log'), BOOTSTRAP_STATUS: '0' });
     var result = child.spawnSync('sh', [wrapper, 'ssm', '/bin/sh', '-c', 'echo $$; printf "%s\\n" "$@"', 'fixture', 'spaces in argument', '$(literal)'], { env: env, encoding: 'utf8' });
     assert.strictEqual(result.status, 0);
@@ -23,6 +24,17 @@ try {
     assert.strictEqual(result.stdout, '');
     assert.strictEqual(fs.readFileSync(env.BOOTSTRAP_LOG, 'utf8'), '--service\nasr\n');
     fs.unlinkSync(env.BOOTSTRAP_LOG + '.mic');
+    // During boot (S04 left the marker) services skip their own bootstrap; SSM, started last, clears it.
+    env.BOOTSTRAP_STATUS = '0'; fs.writeFileSync(path.join(root, 'ready'), ''); fs.unlinkSync(env.BOOTSTRAP_LOG);
+    result = child.spawnSync('sh', [wrapper, 'asr', '/bin/echo', 'up'], { env: env, encoding: 'utf8' });
+    assert.strictEqual(result.stdout, 'up\n');
+    assert(!fs.existsSync(env.BOOTSTRAP_LOG), 'no per-service bootstrap during boot');
+    child.spawnSync('sh', [wrapper, 'ssm', '/bin/true'], { env: env, encoding: 'utf8' });
+    assert.strictEqual(fs.readFileSync(env.BOOTSTRAP_LOG, 'utf8'), '--service\nssm\n--knowledge\n', 'SSM still runs it');
+    assert(!fs.existsSync(path.join(root, 'ready')), 'and clears the marker');
+    child.spawnSync('sh', [wrapper, 'asr', '/bin/true'], { env: env, encoding: 'utf8' });
+    assert.strictEqual(fs.readFileSync(env.BOOTSTRAP_LOG, 'utf8'), '--service\nasr\n', 'later restarts prepare again');
+    fs.unlinkSync(env.BOOTSTRAP_LOG + '.mic');
     // 5x1 helpers get Jibo's startup semaphore posted for their PID (else system-manager waits 10 s on each).
     fs.writeFileSync(path.join(root, 'node'), '#!/bin/sh\nprintf "%s\\n" "$*" > "$BOOTSTRAP_LOG.node"\n', { mode: 493 });
     var launcher2 = path.join(root, 'launcher2');
@@ -32,6 +44,11 @@ try {
     assert(fs.readFileSync(env.BOOTSTRAP_LOG + '.node', 'utf8').indexOf("/jibo-startup-" + result.pid + ".event") >= 0, 'posts the startup event for the service PID');
     assert.strictEqual(Number(result.stdout.trim()), result.pid);
     fs.unlinkSync(env.BOOTSTRAP_LOG + '.node');
+    result = child.spawnSync('sh', [launcher2, 'tts', '/bin/sh', '-c', 'echo $$'], { env: env, encoding: 'utf8' });
+    assert(fs.readFileSync(env.BOOTSTRAP_LOG + '.node', 'utf8').indexOf('/jibo-startup-' + result.pid + '.event') >= 0, 'tts starts side by side');
+    fs.unlinkSync(env.BOOTSTRAP_LOG + '.node');
+    result = child.spawnSync('sh', [launcher2, 'lps', '/bin/true'], { env: env, encoding: 'utf8' });
+    assert(!fs.existsSync(env.BOOTSTRAP_LOG + '.node'), 'lps is waited for (expression needs it)');
     result = child.spawnSync('sh', [launcher2, 'asr', '/bin/true'], { env: env, encoding: 'utf8' });
     assert(!fs.existsSync(env.BOOTSTRAP_LOG + '.node'), 'services that post it themselves are left alone');
     // audio: the speaker path is set even when the OS's /root/OutAudioSetup.sh is missing (a robot went silent).
@@ -62,10 +79,10 @@ try {
     var launcher4 = path.join(root, 'launcher4');
     fs.writeFileSync(launcher4, fs.readFileSync(wrapper, 'utf8').replace(/\/usr\/local\/lib\/jibo\/code-cache\.js/g, hookFile)
         .replace(/\/usr\/bin\/node/g, fakeNode), { mode: 493 });
-    result = child.spawnSync('sh', [launcher4, 'media', fakeNode, '/usr/local/bin/jibo-ssm/jibo-mms.js'], { env: env, encoding: 'utf8' });
+    result = child.spawnSync('sh', [launcher4, 'asr', fakeNode, '/usr/local/bin/jibo-ssm/jibo-mms.js'], { env: env, encoding: 'utf8' });
     assert.strictEqual(result.stdout.trim(), '-r ' + hookFile + ' /usr/local/bin/jibo-ssm/jibo-mms.js');
     fs.unlinkSync(hookFile);
-    result = child.spawnSync('sh', [launcher4, 'media', fakeNode, 'x.js'], { env: env, encoding: 'utf8' });
+    result = child.spawnSync('sh', [launcher4, 'asr', fakeNode, 'x.js'], { env: env, encoding: 'utf8' });
     assert.strictEqual(result.stdout.trim(), 'x.js', 'no hook installed: started as before');
     console.log('Service preparation, exec/PID/arguments, failures and managed modes passed');
 } finally { remove(root); }
