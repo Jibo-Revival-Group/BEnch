@@ -26,4 +26,9 @@ fi
 if [ "$service" = tts ] && [ -f /usr/local/lib/ladspa/jibo_voicefx.so ] && [ -f /usr/local/share/ttsservice/alsa/.asoundrc ] && [ -f /opt/jibo/Knowledge/beacon/voices/fx.txt ]; then
     export HOME=/usr/local/share/ttsservice/alsa
 fi
+# Node services reuse V8's compiled code between boots (usr/local/lib/jibo/code-cache.js).
+if [ "$1" = /usr/bin/node ] && [ -f /usr/local/lib/jibo/code-cache.js ]; then
+    shift
+    set -- /usr/bin/node -r /usr/local/lib/jibo/code-cache.js "$@"
+fi
 exec "$@"

@@ -56,5 +56,16 @@ try {
             }
         });
     });
+    // Node services load the V8 code cache hook first.
+    var fakeNode = path.join(root, 'fake-node'), hookFile = path.join(root, 'code-cache.js');
+    fs.writeFileSync(fakeNode, '#!/bin/sh\necho "$*"\n', { mode: 493 }); fs.writeFileSync(hookFile, '');
+    var launcher4 = path.join(root, 'launcher4');
+    fs.writeFileSync(launcher4, fs.readFileSync(wrapper, 'utf8').replace(/\/usr\/local\/lib\/jibo\/code-cache\.js/g, hookFile)
+        .replace(/\/usr\/bin\/node/g, fakeNode), { mode: 493 });
+    result = child.spawnSync('sh', [launcher4, 'media', fakeNode, '/usr/local/bin/jibo-ssm/jibo-mms.js'], { env: env, encoding: 'utf8' });
+    assert.strictEqual(result.stdout.trim(), '-r ' + hookFile + ' /usr/local/bin/jibo-ssm/jibo-mms.js');
+    fs.unlinkSync(hookFile);
+    result = child.spawnSync('sh', [launcher4, 'media', fakeNode, 'x.js'], { env: env, encoding: 'utf8' });
+    assert.strictEqual(result.stdout.trim(), 'x.js', 'no hook installed: started as before');
     console.log('Service preparation, exec/PID/arguments, failures and managed modes passed');
 } finally { remove(root); }
