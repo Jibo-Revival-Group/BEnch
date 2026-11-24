@@ -1390,7 +1390,7 @@ usr/bin/jibo-download-update	l	0777	0	0	../lib/node_modules/@jibo/jibo-ota-updat
 usr/bin/jibo-fuse	f	0755	0	0	1e0a7c7a9d2699d154d8da2da509b9b093107111ec2c6f3ae4e0d6363724820b
 usr/bin/jibo-get-update	l	0777	0	0	../lib/node_modules/@jibo/jibo-ota-updater/src/get-update.js
 usr/bin/jibo-getidentity	f	0755	0	0	9a06fb04bf91618b84581a9edbe59d52e12e0cdad3c73081baefde8085ba8e25
-usr/bin/jibo-getmode	f	0755	0	0	3be300bd2e9da236599d5c3ecdef3546b4d12efc653eefe924caf1c777660e96
+usr/bin/jibo-getmode	f	0755	0	0	7ac68508a3c24aa8b614373bb98efcdd0e3c19a213a40ef6914269dbba7043e1
 usr/bin/jibo-list-updates	l	0777	0	0	../lib/node_modules/@jibo/jibo-ota-updater/src/list-updates.js
 usr/bin/jibo-log-asr	l	0777	0	0	../lib/node_modules/@jibo/jibo-log-client/src/log-asr-async.js
 usr/bin/jibo-log-client	l	0777	0	0	../lib/node_modules/@jibo/jibo-log-client/src/log-client.js

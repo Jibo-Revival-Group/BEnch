@@ -1,29 +1,6 @@
-#!/usr/bin/env node
-
-"use strict";
-
-// Jibo mode query script
-//
-// Gets Jibo's operating mode.
-
-let fs = require("fs");
-
-// location to read mode.json
-let mode_file = "/var/jibo/mode.json";
-
-function read_mode(filename) {
-    try {
-        let txt = fs.readFileSync(filename);
-        return JSON.parse(txt);
-    } catch (err) {
-        return null;
-    }
-}
-
-let mode = read_mode(mode_file);
-if (!mode) {
-    console.log("ERROR: failed to parse", mode_file);
-    process.exit(1);
-}
-
-console.log(mode.mode);
+#!/bin/sh
+# Jibo mode query: prints the mode from /var/jibo/mode.json. Was a node script; init scripts run it 4 times per boot
+# and each node start took 0.3-1.5 s on Jibo.
+mode=$(sed -n 's/.*"mode" *: *"\([^"]*\)".*/\1/p' /var/jibo/mode.json 2>/dev/null | head -n 1)
+[ -n "$mode" ] || { echo "ERROR: failed to parse /var/jibo/mode.json"; exit 1; }
+echo "$mode"
