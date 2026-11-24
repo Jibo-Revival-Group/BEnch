@@ -14,9 +14,9 @@ case "$service" in
 esac
 # system-manager starts services one at a time, each after the last posts Jibo's startup semaphore. Post it now for
 # 5x1 helpers (they never do: 10 s wait each) and for services nothing waits on at boot, so they start side by side
-# on Jibo's 4 cores. Not expression's lps (expression never comes up without it) or body/audio/asr/jetstream.
+# on Jibo's 4 cores. Not lps: expression never comes up if it starts before lps is ready. Not body/audio/asr/jetstream.
 # exec below keeps this PID.
-case "$service" in resolv-watcher|jibo-bluetooth|jibo-sync-helper|tts|identity|server|monitor|media|security-controller-service|secure-transfer)
+case "$service" in resolv-watcher|jibo-bluetooth|jibo-sync-helper|tts|identity|server|monitor|media|security-controller-service|secure-transfer|expression)
     NODE_PATH=/usr/lib/node_modules /usr/bin/node -e "require('node-semaphore').Semaphore('/jibo-startup-$$.event').post()" || true ;;
 esac
 # Speaker path on the sound chip (what the OS's /root/OutAudioSetup.sh sets at boot): if that file is lost, Jibo is silent.
