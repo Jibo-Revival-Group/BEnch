@@ -35,4 +35,6 @@ if [ "$1" = /usr/bin/node ] && [ -f /usr/local/lib/jibo/code-cache.js ]; then
     shift
     set -- /usr/bin/node -r /usr/local/lib/jibo/code-cache.js "$@"
 fi
+# lps (camera + face detection) uses over a core nonstop; at lower priority it no longer slows the rest of boot.
+[ "$service" = lps ] && set -- nice -n 10 "$@"
 exec "$@"
